@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Gx" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/GxFramework" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/GxFramework" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="Libs/SDL2/i686-w64-mingw32/include/SDL2" />
+			<Add directory="Libs/SDL2_image-2.0.5/i686-w64-mingw32/include/SDL2" />
+			<Add directory="Libs/SDL2_mixer-2.0.4/i686-w64-mingw32/include/SDL2" />
+			<Add directory="Libs/SDL2_ttf-2.0.15/i686-w64-mingw32/include/SDL2" />
+		</Compiler>
+		<Linker>
+			<Add option="-lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer" />
+			<Add directory="Libs/SDL2/i686-w64-mingw32/lib" />
+			<Add directory="Libs/SDL2_image-2.0.5/i686-w64-mingw32/lib" />
+			<Add directory="Libs/SDL2_mixer-2.0.4/i686-w64-mingw32/lib" />
+			<Add directory="Libs/SDL2_ttf-2.0.15/i686-w64-mingw32/lib" />
+		</Linker>
+		<Unit filename="Gx.h" />
+		<Unit filename="Gx/App/GxApp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/App/GxApp.h" />
+		<Unit filename="Gx/Array/GxArray.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Array/GxArray.h" />
+		<Unit filename="Gx/Button/GxButton.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Button/GxButton.h" />
+		<Unit filename="Gx/Element/GxElement.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Element/GxElement.h" />
+		<Unit filename="Gx/Event/GxEvent.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Event/GxEvent.h" />
+		<Unit filename="Gx/Folder/GxFolder.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Folder/GxFolder.h" />
+		<Unit filename="Gx/Graphics/GxGraphics.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Graphics/GxGraphics.h" />
+		<Unit filename="Gx/Ini/GxIni.h" />
+		<Unit filename="Gx/List/GxList.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/List/GxList.h" />
+		<Unit filename="Gx/Map/GxMap.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Map/GxMap.h" />
+		<Unit filename="Gx/Namespace/GxNamespace.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Namespace/GxNamespace.h" />
+		<Unit filename="Gx/Physics/GxPhysics.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Physics/GxPhysics.h" />
+		<Unit filename="Gx/Private/GxPrivate.h" />
+		<Unit filename="Gx/Public/GxPublic.h" />
+		<Unit filename="Gx/Quadtree/GxQuadtree.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Quadtree/GxQuadtree.h" />
+		<Unit filename="Gx/Renderable/GxRenderable.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Renderable/GxRenderable.h" />
+		<Unit filename="Gx/RigidBody/GxRigidBody.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/RigidBody/GxRigidBody.h" />
+		<Unit filename="Gx/Scene/GxScene.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Scene/GxScene.h" />
+		<Unit filename="Gx/Tilemap/GxTilemap.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Tilemap/GxTilemap.h" />
+		<Unit filename="Gx/Utilities/GxUtil.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Utilities/GxUtil.h" />
+		<Unit filename="Gx/XMacros/GxXMacros.h" />
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
