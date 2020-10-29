@@ -9,6 +9,7 @@ static void onLoad(Event* e){
         .modules = DisplayAbsolute | BodyNone,
         .position = &(Rect){0, 0, size.w, size.h},
         .text = "Hello Gx!",
+        .color = "White",
         .fontSize = 32
     });
 }

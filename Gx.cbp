@@ -42,7 +42,6 @@
 			<Add directory="Libs/SDL2_mixer-2.0.4/i686-w64-mingw32/lib" />
 			<Add directory="Libs/SDL2_ttf-2.0.15/i686-w64-mingw32/lib" />
 		</Linker>
-		<Unit filename="Gx.h" />
 		<Unit filename="Gx/App/GxApp.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -71,6 +70,7 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Gx/Graphics/GxGraphics.h" />
+		<Unit filename="Gx/Gx.h" />
 		<Unit filename="Gx/Ini/GxIni.h" />
 		<Unit filename="Gx/List/GxList.c">
 			<Option compilerVar="CC" />

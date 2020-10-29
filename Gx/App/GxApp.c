@@ -13,6 +13,8 @@
 #include "../Array/GxArray.h"
 #include "../List/GxList.h"
 
+#define GX_LANDSCAPE_HEIGHT 480
+
 //... #forward declarations
 static inline GxMap* createColorMap(void);
 static GxMap* createFontMap(void);
@@ -114,15 +116,12 @@ void GxCreateApp(const GxIni* ini) {
     SDL_GetCurrentDisplayMode(0, &mode);
     self->size.w = mode.w > mode.h ? mode.w : mode.h;
     self->size.h = mode.w > mode.h ? mode.h : mode.w;
-    self->size.w = (int) ((self->size.w * 360) / (double) self->size.h);
-    self->size.h = 360;
-
+    self->size.w = (int) ((self->size.w * GX_LANDSCAPE_HEIGHT) / (double) self->size.h);
+    self->size.h = GX_LANDSCAPE_HEIGHT;
     const char* title = ini->title ? ini->title : "Gx";
-    Uint32 flags = GxAndroid ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_SHOWN;
 
-    //init window and renderer
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
+        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, SDL_WINDOW_SHOWN))) {
         GxFatalError(SDL_GetError());
     }
 
@@ -132,13 +131,13 @@ void GxCreateApp(const GxIni* ini) {
     }
 
     //present window
-    SDL_SetRenderDrawColor(self->renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);
     SDL_RenderClear(self->renderer);
     SDL_RenderPresent(self->renderer);
 
     //in android go fullscreen
     if (strcmp(SDL_GetPlatform(), "Android") == 0) {
-        SDL_SetWindowFullscreen(self->window, SDL_WINDOW_FULLSCREEN);
+        SDL_SetWindowFullscreen(self->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
     }
 
     //set logical size
@@ -381,7 +380,7 @@ void GxRunLoop_() {
         GxArrayClean(self->temporary);
 
         //clear window
-        SDL_SetRenderDrawColor(self->renderer, 255, 255, 255, 255);
+        SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);
         SDL_RenderClear(self->renderer);
     }
     destroyApp_();
@@ -510,7 +509,7 @@ void GxConvertColor(SDL_Color* destination, const char* color) {
 
 static GxMap* createFontMap(void) {
     GxMap* fonts = GmCreateMap();
-#define FPATH "Assets/PTSerif/PTSerif-"
+#define FPATH "Gx/Font/PTSerif/PTSerif-"
 
     GxMapSet(fonts, "Default", GmCreateString(FPATH "Regular.ttf"), free);
     GxMapSet(fonts, "Italic", GmCreateString(FPATH "Italic.ttf"), free);

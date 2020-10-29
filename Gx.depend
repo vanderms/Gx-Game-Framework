@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1603981710 source:c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.c
+1603988807 source:c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.c
 	"../Utilities/GxUtil.h"
 	"../App/GxApp.h"
 	"../Ini/GxIni.h"
@@ -18,7 +18,7 @@
 1603655740 c:\users\vande\documents\programacao\c\gxframework\gx\utilities\gxutil.h
 	"../Public/GxPublic.h"
 
-1603985729 c:\users\vande\documents\programacao\c\gxframework\gx\public\gxpublic.h
+1603986963 c:\users\vande\documents\programacao\c\gxframework\gx\public\gxpublic.h
 	"SDL.h"
 	"SDL_mixer.h"
 	"SDL_ttf.h"
@@ -635,7 +635,7 @@
 	<string.h>
 	<stdio.h>
 
-1603982651 source:c:\users\vande\documents\programacao\c\gxframework\main.c
+1603988838 source:c:\users\vande\documents\programacao\c\gxframework\main.c
 	"Gx/Gx.h"
 
 1603976636 c:\users\vande\documents\programacao\c\gxframework\gx.h
