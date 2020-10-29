@@ -118,10 +118,11 @@ void GxCreateApp(const GxIni* ini) {
     self->size.h = 360;
 
     const char* title = ini->title ? ini->title : "Gx";
+    Uint32 flags = GxAndroid ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_SHOWN;
 
     //init window and renderer
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, SDL_WINDOW_SHOWN))) {
+        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
         GxFatalError(SDL_GetError());
     }
 

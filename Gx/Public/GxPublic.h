@@ -9,6 +9,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#ifdef __ANDROID__
+#define GxAndroid 1
+#else
+#define GxAndroid 0
+#endif
+
 //... TYPES :: ALIAS
 typedef SDL_Rect SDL_Rect;
 typedef SDL_Point GxPoint;
