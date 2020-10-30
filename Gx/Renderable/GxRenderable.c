@@ -177,7 +177,7 @@ GxRenderable* GxCreateRenderable_(GxElement* elem, const GxIni* ini) {
 
 void GxDestroyRenderable_(GxRenderable* self) {
 	if (self) {
-		if(GxAppIsRunning_()){
+		if(GxAppIsRunning_() && self->folders){
 			for (Uint32 i = 0; i < GxArraySize(self->folders); i++){
 				GxFolder* folder = GxArrayAt(self->folders, i);
 				GxFolderDecRefCounter_(folder);

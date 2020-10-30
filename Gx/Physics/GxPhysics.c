@@ -10,6 +10,9 @@
 #include <string.h>
 #include "../App/GxApp.h"
 
+
+
+
 typedef struct GxPhysics {
 	GxScene* scene;	
 	GxArray* contacts;
@@ -24,11 +27,12 @@ typedef struct GxPhysics {
 	int depth;
 } GxPhysics;
 
-typedef struct GxContact {	
+typedef struct GxContact {
+	Uint32 hash;
 	GxElement* colliding;
 	GxElement* collided;
 	Uint32 direction;	
-	int amove;	
+	int amove;
 	bool effective;
 	bool prevented;
 } GxContact;
@@ -103,6 +107,7 @@ static inline void destroyEmData(EmData* self) {
 static inline GxContact* createContact(GxElement* self, GxElement* other, int amove, Uint32 direction) {
 	GxContact* contact = malloc(sizeof(GxContact));	
 	GxAssertAllocationFailure(contact);
+	contact->hash = GxHashContact_;
 	contact->colliding = self;
 	contact->collided = other;
 	contact->amove = amove;	
@@ -553,67 +558,87 @@ void GxPhysicsCreateWalls_(GxPhysics* self) {
 	GxCreateElement(&ini);
 }
 
+#define CHECK_CONTACT_HASH(contact)\
+{\
+	uint32_t hash = *(uint32_t *) contact;\
+	GxAssertInvalidHash(hash == GxHashContact_);\
+}
+
 GxElement* GxContactGetColliding(GxContact* contact) {
+	CHECK_CONTACT_HASH(contact)
 	return contact->colliding;
 }
 
 GxElement* GxContactGetCollided(GxContact* contact) {
+	CHECK_CONTACT_HASH(contact)
 	return contact->collided;
 }
 
 bool GxContactIsBetween(GxContact* contact, GxElement* self, GxElement* other) {
+	CHECK_CONTACT_HASH(contact)
 	bool s = self ? contact->colliding == self : true;
 	bool o = other ? contact->collided == other : true;
 	return s && o;
 }
 
 bool GxContactHasElement(GxContact* contact, GxElement* element) {
+	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == element || contact->collided == element);
 }
 
 
 GxElement* GxContactGetOppositeElement(GxContact* contact, GxElement* self) {
+	CHECK_CONTACT_HASH(contact)
 	GxAssertInvalidArgument(contact->colliding == self || contact->collided == self);
 	return (contact->colliding == self ? contact->collided : contact->colliding);
 }
 
 bool GxContactHasDirection(GxContact* contact, Uint32 direction) {
+	CHECK_CONTACT_HASH(contact)
 	return contact->direction & direction;
 }
 
 Uint32 GxContactGetDirection(GxContact* contact) {
+	CHECK_CONTACT_HASH(contact)
 	return contact->direction;
 }
 
 bool GxContactIsPrevented(GxContact* contact) {
+	CHECK_CONTACT_HASH(contact)
 	return contact->prevented;
 }
 
 void GxContactAllowCollision(GxContact* contact) {
+	CHECK_CONTACT_HASH(contact)
 	contact->prevented = true;
 }
 
 bool GxContactIsElemRightContact(GxContact* contact, GxElement* self) {
+	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactRight) ||
 		(contact->collided == self && contact->direction == GxContactLeft);
 }
 
 bool GxContactIsElemLeftContact(GxContact* contact, GxElement* self) {
+	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactLeft) ||
 		(contact->collided == self && contact->direction == GxContactRight);
 }
 
 bool GxContactIsElemDownContact(GxContact* contact, GxElement* self) {
+	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactDown) ||
 		(contact->collided == self && contact->direction == GxContactUp);
 }
 
 bool GxContactIsElemUpContact(GxContact* contact, GxElement* self) {
+	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactUp) ||
 		(contact->collided == self && contact->direction == GxContactDown);
 }
 
 void GxContactOneWayPlatform(GxEvent* e) {
+
 	if(!GxContactHasDirection(e->contact, GxContactDown)){
 		GxContactAllowCollision(e->contact);
 	}

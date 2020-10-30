@@ -24,12 +24,7 @@ static inline int GxRandom(uint32_t* seed, int start, int end) {
 	return response;
 }
 
-
-
-
 void GxPrintMask(Uint32 mask);
-
-
 
 typedef enum GxHash {
 	GxHashElement_ = 1111251919,	

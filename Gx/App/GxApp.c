@@ -120,8 +120,12 @@ void GxCreateApp(const GxIni* ini) {
     self->size.h = GX_LANDSCAPE_HEIGHT;
     const char* title = ini->title ? ini->title : "Gx";
 
+    Uint32 flags =  ( strcmp(SDL_GetPlatform(), "Android") == 0 ?
+        SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_SHOWN
+    );
+
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, SDL_WINDOW_SHOWN))) {
+        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
         GxFatalError(SDL_GetError());
     }
 
@@ -135,17 +139,14 @@ void GxCreateApp(const GxIni* ini) {
     SDL_RenderClear(self->renderer);
     SDL_RenderPresent(self->renderer);
 
-    //in android go fullscreen
-    if (strcmp(SDL_GetPlatform(), "Android") == 0) {
-        SDL_SetWindowFullscreen(self->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-    }
-
     //set logical size
     SDL_RenderSetLogicalSize(self->renderer, self->size.w, self->size.h);
+    SDL_SetRenderDrawBlendMode(self->renderer, SDL_BLENDMODE_BLEND);
 
     self->status = GxStatusNone;
     self->snMain = GxCreateScene(ini);
     GxLoadScene(self->snMain);
+
     GxRunLoop_();
 }
 
@@ -510,12 +511,10 @@ void GxConvertColor(SDL_Color* destination, const char* color) {
 static GxMap* createFontMap(void) {
     GxMap* fonts = GmCreateMap();
 #define FPATH "Gx/Font/PTSerif/PTSerif-"
-
     GxMapSet(fonts, "Default", GmCreateString(FPATH "Regular.ttf"), free);
     GxMapSet(fonts, "Italic", GmCreateString(FPATH "Italic.ttf"), free);
     GxMapSet(fonts, "Bold", GmCreateString(FPATH "Bold.ttf"), free);
     GxMapSet(fonts, "BoldItalic", GmCreateString(FPATH "BoldItalic.ttf"), free);
-
 #undef FPATH
     return fonts;
 }

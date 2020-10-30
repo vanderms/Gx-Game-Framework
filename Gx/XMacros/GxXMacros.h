@@ -55,5 +55,5 @@
 #define x49(...) x40(__VA_ARGS__), x5(__VA_ARGS__), __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, __VA_ARGS__
 #define x50(...) x40(__VA_ARGS__), x10(__VA_ARGS__)
 
-
+#define xpos32(x, y, w, h) (Rect){(int) ((x) * 32), (int) ((y) * 32), (int) ((w) * 32), (int) ((h) * 32)}
 #endif // !GX_H

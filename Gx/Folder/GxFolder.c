@@ -168,6 +168,7 @@ int GXFolderGetPercLoaded_(GxFolder* self) {
 
 static inline void folderUnload(GxFolder* self) {
     GxMapClean(self->assets);
+    self->status = GxStatusNone;
 }
 
 static inline void folderIncreaseAssetsLoaded(GxFolder* self){
