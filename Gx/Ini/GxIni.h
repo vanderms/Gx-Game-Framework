@@ -69,9 +69,6 @@ typedef struct GxIni {
 	GxHandler onContactBegin;
 	GxHandler onContactEnd;
 	GxHandler onElemRemove;
-	
-	GxRequestHandler requestHandler;
-	
 } GxIni;
 
 #endif // !GX_INI_H

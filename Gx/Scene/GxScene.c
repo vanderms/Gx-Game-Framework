@@ -29,7 +29,7 @@ typedef struct GxScene {
 	//callbacks	
 	void* target;
 	GxHandler* handlers;	
-	GxRequestHandler requestHandler;	
+	GxMap* rHandlers;
 } GxScene;
 
 typedef struct Timer {
@@ -81,7 +81,7 @@ GxScene* GxCreateScene(const GxIni* ini) {
 		self->handlers = NULL;
 	}	
 	
-	self->requestHandler = ini->requestHandler;	
+	self->rHandlers = NULL;
 
 	//set folders
 	if (ini->folders) {
@@ -117,6 +117,7 @@ void GxDestroyScene_(GxScene* self) {
 		GxDestroyGraphics_(self->graphics);
 		GxDestroyPhysics_(self->physics);
 		GxDestroyArray(self->elements);
+		GxDestroyMap(self->rHandlers);
 		
 		if (self->handlers && self->handlers[GxEventOnDestroy]){
 			self->handlers[GxEventOnDestroy](&(GxEvent) {
@@ -141,13 +142,21 @@ void GxDestroyScene_(GxScene* self) {
 	}
 }
 
-void* GxSceneSend(GxScene* receiver, const char* description, void* data) {
-	if (receiver->requestHandler) {
-		return receiver->requestHandler(&(GxRequest){
-			receiver->target, description, data
-		});
+
+void GxSceneAddRequestHandler(GxScene* self, 
+	const char* request, GxRequestHandler handler
+){	
+	if (self->rHandlers == NULL) {
+		self->rHandlers = GmCreateMap();
 	}
-	return NULL;	
+	GxMapSet(self->rHandlers, request, handler, NULL);
+}
+
+
+void* GxSceneSend(GxScene* receiver, const char* request, void* data) {
+	GxRequestHandler handler = GxMapGet(receiver->rHandlers, request);
+	GxAssertNotImplemented(handler);
+	return handler(&(GxRequest){ receiver->target, request, data });	
 }
 
 

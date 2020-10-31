@@ -20,7 +20,7 @@ typedef struct GxElement {
 	//event handler module
 	void* target;
 	GxHandler* handlers;	
-	GxRequestHandler requestHandler;	
+	GxMap* rHandlers;
 
 	//special elements
 	void* child;

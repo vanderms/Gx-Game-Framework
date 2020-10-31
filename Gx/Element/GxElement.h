@@ -17,7 +17,9 @@ void GxElemRemove(GxElement* self);
 //accessors and mutators
 void* GxElemSend(GxElement* self, const char* description, void* data);
 void* GxElemGetTarget(GxElement* self);
-
+void GxElemAddRequestHandler(GxElement* self, 
+	const char* request, GxRequestHandler handler
+);
 Uint32 GxElemGetId(GxElement* self);
 const char* GxElemGetClassName(GxElement* self);
 bool GxElemHasHandler(GxElement* self, int type);

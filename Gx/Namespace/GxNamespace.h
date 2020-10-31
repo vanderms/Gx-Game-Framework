@@ -75,6 +75,7 @@ typedef struct GxElemNamespace {
 	
 	bool (*hasHandler)(GxElement* self, int type);
 	GxHandler (*getHandler)(GxElement* self, int type);	
+	void (*addRequestHandler)(GxElement* self, const char* request, GxRequestHandler handler);
 	
 	bool (*isPhysical)(GxElement* self);
 	bool (*isRenderable)(GxElement* self);
@@ -253,6 +254,7 @@ typedef struct GxSceneNamespace {
 		
 	GxScene* (*create)(const GxIni* ini);	
 	void* (*send)(GxScene* receiver, const char* description, void* data);	
+	void (*addRequestHandler)(GxScene* receiver, const char* request, GxRequestHandler handler);
 	Uint32 (*getPercLoaded)(GxScene* self);
 	const char* (*getName)(GxScene* self);
 	GxSize (*getSize)(GxScene* self);

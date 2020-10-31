@@ -16,8 +16,9 @@ void* GxSceneSend(GxScene* self, const char* description, void* data);
 Uint32 GxSceneGetPercLoaded(GxScene* self);
 const char* GxSceneGetName(GxScene* self);
 void GxSceneExecuteElemChildDtor_(GxScene* self, void* child);
-
-
+void GxSceneAddRequestHandler(GxScene* receiver, 
+	const char* request, GxRequestHandler handler
+);
 GxSize GxSceneGetSize(GxScene* self);
 bool GxSceneHasStatus(GxScene* self, int status);
 int GxSceneGetStatus(GxScene* self);

@@ -61,7 +61,7 @@ typedef struct GxEvent {
 
 typedef struct GxRequest {
 	void* target;
-	const char* description;
+	const char* request;
 	void* data;
 } GxRequest;
 

@@ -9,6 +9,7 @@
 #include "../Scene/GxScene.h"
 #include <string.h>
 #include "../Renderable/GxRenderable.h"
+#include "../Map/GxMap.h"
 
 
 
@@ -50,7 +51,7 @@ GxElement* GxCreateElement(const GxIni* ini){
 	}
 
 	//getHandler and putHandler		
-	self->requestHandler = ini->requestHandler;		
+	self->rHandlers = NULL;
 
 	//add element to scene then return
 	self->id = GxSceneAddElement_(self->scene, self);
@@ -68,6 +69,7 @@ void GxDestroyElement_(GxElement* self) {
 				.type = GxEventOnDestroy, 
 			});
 		}
+		GxDestroyMap(self->rHandlers);
 		GxDestroyRigidBody_(self->body);
 		GxDestroyRenderable_(self->renderable);
 		GxDestroyArray(self->classList);
@@ -84,14 +86,11 @@ void GxElemRemove(GxElement* self) {
 	GxSceneRemoveElement_(self->scene, self);
 }
 
-void* GxElemSend(GxElement* self, const char* description, void* data){
-	validateElem(self, false, false);
-	if (self->requestHandler) {
-		return self->requestHandler(&(GxRequest){
-			self->target, description, data
-		});
-	}	
-	return NULL;
+void* GxElemSend(GxElement* receiver, const char* request, void* data){
+	validateElem(receiver, false, false);
+	GxRequestHandler handler = GxMapGet(receiver->rHandlers, request);
+	GxAssertInvalidArgument(handler);
+	return handler(&(GxRequest){ receiver->target, request, data });	
 }
 
 void* GxElemGetTarget(GxElement* self) {
@@ -99,9 +98,16 @@ void* GxElemGetTarget(GxElement* self) {
 	return self->target;
 }
 
+void GxElemAddRequestHandler(GxElement* self, 
+	const char* request, GxRequestHandler handler
+){
+	validateElem(self, false, false);
+	if (self->rHandlers == NULL) {
+		self->rHandlers = GmCreateMap();
+	}
+	GxMapSet(self->rHandlers, request, handler, NULL);
+}
 
-
-//acessors and mutators
 Uint32 GxElemGetId(GxElement* self) {
 	validateElem(self, false, false);
 	return self->id;
