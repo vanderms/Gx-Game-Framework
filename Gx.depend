@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1604345955 source:c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.c
+1604351026 source:c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.c
 	"../Utilities/GxUtil.h"
 	"../App/GxApp.h"
 	"../Ini/GxIni.h"

@@ -98,24 +98,7 @@ void GxCreateApp(const GxIni* ini) {
 
     SDL_AtomicSet(&self->atom, GxStatusNone);
 
-    bool landscape = false;
-    bool portrait = false;
-    bool windowsDev = false;
-
-    GxAssertInvalidArgument(ini->window);
-    GxArray* wparams = GmArraySplit(ini->window, "|");
-    GxAssertInvalidArgument(GxArraySize(wparams) == 2);
-    const char* orientation = GxArrayAt(wparams, 0); 
-
-    if(strstr(ini->window, "Landscape")){
-	    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
-        landscape = true;            
-    }
-    else if (strstr(ini->window, "Portrait")) {
-        SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
-        portrait = true;
-    }
-    
+   
 	  //init SDL modules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
        GxFatalError(SDL_GetError());
@@ -133,35 +116,50 @@ void GxCreateApp(const GxIni* ini) {
         GxFatalError(SDL_GetError());
     }
 
-    //calc window size  
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(0, &mode);
-    GxSize screenSize = (mode.w > mode.h && portrait ? 
-        (GxSize){ mode.h, mode.w } :  (GxSize){ mode.w, mode.h }
-    );
-    
-    self->size = parseSize(GxArrayAt(wparams, 1), &screenSize);
-    GxDestroyArray(wparams);   
-      
+    Uint32 bigger = mode.w > mode.h ? mode.w : mode.h;
+    Uint32 smaller = mode.w > mode.h ? mode.h : mode.w;
+
+    GxAssertInvalidArgument(ini->window);
+    GxArray* wparams = GmArraySplit(ini->window, "|");
+    GxAssertInvalidArgument(GxArraySize(wparams) == 2);
+
+    if(strstr(ini->window, "Landscape")){
+	    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+        self->size.h = atoi(GxArrayAt(wparams, 1));
+        GxAssertInvalidArgument(self->size.h);
+        self->size.w = ((double) bigger * self->size.h) / smaller;       
+    }
+    else if (strstr(ini->window, "Portrait")) {
+        SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
+        self->size.w = atoi(GxArrayAt(wparams, 1));
+        GxAssertInvalidArgument(self->size.w);
+        self->size.h = ((double) bigger * self->size.w) / smaller;       
+    }
+    GxDestroyArray(wparams);
+
     const char* title = ini->title ? ini->title : "Gx";
+    Uint32 flags = SDL_WINDOW_ALLOW_HIGHDPI;
 
-    if (strcmp(SDL_GetPlatform(), "Windows") == 0 && GxDev) {     
-        screenSize = self->size;
-        windowsDev = true;
-    }   
-    Uint32 flags =  ( !windowsDev || strcmp(SDL_GetPlatform(), "Android") == 0 ?
-        SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_RESIZABLE
-    );
-
+    if (!(strcmp(SDL_GetPlatform(), "Windows") == 0 && GxDev) ||
+        ( strcmp(SDL_GetPlatform(), "Android") == 0)) {             
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    }
+    else{
+        flags |= SDL_WINDOW_RESIZABLE;
+    }
+      
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, screenSize.w, screenSize.h, flags))) {
+        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
         GxFatalError(SDL_GetError());
     }
 
-    if (!(self->renderer = SDL_CreateRenderer(self->window, -1, SDL_RENDERER_ACCELERATED |
-        SDL_RENDERER_PRESENTVSYNC))) {
+    if (!(self->renderer = SDL_CreateRenderer(self->window, -1, SDL_RENDERER_PRESENTVSYNC))) {
          GxFatalError(SDL_GetError());
     }
+
+
 
     //present window
     SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);

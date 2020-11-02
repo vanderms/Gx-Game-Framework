@@ -221,10 +221,10 @@ GxImage* GxImageCreateText_(const char* text, const char* fontName, int size, SD
     GxAssertAllocationFailure(self);
     self->type = Texture;
     const char* fontPath = GxGetFontPath_(fontName);
-#if 1
+#if 0
     //for some reason not working
     GxSize wsize = {0, 0};
-    SDL_GetWindowSize(GxGetSDLWindow(), &wsize.w, &wsize.h);
+    SDL_GetRendererOutputSize(GxGetSDLRenderer(), &wsize.w, &wsize.h);
     GxSize lsize = GxGetWindowSize();
     size = ((double) size * wsize.w) / lsize.w;
 #endif
