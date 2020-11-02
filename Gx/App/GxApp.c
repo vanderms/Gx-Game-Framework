@@ -140,33 +140,27 @@ void GxCreateApp(const GxIni* ini) {
     GxDestroyArray(wparams);
 
     const char* title = ini->title ? ini->title : "Gx";
-    Uint32 flags = SDL_WINDOW_ALLOW_HIGHDPI;
+    Uint32 flags = SDL_WINDOW_RESIZABLE;
 
     if (!(strcmp(SDL_GetPlatform(), "Windows") == 0 && GxDev) ||
         ( strcmp(SDL_GetPlatform(), "Android") == 0)) {             
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    }
-    else{
-        flags |= SDL_WINDOW_RESIZABLE;
-    }
+    }   
       
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
         GxFatalError(SDL_GetError());
     }
 
-    if (!(self->renderer = SDL_CreateRenderer(self->window, -1, SDL_RENDERER_PRESENTVSYNC))) {
+    if (!(self->renderer = SDL_CreateRenderer(self->window, -1, 
+        SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED))) {
          GxFatalError(SDL_GetError());
     }
-
-
 
     //present window
     SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);
     SDL_RenderClear(self->renderer);
-    SDL_RenderPresent(self->renderer);
-
-   SDL_RenderSetLogicalSize(self->renderer, self->size.w, self->size.h);
+    SDL_RenderPresent(self->renderer);  
    
     SDL_SetRenderDrawBlendMode(self->renderer, SDL_BLENDMODE_BLEND);
 
@@ -177,32 +171,24 @@ void GxCreateApp(const GxIni* ini) {
     GxRunLoop_();
 }
 
-static GxSize parseSize(char* strsize, GxSize* screenSize) {
-       
-    strsize = GxTrim(strsize, (char[32]){0}, 32);
-    size_t len = strlen(strsize);
-    GxAssertInvalidArgument(strsize[0] == '(' && strsize[len-1] == ')');
-    strsize[len-1] = '\0';
-    strsize++;
-    GxArray* measures = GmArraySplit(strsize, ",");
-    int width = atoi(GxArrayAt(measures, 0));
-    int height = atoi(GxArrayAt(measures, 1));
-   
-    if(width && !height){
-        GxAssertInvalidArgument(strstr(GxArrayAt(measures, 1), "auto"));
-        height = ((double) width * screenSize->h) / screenSize->w;
-    }
-    else if (!width && height) {
-         GxAssertInvalidArgument(strstr(GxArrayAt(measures, 0), "auto"));
-         width = ((double) height * screenSize->w) / screenSize->h;
-    }
-    else if (!width && !height) {
-         GxAssertInvalidArgument(strstr(GxArrayAt(measures, 0), "auto"));
-         GxAssertInvalidArgument(strstr(GxArrayAt(measures, 1), "auto"));
-         width = screenSize->w;
-         height = screenSize->h;
-    }
-    return (GxSize){width, height};
+SDL_Rect* GxAppCalcDest(SDL_Rect* src, SDL_Rect* dest) {        
+    GxSize wsize = {0, 0};
+    SDL_GetRendererOutputSize(GxGetSDLRenderer(), &wsize.w, &wsize.h);
+    dest->x = round(((double) src->x * wsize.w) / self->size.w);
+    dest->w = round(((double) src->w * wsize.w) / self->size.w);
+    dest->y = round(((double) src->y * wsize.h) / self->size.h);
+    dest->h = round(((double) src->h * wsize.h) / self->size.h);
+    return dest;
+}
+
+SDL_Rect* GxAppCalcLabelDest(SDL_Rect* src, SDL_Rect* dest) {
+    GxAppCalcDest(src, dest);
+    SDL_Point center = {dest->x + dest->w/2, dest->y + dest->h/2};
+    dest->x = center.x - src->w/2;
+    dest->y = center.y - src->h/2;
+    dest->w = src->w;
+    dest->h = src->h;
+    return dest;
 }
 
 bool GxAppIsCreated_() {

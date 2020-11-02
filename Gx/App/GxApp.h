@@ -20,7 +20,8 @@ void GxAddFolder_(GxFolder* handler);
 GxFolder* GxGetFolder_(const char* id);
 GxSize GxGetWindowSize(void);
 bool GxAppIsRunning_(void);
-
+SDL_Rect* GxAppCalcDest(SDL_Rect* src, SDL_Rect* dest);
+SDL_Rect* GxAppCalcLabelDest(SDL_Rect* src, SDL_Rect* dest);
 //...
 void GxLoadScene(GxScene* scene);
 GxScene* GxGetRunningScene(void);

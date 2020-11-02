@@ -518,7 +518,8 @@ SDL_Rect GxGetElemPositionOnWindow(GxElement* self) {
 static inline void renderBorder(SDL_Renderer* renderer, SDL_Rect* pos, int quantity) {
 	if (quantity <= 0) return;
 	if (pos->w == 0 || pos->h == 0) return;
-	SDL_RenderDrawRect(renderer, pos);
+	SDL_Rect* dst = GxAppCalcDest(pos, &(SDL_Rect){0});
+	SDL_RenderDrawRect(renderer, dst);
 	pos->x++;
 	pos->y++;
 	pos->w -= 2;
@@ -539,7 +540,8 @@ void GxElemRender_(GxElement* self) {
 		int bs = self->renderable->border.size;
 		SDL_Rect square = {pos.x + bs, pos.y + bs, pos.w - 2*bs, pos.h - 2*bs};
 		SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, color->a);
-		SDL_RenderFillRect(renderer, &square);
+		SDL_Rect* dst = GxAppCalcDest(&square, &(SDL_Rect){0});
+		SDL_RenderFillRect(renderer, dst);
 		//SDL_RenderDrawRect(renderer, &pos);
 	}
 

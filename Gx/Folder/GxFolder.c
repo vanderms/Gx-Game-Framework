@@ -219,9 +219,9 @@ GxImage* GxImageCreateText_(const char* text, const char* fontName, int size, SD
 
     GxImage* self = calloc(1, sizeof(GxImage));
     GxAssertAllocationFailure(self);
-    self->type = Texture;
+    self->type = Text;
     const char* fontPath = GxGetFontPath_(fontName);
-#if 0
+#if 1
     //for some reason not working
     GxSize wsize = {0, 0};
     SDL_GetRendererOutputSize(GxGetSDLRenderer(), &wsize.w, &wsize.h);
@@ -378,10 +378,10 @@ void GxImageTextureSetResource_(GxImage* self, void* resource, GxSize* size) {
 
 void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererFlip orientation) {
 
-    if (self->type == Texture || self->type == Opaque){
+    if (self->type == Texture || self->type == Opaque || self->type == Text){
         void* resource = NULL;
         void* src = NULL;
-        if (self->type == Texture) {
+        if (self->type == Texture || self->type == Text) {
             resource = self->resource;
             src = self->src;
         }
@@ -391,11 +391,16 @@ void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererF
         }
 	    if (resource) {
             SDL_Renderer* renderer = GxGetSDLRenderer();
+            SDL_Rect* dst = ( self->type == Text ? 
+                GxAppCalcLabelDest(target, &(SDL_Rect){0}) 
+                : GxAppCalcDest(target, &(SDL_Rect){0, 0, 0, 0})
+            );
+             
             if ((angle <= -1.0 || angle >= 1.0) || orientation != SDL_FLIP_NONE) {
-                SDL_RenderCopyEx(renderer, resource, src, target, angle, NULL, orientation);
+                SDL_RenderCopyEx(renderer, resource, src, dst, angle, NULL, orientation);
             }
             else {
-                SDL_RenderCopy(renderer, resource, src, target);
+                SDL_RenderCopy(renderer, resource, src, dst);
             }
         }
 	}
