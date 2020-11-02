@@ -59,9 +59,18 @@
 #define xpoint32(x, y) (GxPoint){(int) ((x) * 32), (int)((y) * 32)}
 #define xsize32(w, h) (GxSize){(int) ((w) * 32), (int)((h) * 32)}
 
-
 #define xtilemap32(x, y, w, h, ...)\
 	position = &xrect32(x, y, w, h),\
+	.matrix = {h, w},\
+	.sequence = (int[w * h]) __VA_ARGS__
+
+
+#define xrect64(x, y, w, h) (SDL_Rect){(int) ((x) * 64), (int) ((y) * 64), (int) ((w) * 64), (int) ((h) * 64)}
+#define xpoint64(x, y) (GxPoint){(int) ((x) * 64), (int)((y) * 64)}
+#define xsize64(w, h) (GxSize){(int) ((w) * 64), (int)((h) * 64)}
+
+#define xtilemap64(x, y, w, h, ...)\
+	position = &xrect64(x, y, w, h),\
 	.matrix = {h, w},\
 	.sequence = (int[w * h]) __VA_ARGS__
 

@@ -13,7 +13,11 @@
 #include "../Array/GxArray.h"
 #include "../List/GxList.h"
 
-#define GX_LANDSCAPE_HEIGHT 480
+#ifdef NDEBUG
+    #define GxDev 0
+#else
+    #define GxDev 1
+#endif
 
 //... #forward declarations
 static inline GxMap* createColorMap(void);
@@ -26,7 +30,7 @@ enum AType { IMAGE, MUSIC, SOUND };
 typedef struct GxApp {
 
     //...
-    int status;
+    int status;    
     GxSize size;
 
     //...SDL
@@ -69,6 +73,9 @@ static inline void destroyAsset(Asset* self) {
     }
 }
 
+//...prototype
+static GxSize parseSize(char* strsize, GxSize* screenSize);
+
 //static instance
 static GxApp* self = NULL;
 
@@ -76,6 +83,7 @@ static GxApp* self = NULL;
 void GxCreateApp(const GxIni* ini) {
 
     if(self){ return; }
+    
     self = calloc(1, sizeof(GxApp));
     GxAssertAllocationFailure(self);
     self->snActive = NULL;
@@ -90,10 +98,24 @@ void GxCreateApp(const GxIni* ini) {
 
     SDL_AtomicSet(&self->atom, GxStatusNone);
 
+    bool landscape = false;
+    bool portrait = false;
+    bool windowsDev = false;
 
-    //set hint
-	SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+    GxAssertInvalidArgument(ini->window);
+    GxArray* wparams = GmArraySplit(ini->window, "|");
+    GxAssertInvalidArgument(GxArraySize(wparams) == 2);
+    const char* orientation = GxArrayAt(wparams, 0); 
 
+    if(strstr(ini->window, "Landscape")){
+	    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+        landscape = true;            
+    }
+    else if (strstr(ini->window, "Portrait")) {
+        SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
+        portrait = true;
+    }
+    
 	  //init SDL modules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
        GxFatalError(SDL_GetError());
@@ -111,21 +133,28 @@ void GxCreateApp(const GxIni* ini) {
         GxFatalError(SDL_GetError());
     }
 
-    //calc window size
+    //calc window size  
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(0, &mode);
-    self->size.w = mode.w > mode.h ? mode.w : mode.h;
-    self->size.h = mode.w > mode.h ? mode.h : mode.w;
-    self->size.w = (int) ((self->size.w * GX_LANDSCAPE_HEIGHT) / (double) self->size.h);
-    self->size.h = GX_LANDSCAPE_HEIGHT;
+    GxSize screenSize = (mode.w > mode.h && portrait ? 
+        (GxSize){ mode.h, mode.w } :  (GxSize){ mode.w, mode.h }
+    );
+    
+    self->size = parseSize(GxArrayAt(wparams, 1), &screenSize);
+    GxDestroyArray(wparams);   
+      
     const char* title = ini->title ? ini->title : "Gx";
 
-    Uint32 flags =  ( strcmp(SDL_GetPlatform(), "Android") == 0 ?
-        SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_SHOWN
+    if (strcmp(SDL_GetPlatform(), "Windows") == 0 && GxDev) {     
+        screenSize = self->size;
+        windowsDev = true;
+    }   
+    Uint32 flags =  ( !windowsDev || strcmp(SDL_GetPlatform(), "Android") == 0 ?
+        SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_RESIZABLE
     );
 
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
+        SDL_WINDOWPOS_CENTERED, screenSize.w, screenSize.h, flags))) {
         GxFatalError(SDL_GetError());
     }
 
@@ -139,8 +168,8 @@ void GxCreateApp(const GxIni* ini) {
     SDL_RenderClear(self->renderer);
     SDL_RenderPresent(self->renderer);
 
-    //set logical size
-    SDL_RenderSetLogicalSize(self->renderer, self->size.w, self->size.h);
+   SDL_RenderSetLogicalSize(self->renderer, self->size.w, self->size.h);
+   
     SDL_SetRenderDrawBlendMode(self->renderer, SDL_BLENDMODE_BLEND);
 
     self->status = GxStatusNone;
@@ -148,6 +177,34 @@ void GxCreateApp(const GxIni* ini) {
     GxLoadScene(self->snMain);
 
     GxRunLoop_();
+}
+
+static GxSize parseSize(char* strsize, GxSize* screenSize) {
+       
+    strsize = GxTrim(strsize, (char[32]){0}, 32);
+    size_t len = strlen(strsize);
+    GxAssertInvalidArgument(strsize[0] == '(' && strsize[len-1] == ')');
+    strsize[len-1] = '\0';
+    strsize++;
+    GxArray* measures = GmArraySplit(strsize, ",");
+    int width = atoi(GxArrayAt(measures, 0));
+    int height = atoi(GxArrayAt(measures, 1));
+   
+    if(width && !height){
+        GxAssertInvalidArgument(strstr(GxArrayAt(measures, 1), "auto"));
+        height = ((double) width * screenSize->h) / screenSize->w;
+    }
+    else if (!width && height) {
+         GxAssertInvalidArgument(strstr(GxArrayAt(measures, 0), "auto"));
+         width = ((double) height * screenSize->w) / screenSize->h;
+    }
+    else if (!width && !height) {
+         GxAssertInvalidArgument(strstr(GxArrayAt(measures, 0), "auto"));
+         GxAssertInvalidArgument(strstr(GxArrayAt(measures, 1), "auto"));
+         width = screenSize->w;
+         height = screenSize->h;
+    }
+    return (GxSize){width, height};
 }
 
 bool GxAppIsCreated_() {

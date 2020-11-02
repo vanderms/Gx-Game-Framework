@@ -17,6 +17,7 @@ static void onLoad(Event* e){
 int main(int argc, char** argv){
 
     app->create(&(Ini){
+        .window = "Landscape|(800, 480)",
         .onLoad = onLoad
     });
 
