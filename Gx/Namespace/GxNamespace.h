@@ -273,6 +273,11 @@ typedef struct GxSceneNamespace {
 
 }GxSceneNamespace;
 
+typedef struct GxTilemapNamespace {
+	GxElement* (*create)(const char* tilePath, const GxIni* ini);
+	void (*update)(GxElement* elem, int* sequence);
+}GxTilemapNamespace;
+
 
 typedef struct GxUtilNamespace {	
 	int* (*createInt)(int value);
@@ -300,6 +305,7 @@ extern const GxMapNamespace GxMapNamespaceInstance;
 extern const GxContactNamespace GxContactNamespaceInstance;
 extern const GxSceneNamespace GxSceneNamespaceInstance;
 extern const GxUtilNamespace GxUtilNamespaceInstance;
+extern const GxTilemapNamespace GxTilemapNamespaceInstance; 
 
 #endif // !GX_NAMESPACE_H
 

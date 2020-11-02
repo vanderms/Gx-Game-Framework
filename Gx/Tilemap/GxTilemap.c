@@ -55,13 +55,6 @@ void GxTilemapUpdate(GxElement* elem, int* sequence) {
 	}
 }
 
-//...callbacks
-static void onPreGraphicalTilemap(GxEvent* e) {
-	Tilemap* self = e->target;
-	SDL_Rect pos = GxGetElemPositionOnWindow(self->base);
-	GxElemCalcImagePos(self->base, &pos, self->pallete);
-	GxImageRender_(self->pallete, &pos, 0.0, (SDL_RendererFlip) GxElemForward);		
-}
 
 static void onDestroyTilemap(GxEvent* e) {
 	Tilemap* self = e->target;
@@ -75,7 +68,7 @@ static void onDestroyTilemap(GxEvent* e) {
 
 GxElement* GxCreateTileMap(const char* tilePath, const GxIni* ini) {
 	
-	GxAssertInvalidArgument(ini->position->w && ini->position->h && 
+	GxAssertInvalidArgument(ini->position && ini->position->w && ini->position->h &&
 		ini->matrix.nr && ini->matrix.nc && tilePath);
 	GxAssertInvalidArgument(ini->modules & (GxDisplayRelative | GxDisplayAbsolute));
 	
@@ -98,6 +91,8 @@ GxElement* GxCreateTileMap(const char* tilePath, const GxIni* ini) {
 	);
 			
 	self->base = GxCreateElement(ini);
+	GxTilemapSetImage_(self->base, self->pallete);
+	
 	self->folder = GmCreateString(folder);
 	self->group = GmCreateString(group);
 	
@@ -105,8 +100,7 @@ GxElement* GxCreateTileMap(const char* tilePath, const GxIni* ini) {
 	GxScene* scene = GxElemGetScene(self->base);
 
 	//add event listeners
-	GxSceneAddEventListener(scene, GxEventOnDestroy, onDestroyTilemap, self);
-	GxSceneAddEventListener(scene, GxEventOnPreGraphical, onPreGraphicalTilemap, self);
+	GxSceneAddEventListener(scene, GxEventOnDestroy, onDestroyTilemap, self);	
 		
 	return self->base;
 }

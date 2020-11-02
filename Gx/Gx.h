@@ -112,6 +112,7 @@ static const GxMapNamespace* map = &GxMapNamespaceInstance;
 static const GxContactNamespace* contact = &GxContactNamespaceInstance;
 static const GxSceneNamespace* scene = &GxSceneNamespaceInstance;
 static const GxUtilNamespace* util = &GxUtilNamespaceInstance;
+static const GxTilemapNamespace* tilemap = &GxTilemapNamespaceInstance;
 
 #ifdef __GNUC__
    #pragma GCC diagnostic pop

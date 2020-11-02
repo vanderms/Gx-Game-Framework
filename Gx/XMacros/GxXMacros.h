@@ -59,4 +59,10 @@
 #define xpoint32(x, y) (GxPoint){(int) ((x) * 32), (int)((y) * 32)}
 #define xsize32(w, h) (GxSize){(int) ((w) * 32), (int)((h) * 32)}
 
+
+#define xtilemap32(x, y, w, h, ...)\
+	position = &xrect32(x, y, w, h),\
+	.matrix = {h, w},\
+	.sequence = (int[w * h]) __VA_ARGS__
+
 #endif // !GX_H

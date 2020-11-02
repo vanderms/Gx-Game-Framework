@@ -12,6 +12,7 @@ void GxElemSetOrientation(GxElement* self, int value);
 
 const char* GxElemGetImage(GxElement* self);
 void GxElemSetImage(GxElement* self, const char* apath);
+void GxTilemapSetImage_(GxElement* self, GxImage* pallete);
 
 const char* GxElemGetAnimation(GxElement* self);
 void GxElemSetAnimation(GxElement* self, const char* apath);

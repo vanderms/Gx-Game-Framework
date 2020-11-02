@@ -232,6 +232,11 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 	.removeEventListener = GxSceneRemoveEventListener
 };
 
+const GxTilemapNamespace GxTilemapNamespaceInstance = {
+	.create = GxCreateTileMap,
+	.update = GxTilemapUpdate,
+};
+
 const GxUtilNamespace GxUtilNamespaceInstance = {
 	.createInt = GxUtilCreateInt,
 	.createUint = GxUtilCreateUint,

@@ -639,6 +639,11 @@ void GxElemSetImage(GxElement* self, const char* apath) {
 	}
 }
 
+void GxTilemapSetImage_(GxElement* self, GxImage* pallete) {
+	validateElem(self, false, true);
+	self->renderable->image = pallete;
+}
+
 void GxElemSetAnimation(GxElement* self, const char* apath) {
 
 	validateElem(self, false, true);
