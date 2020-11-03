@@ -517,9 +517,8 @@ SDL_Rect GxGetElemPositionOnWindow(GxElement* self) {
 
 static inline void renderBorder(SDL_Renderer* renderer, SDL_Rect* pos, int quantity) {
 	if (quantity <= 0) return;
-	if (pos->w == 0 || pos->h == 0) return;
-	SDL_Rect* dst = GxAppCalcDest(pos, &(SDL_Rect){0});
-	SDL_RenderDrawRect(renderer, dst);
+	if (pos->w == 0 || pos->h == 0) return;	
+	SDL_RenderDrawRect(renderer, pos);
 	pos->x++;
 	pos->y++;
 	pos->w -= 2;
@@ -553,7 +552,8 @@ void GxElemRender_(GxElement* self) {
 		SDL_SetRenderDrawColor(renderer,
 			borderColor->r, borderColor->g, borderColor->b, borderColor->a
 		);
-		renderBorder(renderer, &pos, bsize);
+		SDL_Rect* dst = GxAppCalcDest(&pos, &(SDL_Rect){0});
+		renderBorder(renderer, dst, bsize);
 	}
 
 	//then image or animation
@@ -650,13 +650,11 @@ void GxElemSetAnimation(GxElement* self, const char* apath) {
 
 	validateElem(self, false, true);
 	GxAnimation* anim = elemGetAsset(self, apath, ANIMATION);
-
-	if(self->renderable->animation != anim){
-		self->renderable->image = NULL;
-		self->renderable->animation = anim;
-		self->renderable->animCounter = 0;
-		self->renderable->animCurrent = 0;
-	}
+	
+	self->renderable->image = NULL;
+	self->renderable->animation = anim;
+	self->renderable->animCounter = 0;
+	self->renderable->animCurrent = 0;	
 }
 
 
