@@ -16,8 +16,10 @@
 const GxAppNamespace GxAppNamespaceInstance = {
 	.create = GxCreateApp,
 	.run = GxAppRun,
-	.getSDLWindow = GxGetSDLWindow,
-	.getSDLRenderer = GxGetSDLRenderer,
+	.sdl = &(struct GxSDLNamespace){
+		.getWindow = GxGetSDLWindow,
+		.getRenderer = GxGetSDLRenderer
+	},
 	.getScene = GxGetScene,
 	.getWindowSize = GxGetWindowSize,
 	.loadScene = GxLoadScene,

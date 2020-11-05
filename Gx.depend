@@ -441,7 +441,7 @@
 	<string.h>
 	<stdbool.h>
 
-1603890719 source:c:\users\vande\documents\programacao\c\gxframework\gx\button\gxbutton.c
+1604545403 source:c:\users\vande\documents\programacao\c\gxframework\gx\button\gxbutton.c
 	"../Utilities/GxUtil.h"
 	"../Button/GxButton.h"
 	"../Element/GxElement.h"
@@ -638,7 +638,7 @@
 	<string.h>
 	<stdio.h>
 
-1604537993 source:c:\users\vande\documents\programacao\c\gxframework\main.c
+1604546460 source:c:\users\vande\documents\programacao\c\gxframework\main.c
 	"Gx/Gx.h"
 
 1603976636 c:\users\vande\documents\programacao\c\gxframework\gx.h

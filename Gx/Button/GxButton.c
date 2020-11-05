@@ -9,22 +9,46 @@
 #include <string.h>
 
 
+
 typedef struct GxButton {
 	GxElement* base;	
 	Uint32 input;
 	
 	Uint32 status;
-	bool clickFlag;
+	bool clickFlag;		
+	SDL_FingerID* fingerID;	
+	SDL_TouchID touchID;
 	
 	int keyCode;	
 	Uint32 keyStatus;
 	bool keyClickFlag;
+
+
 } GxButton;
+
+static void setFingerId(GxButton* self, const SDL_FingerID* value){
+	
+	if (self->fingerID && !value) {
+		free(self->fingerID);
+		self->fingerID = NULL;				
+	}
+		
+	else if (!self->fingerID && value) {
+		self->fingerID = malloc(sizeof(SDL_FingerID));
+		*self->fingerID = *value;
+
+	}
+	else if (value && self->fingerID) {
+		*(self->fingerID) = *value;
+	}	
+};
+
+
 
 static void onLoopBegin(GxEvent* e) {
 	GxButton* self = e->target;
 	self->status &= GxButtonOn;
-	self->keyStatus &= GxButtonOn;
+	self->keyStatus &= GxButtonOn;	
 }
 
 
@@ -80,30 +104,57 @@ static void onFinger(GxEvent* ev) {
 			self->status |= GxButtonDown;
 			self->status |= GxButtonOn;
 			self->clickFlag = true;
-		}
+			setFingerId(self, &e->tfinger.fingerId);
+			self->touchID = e->tfinger.touchId;
+		}		
 	}
 	else if (e->type == SDL_FINGERUP) {
-		GxPoint p = { (int) (e->tfinger.x * appSize.w + 0.5f), (int) (e->tfinger.y * appSize.h + 0.5f) };
-		if (SDL_PointInRect(&p, &pos)) {
-			self->status |= GxButtonUp;	
-			self->status &= ~GxButtonOn;
-			if (self->clickFlag) self->status |= GxButtonClick;
+			
+		if(self->fingerID && e->tfinger.fingerId == *(self->fingerID)){
+			GxPoint p = { 
+				.x = (int) ((e->tfinger.x * appSize.w) + 0.5f), //0.5f is used to round
+				.y = (int) ((e->tfinger.y * appSize.h) + 0.5f) 
+			};
+
+			if (SDL_PointInRect(&p, &pos)) {
+				self->status |= GxButtonUp;	
+				self->status &= ~GxButtonOn;
+				if (self->clickFlag){
+					self->status |= GxButtonClick;
+				}
+			}
+			else {
+				self->status &= ~(GxButtonHover | GxButtonOn);							
+			}
+
 			self->clickFlag = false;
+			setFingerId(self, NULL);
 		}
 	}
 	else if (e->type == SDL_FINGERMOTION) {
-		GxPoint p = { (int) (e->tfinger.x * appSize.w + 0.5f), (int) (e->tfinger.y * appSize.h + 0.5f) };		
-		SDL_Rect area = { pos.x - 25, pos.y - 25, pos.w + 50, pos.h + 50 };
-		bool inside_pos = SDL_PointInRect(&p, &pos);
-		bool inside_area = SDL_PointInRect(&p, &area);
-		if (inside_pos) {
-			self->status |= GxButtonHover;
-			self->status |= GxButtonOn;
+		
+		GxPoint p = { 
+			.x = (int) (e->tfinger.x * appSize.w + 0.5f), 
+			.y = (int) (e->tfinger.y * appSize.h + 0.5f) 
+		};
+
+		bool isInside = SDL_PointInRect(&p, &pos);
+
+		if(self->fingerID && e->tfinger.fingerId == *(self->fingerID)){
+			
+			if (!isInside) {
+				self->status &= ~(GxButtonHover | GxButtonOn);
+				self->clickFlag = false;
+				setFingerId(self, NULL);			
+			}			
 		}
-		else if (!inside_pos && inside_area) {
-			self->status &= ~(GxButtonHover | GxButtonOn);
-			self->clickFlag = false;
-		}
+		else if(!self->fingerID){
+			if(isInside){
+				self->status |= GxButtonHover;
+				self->status |= GxButtonOn;
+				setFingerId(self, &e->tfinger.fingerId);
+			}			
+		}		
 	}		
 }
 

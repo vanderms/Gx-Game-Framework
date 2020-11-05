@@ -32,4 +32,9 @@ typedef enum GxHash {
 	GxHashContact_ = 804125936,
 } GxHash;
 
+
+
+
+
+
 #endif // !UTILITIES_H

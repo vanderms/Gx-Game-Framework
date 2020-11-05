@@ -4,11 +4,15 @@
 #include "../Ini/GxIni.h"
 
 //... NAMESPACES
+struct GxSDLNamespace {
+	SDL_Window* (*getWindow)(void);
+	SDL_Renderer* (*getRenderer)(void);	
+};
+
 typedef struct GxAppNamespace {
 	GxScene* (*create)(const GxIni* ini);	
 	void (*run)(void);
-	SDL_Window* (*getSDLWindow)(void);
-	SDL_Renderer* (*getSDLRenderer)(void);	
+	const struct GxSDLNamespace* SDL;
 	GxScene* (*getScene)(const char* id);
 	GxSize (*getWindowSize)(void);
 	void (*loadScene)(GxScene* scene);

@@ -37,6 +37,7 @@ typedef struct GxFolder GxFolder;
 typedef struct GxSound GxSound;
 typedef struct GxMusic GxMusic;
 
+
 //... FUNCTIONS :: ALIAS
 typedef void (*GxDestructor)();
 typedef int (*GxComp)(const void*, const void*);
@@ -65,25 +66,6 @@ typedef struct GxRequest {
 	const char* request;
 	void* data;
 } GxRequest;
-
-//...ASSERTIONS
-#define GxAssertNullPointer(pointer) GxAssertion_((pointer), "Null Pointer", __func__)
-#define GxAssertInvalidArgument(condition) GxAssertion_((condition), "Invalid argument", __func__)
-#define GxAssertAllocationFailure(pointer) GxAssertion_((pointer), "Failed to allocate memory", __func__)
-#define GxAssertNotImplemented(condition) GxAssertion_((condition), "Trying to access not implemented module", __func__)
-#define GxAssertInvalidHash(condition) GxAssertion_((condition), "Invalid hash", __func__)
-#define GxAssertOutOfRange(condition) GxAssertion_((condition), "Out of range", __func__)
-#define GxAssertInvalidOperation(condition) GxAssertion_((condition), "Invalid operation", __func__)
-#define GxAssertNotFoundAsset(condition) GxAssertion_((condition), "Not found asset", __func__);
-
-static inline void GxAssertion_(bool condition, const char* message, const char* func) {
-	if (!condition) {
-		char error[1024];
-        snprintf(error, 1024, "In %s(): %s.", func, message);
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", error, NULL);
-        exit(EXIT_FAILURE);
-    }
-}
 
 //.. CONSTANTS
 #define	GxCmaskNone &(Uint32) {0},
