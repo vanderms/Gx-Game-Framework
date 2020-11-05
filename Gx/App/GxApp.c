@@ -78,9 +78,9 @@ static inline void destroyAsset(Asset* self) {
 static GxApp* self = NULL;
 
 //constructor and destructor
-void GxCreateApp(const GxIni* ini) {
+GxScene* GxCreateApp(const GxIni* ini) {
 
-    if(self){ return; }
+    if(self){ return self->snMain; }
     
     self = calloc(1, sizeof(GxApp));
     GxAssertAllocationFailure(self);
@@ -164,9 +164,7 @@ void GxCreateApp(const GxIni* ini) {
 
     self->status = GxStatusNone;
     self->snMain = GxCreateScene(ini);
-    GxLoadScene(self->snMain);
-
-    GxRunLoop_();
+    return self->snMain;
 }
 
 
@@ -352,12 +350,13 @@ static inline int threadLoadAsset() {
 }
 
 
-void GxRunLoop_() {
-
+void GxAppRun() {
+    GxAssertInvalidOperation(self);
     self->counter = SDL_GetTicks();
-
+    
     //run
     self->status = GxStatusRunning;
+    GxLoadScene(self->snMain);
 
     while (self->status == GxStatusRunning) {
 

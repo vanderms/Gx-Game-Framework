@@ -8,7 +8,7 @@ typedef struct GxApp GxApp;
 typedef struct GxIni GxIni;
 
 //constructor, destructor, interface
-void GxCreateApp(const GxIni* ini);
+GxScene* GxCreateApp(const GxIni* ini);
 
 //acessors and mutators
 bool GxAppIsCreated_(void);
@@ -26,7 +26,7 @@ SDL_Rect* GxAppCalcLabelDest(SDL_Rect* src, SDL_Rect* dest);
 void GxLoadScene(GxScene* scene);
 GxScene* GxGetRunningScene(void);
 GxScene* GxGetMainScene(void);
-void GxRunLoop_(void);
+void GxAppRun(void);
 
 void GxAddFont(const char* name, const char* path);
 const char* GxGetFontPath_(const char* name);

@@ -17,9 +17,11 @@ static void onLoad(Event* e){
 int main(int argc, char** argv){
 
     app->create(&(Ini){
-        .window = "Portrait|360",
+        .window = "Landscape|360",
         .onLoad = onLoad
     });
+
+    app->run();
 
     return 0;
 }

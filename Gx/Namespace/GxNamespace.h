@@ -5,7 +5,8 @@
 
 //... NAMESPACES
 typedef struct GxAppNamespace {
-	void (*create)(const GxIni* ini);	
+	GxScene* (*create)(const GxIni* ini);	
+	void (*run)(void);
 	SDL_Window* (*getSDLWindow)(void);
 	SDL_Renderer* (*getSDLRenderer)(void);	
 	GxScene* (*getScene)(const char* id);
