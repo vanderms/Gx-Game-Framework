@@ -45,10 +45,6 @@ typedef struct GxRigidBody {
 	//Flag used by Body to see if a element is on ground
 	int groundFlag;
 
-	//Flags used by GxRigidBody to avoid corner collision effect in scenes with gravity
-	bool rightFlag;
-	bool leftFlag;
-
 	//contacts
 	GxList* contacts;
 	GxArray* temp;
@@ -154,16 +150,8 @@ GxVector GxElemGetVelocity(GxElement* self) {
 
 
 void GxElemSetVelocity(GxElement* self, GxVector velocity){
-	validateElem(self, true, false);
-	if (velocity.x > 0 && !self->body->rightFlag) {
-		self->body->velocity.x = velocity.x;
-	}
-	else if (velocity.x < 0 && !self->body->leftFlag) {
-		self->body->velocity.x = velocity.x;
-	}
-	else if(velocity.x == 0){
-		self->body->velocity.x = 0;
-	}
+	validateElem(self, true, false);	
+	self->body->velocity.x = velocity.x;
 	self->body->velocity.y = velocity.y;
 }
 
@@ -186,16 +174,7 @@ int GxElemGetVelx(GxElement* self) {
 
 void GxElemSetVelx(GxElement* self, int x) {
 	validateElem(self, true, false);
-	if (x > 0 && !self->body->rightFlag) {
-		self->body->velocity.x = x;
-	}
-	else if (x < 0 && !self->body->leftFlag) {
-		self->body->velocity.x = x;
-	}
-	else if(x == 0){
-		self->body->velocity.x = 0;
-	}
-}
+	self->body->velocity.x = x;}
 
 void GxElemAccelerate(GxElement* self, double x, double y) {
 	validateElem(self, true, false);
@@ -272,11 +251,6 @@ void elemRemoveContact_(GxElement* self, GxContact* contact) {
 	}
 }
 
-static void lateralFlagsTimeoutHandler(GxEvent* e) {
-	GxElement* self = e->target;
-	self->body->rightFlag = false;
-	self->body->leftFlag = false;
-}
 
 void elemAddContact_(GxElement* self, GxContact* contact) {
 	validateElem(self, true, false);
@@ -287,15 +261,7 @@ void elemAddContact_(GxElement* self, GxContact* contact) {
 	//then change ground flag if contact is down and not prevented
 	if (GxContactIsElemDownContact(contact, self) && !GxContactIsPrevented(contact)){
 		self->body->groundFlag++;
-	}
-	else if (GxContactIsElemRightContact(contact, self) && !GxContactIsPrevented(contact)){
-		self->body->rightFlag = true;
-		GxSceneSetTimeout(self->scene, 2, lateralFlagsTimeoutHandler, self);
-	}
-	if (GxContactIsElemLeftContact(contact, self) && !GxContactIsPrevented(contact)){
-		self->body->leftFlag = true;
-		GxSceneSetTimeout(self->scene, 2, lateralFlagsTimeoutHandler, self);
-	}
+	}	
 }
 
 uint32_t GxElemGetDFlag_(GxElement* self) {

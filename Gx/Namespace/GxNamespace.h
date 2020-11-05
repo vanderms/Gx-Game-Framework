@@ -54,13 +54,25 @@ typedef struct GxButtonNamespace {
 	GxElement* (*create)(const GxIni* ini, Uint32 inputs, int keyCode);	
 	Uint32 (*getStatus)(GxElement* elem);
 	bool (*hasStatus)(GxElement* elem, Uint32 status);
+	const Uint32 KEYBOARD;
+	const Uint32 FINGER;
+	const Uint32 MOUSE;	
+	const Uint32 NONE;
+	const Uint32 ON;
+	const Uint32 HOVER;
+	const Uint32 CLICK;
+	const Uint32 DOWN;
+	const Uint32 UP;
 } GxButtonNamespace;
+
 
 
 typedef struct GxElemNamespace {
 	
 	//...Element
 	GxElement* (*create)(const GxIni* ini);	
+	GxElement* (*createTilemap)(const char* tilePath, const GxIni* ini);
+	void (*updateTilemap)(GxElement* elem, int* sequence);
 	void (*remove)(GxElement* self);	
 	void* (*getTarget)(GxElement* self);
 	Uint32 (*getId)(GxElement* self);
@@ -174,8 +186,7 @@ typedef struct GxElemNamespace {
 
 	SDL_Rect (*getPositionOnWindow)(GxElement* self);
 
-	void* (*send)(GxElement* receiver, const char* description, void* data);	
-
+	void* (*send)(GxElement* receiver, const char* description, void* data);
 }GxElemNamespace;
 
 
@@ -190,7 +201,8 @@ typedef struct GxFolderNamespace {
 	void (*createTiles)(const char* image, GxSize size, GxMatrix matrix);		
 	void (*loadAnimation)(const char* id, const char* pathF, 
 		int start, int end, int interval, double proportion, bool continuous
-	);			
+	);	
+	GxSize (*getImageSize)(const char* path);
 	void (*loadChunk)(const char* id, const char* path);
 	void (*loadMusic)(const char* id, const char* path);
 	Mix_Chunk* (*getChunk)(const char* path);
@@ -247,6 +259,13 @@ typedef struct GxContactNamespace {
 	bool (*isElemDownContact)(GxContact* contact, GxElement* self);
 	bool (*isElemUpContact)(GxContact* contact, GxElement* self);
 	void (*oneWayPlatform)(GxEvent* e);
+	const GxContactConstant RIGHT;
+	const GxContactConstant LEFT;
+	const GxContactConstant HORIZONTAL;
+	const GxContactConstant UP;
+	const GxContactConstant DOWN;
+	const GxContactConstant VERTICAL;
+	const GxContactConstant ALL;
 }GxContactNamespace;
 
 
@@ -272,11 +291,6 @@ typedef struct GxSceneNamespace {
 	bool (*removeEventListener)(GxScene* self, int type, GxHandler handler, void* target);
 
 }GxSceneNamespace;
-
-typedef struct GxTilemapNamespace {
-	GxElement* (*create)(const char* tilePath, const GxIni* ini);
-	void (*update)(GxElement* elem, int* sequence);
-}GxTilemapNamespace;
 
 
 typedef struct GxUtilNamespace {	
@@ -305,7 +319,7 @@ extern const GxMapNamespace GxMapNamespaceInstance;
 extern const GxContactNamespace GxContactNamespaceInstance;
 extern const GxSceneNamespace GxSceneNamespaceInstance;
 extern const GxUtilNamespace GxUtilNamespaceInstance;
-extern const GxTilemapNamespace GxTilemapNamespaceInstance; 
+ 
 
 #endif // !GX_NAMESPACE_H
 

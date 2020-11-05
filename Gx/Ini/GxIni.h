@@ -28,8 +28,8 @@ typedef struct GxIni {
 	//widget
 	int zIndex;
 	int orientation;
-	char* image;
-	char* animation;
+	const char* image;
+	const char* animation;
 	int animationRepeat;
 	const char* alignment;	
 	bool hidden;

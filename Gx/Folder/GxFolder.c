@@ -357,6 +357,18 @@ GxSize GxImageGetSize_(GxImage* self) {
     return self->size;
 }
 
+GxSize GxFolderGetImageSize(const char* path) {
+	GxAssertInvalidArgument(path);
+    char folderId[32];
+    char imageId[32];
+    GxSplitAssetPath_(path, folderId, imageId);
+    GxFolder* folder = GxGetFolder_(folderId);
+    GxAssertInvalidArgument(path);
+    GxImage* image = GxFolderGetImage_(folder, imageId);
+    GxAssertInvalidArgument(image);
+    return image->size;
+}
+
 const char* GxImageGetId_(GxImage* self) {
 	return self->id;
 }
@@ -455,8 +467,7 @@ void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target) {
                 .y = y - ((child->size.h - h) / 2), //... ycenter texture
                 .w = child->size.w,
                 .h = child->size.h
-            };
-
+            };           
             GxImageRender_(child, &pos, 0.0, SDL_FLIP_NONE);
         }
     }

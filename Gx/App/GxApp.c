@@ -73,8 +73,6 @@ static inline void destroyAsset(Asset* self) {
     }
 }
 
-//...prototype
-static GxSize parseSize(char* strsize, GxSize* screenSize);
 
 //static instance
 static GxApp* self = NULL;
@@ -171,14 +169,25 @@ void GxCreateApp(const GxIni* ini) {
     GxRunLoop_();
 }
 
-SDL_Rect* GxAppCalcDest(SDL_Rect* src, SDL_Rect* dest) {        
+
+
+SDL_Rect* GxAppCalcDest(SDL_Rect* src, SDL_Rect* dest) {
+#define intround(x) ((x) >= 0.0 ? (int) ((x) + 0.5) : (int) ((x) - 0.5))
     GxSize wsize = {0, 0};
     SDL_GetRendererOutputSize(GxGetSDLRenderer(), &wsize.w, &wsize.h);
-    dest->x = round(((double) src->x * wsize.w) / self->size.w);
-    dest->w = round(((double) src->w * wsize.w) / self->size.w);
-    dest->y = round(((double) src->y * wsize.h) / self->size.h);
-    dest->h = round(((double) src->h * wsize.h) / self->size.h);
+    if (wsize.w == self->size.w) {
+        *dest = *src;            
+    }
+    else {
+        dest->x = intround(((double)src->x * wsize.w) / self->size.w);       
+        dest->y = intround(((double)src->y * wsize.h) / self->size.h);        
+        int x1 = intround(((double)(src->x + src->w) * wsize.w) / self->size.w); 
+        int y1 = intround(((double)(src->y + src->h) * wsize.h) / self->size.h);
+        dest->w = x1 - dest->x;
+        dest->h = y1 - dest->y;
+    }
     return dest;
+#undef intround
 }
 
 SDL_Rect* GxAppCalcLabelDest(SDL_Rect* src, SDL_Rect* dest) {

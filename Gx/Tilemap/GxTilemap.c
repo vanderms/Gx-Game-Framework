@@ -55,6 +55,11 @@ void GxTilemapUpdate(GxElement* elem, int* sequence) {
 	}
 }
 
+bool GxIsTilemap(GxElement* elem) {
+	Tilemap* self = GxElemGetChild(elem);
+	return self && (self->hash == tilemapHash);
+}
+
 
 static void onDestroyTilemap(GxEvent* e) {
 	Tilemap* self = e->target;

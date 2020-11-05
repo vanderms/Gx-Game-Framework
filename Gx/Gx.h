@@ -10,17 +10,6 @@
 #define	CmaskDynamic GxCmaskDynamic
 #define	CmaskFixed GxCmaskFixed
 
-#define ButtonKeyboard GxButtonKeyboard
-#define	ButtonFinger GxButtonFinger
-#define	ButtonMouse GxButtonMouse
-
-#define	ButtonNone GxButtonNone
-#define ButtonOn GxButtonOn
-#define	ButtonHover GxButtonHover
-#define	ButtonClick GxButtonClick
-#define	ButtonDown GxButtonDown
-#define	ButtonUp GxButtonUp
-
 #define assertNullPointer GxAssertNullPointer
 #define assertInvalidArgument GxAssertInvalidArgument
 #define assertAllocationFailure GxAssertAllocationFailure
@@ -29,17 +18,8 @@
 #define assertOutOfRange GxAssertOutOfRange
 #define assertInvalidOperation GxAssertInvalidOperation
 
-
 //...CONSTANTS:: ENUM
 enum GxConstantsAliases {
-	//... contact
-	ContactRight = GxContactRight,
-	ContactLeft = GxContactLeft,
-	ContactHorizontal = GxContactHorizontal,
-	ContactUp = GxContactUp,
-	ContactDown = GxContactDown,
-	ContactVertical = GxContactVertical,
-	ContactAll = GxContactAll,
 
 	//...status
 	StatusNone = GxStatusNone,
@@ -112,7 +92,6 @@ static const GxMapNamespace* map = &GxMapNamespaceInstance;
 static const GxContactNamespace* contact = &GxContactNamespaceInstance;
 static const GxSceneNamespace* scene = &GxSceneNamespaceInstance;
 static const GxUtilNamespace* util = &GxUtilNamespaceInstance;
-static const GxTilemapNamespace* tilemap = &GxTilemapNamespaceInstance;
 
 #ifdef __GNUC__
    #pragma GCC diagnostic pop

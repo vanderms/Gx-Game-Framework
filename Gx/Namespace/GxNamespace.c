@@ -61,13 +61,23 @@ const GxArrayNamespace GxArrayNamespaceInstance = {
 const GxButtonNamespace GxButtonNamespaceInstance = {
 	.create = GxCreateButton,
 	.getStatus = GxButtonGetStatus,
-	.hasStatus = GxButtonHasStatus
+	.hasStatus = GxButtonHasStatus,
+	.KEYBOARD = GxButtonKeyboard,
+	.FINGER = GxButtonFinger,
+	.MOUSE = GxButtonMouse,	
+	.NONE = GxButtonNone,
+	.ON = GxButtonOn,
+	.HOVER = GxButtonHover,
+	.CLICK = GxButtonClick,
+	.DOWN = GxButtonDown,
+	.UP = GxButtonUp,
 };
-
 
 const GxElemNamespace GxElemNamespaceInstance = {
 	
 	.create = GxCreateElement,	
+	.createTilemap = GxCreateTileMap,
+	.updateTilemap = GxTilemapUpdate,
 	.remove = GxElemRemove,
 	.getTarget = GxElemGetTarget,	
 	.addRequestHandler = GxElemAddRequestHandler,
@@ -145,13 +155,14 @@ const GxElemNamespace GxElemNamespaceInstance = {
 	.getColor = GxElemGetColor, 
 	.setColor = GxElemSetColor,
 	.getPositionOnWindow = GxGetElemPositionOnWindow,
-	.send = GxElemSend,	
+	.send = GxElemSend,
 };
 
 
 const GxFolderNamespace GxFolderNamespaceInstance = {
 	.create = GxCreateFolder,
 	.loadImage = GxLoadImage,
+	.getImageSize = GxFolderGetImageSize,
 	.loadTileset = GxLoadTileset,
 	.createTiles = GxCreateTiles,
 	.loadAnimation = GxLoadAnimation,
@@ -208,6 +219,13 @@ const GxContactNamespace GxContactNamespaceInstance = {
 	.isElemDownContact = GxContactIsElemDownContact,
 	.isElemUpContact = GxContactIsElemUpContact,
 	.oneWayPlatform = GxContactOneWayPlatform,
+	.RIGHT = GxContactRight,
+	.LEFT = GxContactLeft,
+	.HORIZONTAL = GxContactHorizontal,
+	.UP = GxContactUp,
+	.DOWN = GxContactDown,
+	.VERTICAL = GxContactVertical,
+	.ALL = GxContactAll
 };
 
 
@@ -232,10 +250,6 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 	.removeEventListener = GxSceneRemoveEventListener
 };
 
-const GxTilemapNamespace GxTilemapNamespaceInstance = {
-	.create = GxCreateTileMap,
-	.update = GxTilemapUpdate,
-};
 
 const GxUtilNamespace GxUtilNamespaceInstance = {
 	.createInt = GxUtilCreateInt,

@@ -4,6 +4,7 @@
 #include "../Folder/GxFolder.h"
 #include "../Scene/GxScene.h"
 #include "../Array/GxArray.h"
+#include "../Tilemap/GxTilemap.h"
 #include <string.h>
 
 //... AUXILIARY STRUCTS
@@ -230,12 +231,12 @@ void GxElemSetOrientation(GxElement* self, int value) {
 
 const char* GxElemGetImage(GxElement* self) {
 	validateElem(self, false, true);
-	return self->renderable->image ? GxImageGetId_(self->renderable->image) : NULL;
+	return self->renderable->image ? self->renderable->asset : NULL;
 }
 
 const char* GxElemGetAnimation(GxElement* self) {
 	validateElem(self, false, true);
-	return self->renderable->animation ? GxAnimGetId_(self->renderable->animation) : NULL;
+	return self->renderable->animation ? self->renderable->asset : NULL;
 }
 
 const char* GxElemGetAlignment(GxElement* self) {
@@ -632,6 +633,7 @@ static inline void* elemGetAsset(GxElement* self, const char* apath, enum AssetT
 void GxElemSetImage(GxElement* self, const char* apath) {
 
 	validateElem(self, false, true);
+	GxAssertInvalidOperation(!GxIsTilemap(self));
 	GxImage* image = elemGetAsset(self, apath, IMAGE);
 	if(self->renderable->image != image){
 		self->renderable->animation = NULL;
@@ -647,8 +649,9 @@ void GxTilemapSetImage_(GxElement* self, GxImage* pallete) {
 }
 
 void GxElemSetAnimation(GxElement* self, const char* apath) {
-
+	
 	validateElem(self, false, true);
+	GxAssertInvalidOperation(!GxIsTilemap(self));
 	GxAnimation* anim = elemGetAsset(self, apath, ANIMATION);
 	
 	self->renderable->image = NULL;

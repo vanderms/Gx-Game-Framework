@@ -50,6 +50,7 @@ GxImage* GxCreateTilePalette_(GxFolder* folder,
 );
 
 GxSize GxImageGetSize_(GxImage* self);
+GxSize GxFolderGetImageSize(const char* path);
 
 const char* GxImageGetId_(GxImage* self);
 
