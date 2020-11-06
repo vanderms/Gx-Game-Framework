@@ -635,3 +635,132 @@ GxArray* GxTokenize(const char* str, const char* sep){
     GxArrayPush(self->temporary, response, GxDestroyArray);
     return response;
 }
+
+static inline GxData* createData() {
+    GxData* self = malloc(sizeof(GxData));
+    GxAssertAllocationFailure(self);
+    return self;
+}
+/*
+typedef union GxData {
+	int i;
+	Uint32 u;
+	double f;
+	char c;
+	const char* s;
+	void* ptr;
+	GxList* list;
+	GxArray* array;
+	GxMap* map;
+	SDL_Rect rect;
+	SDL_Color color;
+	GxVector vector;
+	GxSize size;
+	SDL_Point point;
+} GxData;
+*/
+
+GxData* GxDataI(const int value) {
+    GxData* data = createData();
+    data->i = value;  
+    return data;
+}
+
+GxData* GxDataU(const Uint32 value) {
+    GxData* data = createData();
+    data->u = value;
+    return data;
+}
+
+GxData* GxDataF(const double value) {
+    GxData* data = createData();
+    data->f = value;
+    return data;
+}
+
+GxData* GxDataB(const bool value) {
+    GxData* data = createData();
+    data->b = value;  
+    return data;
+}
+
+GxData* GxDataC(const char value) {
+    GxData* data = createData();
+    data->c = value;
+    return data;
+}
+
+GxData* GxDataSF(const char* format, ...) {    
+    static char buffer[1024];    
+    va_list args;
+	va_start(args, format);
+	vsnprintf(buffer, 1024, format, args);
+	va_end(args);
+    char* value = GmCreateString(buffer);
+    GxArrayPush(self->temporary, value, free);
+    GxData* data = createData();
+    data->s = value;
+	return data;
+}
+
+GxData* GxDataPtr(const void* value) {
+    GxData* data = createData();
+    data->ptr = value;
+    return data;
+}
+
+GxData* GxDataList(void) {
+    GxData* data = createData();
+    data->list = GxCreateList();
+    GxArrayPush(self->temporary, data->list, GxDestroyList);
+    return data;
+}
+
+GxData* GxDataArray(void) {
+    GxData* data = createData();
+    data->array = GxCreateArray();
+    GxArrayPush(self->temporary, data->array, GxDestroyArray);
+    return data;
+}
+
+GxData* GxDataMap(void) {
+    GxData* data = createData();
+    data->map = GmCreateMap();
+    GxArrayPush(self->temporary, data->map, GxDestroyMap);
+    return data;
+}
+
+GxData* GxDataRect(const SDL_Rect* rect) {
+    GxAssertNullPointer(rect);
+    GxData* data = createData();
+    data->rect = *rect;
+    return data;
+}
+
+GxData* GxDataVector(const GxVector* vector) {
+    GxAssertNullPointer(vector);
+    GxData* data = createData();
+    data->vector = *vector;
+    return data;
+}
+
+GxData* GxDataPoint(const SDL_Point* point) {
+    GxAssertNullPointer(point);
+    GxData* data = createData();
+    data->point = *point;
+    return data;
+}
+
+GxData* GxDataSize(const GxSize* size) {
+    GxAssertNullPointer(size);
+    GxData* data = createData();
+    data->size = *size;
+    return data;
+}
+
+GxData* GxDataMatrix(const GxMatrix* matrix) {
+    GxAssertNullPointer(matrix);
+    GxData* data = createData();
+    data->matrix = *matrix;
+    return data;
+}

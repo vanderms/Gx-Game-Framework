@@ -12,7 +12,7 @@ GxScene* GxCreateScene(const GxIni* ini);
 void GxDestroyScene_(GxScene* self);
 
 //acessors and mutators
-void* GxSceneSend(GxScene* self, const char* description, void* data);
+GxData* GxSceneSend(GxScene* self, const char* description, GxData* data);
 Uint32 GxSceneGetPercLoaded(GxScene* self);
 const char* GxSceneGetName(GxScene* self);
 void GxSceneExecuteElemChildDtor_(GxScene* self, void* child);

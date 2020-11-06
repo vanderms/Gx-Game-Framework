@@ -10,11 +10,11 @@
 #include <stdio.h>
 #include <string.h>
 
-
 //... TYPES :: ALIAS
 typedef SDL_Rect SDL_Rect;
 typedef SDL_Point GxPoint;
 typedef SDL_Point GxVector;
+typedef Uint32 GxElemID;
 
 //... TYPES :: FORWARD DECLARATION
 typedef struct GxList GxList;
@@ -24,6 +24,7 @@ typedef struct GxIni GxIni;
 typedef struct GxIEventHandler GxIEventHandler;
 typedef struct GxEvent GxEvent;
 typedef struct GxRequest GxRequest;
+typedef struct GxResponse GxResponse;
 typedef struct GxScene GxScene;
 typedef struct GxElement GxElement;
 typedef struct GxGraphics GxGraphics;
@@ -41,7 +42,7 @@ typedef struct GxMusic GxMusic;
 typedef void (*GxDestructor)();
 typedef int (*GxComp)(const void*, const void*);
 typedef void (*GxHandler)(GxEvent*);
-typedef void* (*GxRequestHandler)(GxRequest*);
+typedef void (*GxRequestHandler)(GxRequest*, GxResponse*);
 
 //... TYPES :: DEFINITIONS
 typedef struct GxSize {
@@ -60,11 +61,33 @@ typedef struct GxEvent {
 	union { GxContact* contact; SDL_Event* sdle; };
 } GxEvent;
 
+typedef union GxData {
+	int i;
+	Uint32 u;
+	char c;
+	bool b;
+	double f;	
+	const char* s;
+	const void* ptr;
+	GxList* list;
+	GxArray* array;
+	GxMap* map;
+	SDL_Rect rect;	
+	GxVector vector;
+	GxSize size;
+	SDL_Point point;
+	GxMatrix matrix;
+} GxData;
+
 typedef struct GxRequest {
 	void* target;
 	const char* request;
-	void* data;
+	GxData* data;
 } GxRequest;
+
+typedef struct GxResponse {
+	GxData* value;
+}GxResponse;
 
 //...ASSERTIONS
 #define GxAssertNullPointer(pointer) GxAssertion_((pointer), "Null Pointer", __func__)

@@ -9,7 +9,6 @@ struct GxSDLNamespace {
 	SDL_Renderer* (*getRenderer)(void);	
 };
 
-
 typedef struct GxAppNamespace {
 	GxScene* (*create)(const GxIni* ini);	
 	void (*run)(void);
@@ -28,13 +27,23 @@ typedef struct GxAppNamespace {
 	void (*pauseMusic)(void);
 	void (*resumeMusic)(void);
 	int (*isPlayingMusic)(void);
-	void (*convertColor)(SDL_Color* destination, const char* color);
-	char* (*f)(const char* format, ...);
-	int* (*i)(int value);
-	Uint32* (*u)(Uint32 value);
-	double* (*d)(double value);
-	bool* (*b)(bool value);
+	void (*convertColor)(SDL_Color* destination, const char* color);	
 	GxArray* (*tokenize)(const char* str, const char* sep);
+	GxData* (*i)(const int value);
+	GxData* (*u)(const Uint32 value);
+	GxData* (*f)(const double value);
+	GxData* (*b)(const bool value);
+	GxData* (*c)(const char value);
+	GxData* (*sf)(const char* format, ...);
+	GxData* (*ptr)(const void* value);
+	GxData* (*list)(void);
+	GxData* (*array)(void);
+	GxData* (*map)(void);
+	GxData* (*rect)(const SDL_Rect* rect);
+	GxData* (*vector)(const GxVector* vector);
+	GxData* (*point)(const SDL_Point* point);
+	GxData* (*size)(const GxSize* size);
+	GxData* (*matrix)(const GxMatrix* matrix);	
 	void (*freeTarget)(GxEvent* e);
 } GxAppNamespace;
 
@@ -80,7 +89,7 @@ typedef struct GxElemNamespace {
 	void (*updateTilemap)(GxElement* elem, int* sequence);
 	void (*remove)(GxElement* self);	
 	void* (*getTarget)(GxElement* self);
-	Uint32 (*getId)(GxElement* self);
+	Uint32 (*getID)(GxElement* self);
 	GxScene* (*getScene)(GxElement* self);
 
 	const SDL_Rect* (*getPos)(GxElement* self);
@@ -191,7 +200,7 @@ typedef struct GxElemNamespace {
 
 	SDL_Rect (*getPositionOnWindow)(GxElement* self);
 
-	void* (*send)(GxElement* receiver, const char* description, void* data);
+	GxData* (*send)(Uint32 receiverID, const char* description, GxData* data);
 
 	const int NONE;
 	const int ABSOLUTE;
@@ -286,7 +295,7 @@ typedef struct GxContactNamespace {
 typedef struct GxSceneNamespace {
 		
 	GxScene* (*create)(const GxIni* ini);	
-	void* (*send)(GxScene* receiver, const char* description, void* data);	
+	GxData* (*send)(GxScene* receiver, const char* description, GxData* data);	
 	void (*addRequestHandler)(GxScene* receiver, const char* request, GxRequestHandler handler);
 	Uint32 (*getPercLoaded)(GxScene* self);
 	const char* (*getName)(GxScene* self);

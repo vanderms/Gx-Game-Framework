@@ -62,9 +62,12 @@ typedef GxArray Array;
 typedef GxMap Map;
 typedef GxEvent Event;
 typedef GxRequest Request;
+typedef GxResponse Response;
 typedef GxScene Scene;
 typedef GxElement Element;
 typedef GxContact Contact;
+typedef GxData Data;
+typedef GxElemID ElemID;
 
 #ifdef __GNUC__
     #pragma GCC diagnostic push

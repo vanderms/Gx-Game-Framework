@@ -10,6 +10,7 @@
 #include "../Physics/GxPhysics.h"
 #include "../Folder/GxFolder.h"
 #include "../Button/GxButton.h"
+#include "../Event/GxEvent.h"
 #include <string.h>
 
 
@@ -153,10 +154,12 @@ void GxSceneAddRequestHandler(GxScene* self,
 }
 
 
-void* GxSceneSend(GxScene* receiver, const char* request, void* data) {
+GxData* GxSceneSend(GxScene* receiver, const char* request, GxData* data) {
 	GxRequestHandler handler = GxMapGet(receiver->rHandlers, request);
 	GxAssertNotImplemented(handler);
-	return handler(&(GxRequest){ receiver->target, request, data });	
+	GxResponse response = {.value = NULL};
+	handler(&(GxRequest){ receiver->target, request, data }, &response);
+	return response.value;
 }
 
 

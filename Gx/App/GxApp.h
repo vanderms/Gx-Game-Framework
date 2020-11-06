@@ -40,7 +40,6 @@ void gxPushMusicToLoad_(GxMusic* music, const char* path);
 void GxAlert(const char* message);
 void GxFatalError(const char* message);
 
-
 //audio
 void GxPlayMusic(const char* path, int loops);
 void GxPlayChunk(const char* path, int loops);
@@ -53,4 +52,21 @@ double* GxD(double value);
 bool* GxB(bool value);
 Uint32* GxU(Uint32 value);
 GxArray* GxTokenize(const char* str, const char* sep);
+
+//...Data buffers
+GxData* GxDataI(const int value);
+GxData* GxDataU(const Uint32 value);
+GxData* GxDataF(const double value);
+GxData* GxDataB(const bool value);
+GxData* GxDataC(const char value);
+GxData* GxDataSF(const char* format, ...);
+GxData* GxDataPtr(const void* value);
+GxData* GxDataList(void);
+GxData* GxDataArray(void);
+GxData* GxDataMap(void);
+GxData* GxDataRect(const SDL_Rect* rect);
+GxData* GxDataVector(const GxVector* vector);
+GxData* GxDataPoint(const SDL_Point* point);
+GxData* GxDataSize(const GxSize* size);
+GxData* GxDataMatrix(const GxMatrix* matrix);
 #endif // !GX_APP_H

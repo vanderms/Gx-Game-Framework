@@ -15,7 +15,7 @@ void GxDestroyElement_(GxElement* self);
 void GxElemRemove(GxElement* self);
 
 //accessors and mutators
-void* GxElemSend(GxElement* self, const char* description, void* data);
+GxData* GxElemSend(Uint32 receiverid, const char* description, GxData* data);
 void* GxElemGetTarget(GxElement* self);
 void GxElemAddRequestHandler(GxElement* self, 
 	const char* request, GxRequestHandler handler
