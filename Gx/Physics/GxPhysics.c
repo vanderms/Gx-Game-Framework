@@ -541,7 +541,8 @@ void GxPhysicsCreateWalls_(GxPhysics* self) {
 	GxSize size = GxSceneGetSize(self->scene);
 	GxIni ini = {
 		.className = "__WALL__",				
-		.modules = GxDisplayNone | GxBodyFixed,
+		.display = GxElemNone,
+		.body = GxElemFixed,	
 		.cmask = GxCmaskAll
 	};
 	

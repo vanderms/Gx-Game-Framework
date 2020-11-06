@@ -15,14 +15,15 @@ typedef struct GxIni {
 	int gravity;
 	const char* folders;
 
-	//block element	
+	//tilemap
 	int* sequence;
 	GxMatrix matrix;
 	
 	//element
 	const char* name;
 	const char* className;
-	int modules;
+	int display;
+	int body;
 	const SDL_Rect* position;
 
 	//widget

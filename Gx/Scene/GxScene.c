@@ -386,7 +386,8 @@ static void GxSceneLoad_(GxScene* self) {
 	GxPhysicsCreateWalls_(self->physics);
 	GxSize size = GxGetWindowSize();
 	self->camera = GxCreateElement(&(GxIni) {
-		.modules = GxBodyFixed | GxDisplayNone,
+		.display = GxElemNone,
+		.body = GxElemFixed,
 		.className = "__CAMERA__",		
 		.position = &(SDL_Rect){ 0, 0, size.w, size.h },		
 		.cmask = GxCmaskCamera

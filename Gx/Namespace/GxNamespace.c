@@ -60,7 +60,6 @@ const GxArrayNamespace GxArrayNamespaceInstance = {
 	.sort = GxArraySort	
 };
 
-
 const GxButtonNamespace GxButtonNamespaceInstance = {
 	.create = GxCreateButton,
 	.getStatus = GxButtonGetStatus,
@@ -159,6 +158,14 @@ const GxElemNamespace GxElemNamespaceInstance = {
 	.setColor = GxElemSetColor,
 	.getPositionOnWindow = GxGetElemPositionOnWindow,
 	.send = GxElemSend,
+
+	.NONE = GxElemNone,
+	.ABSOLUTE = GxElemAbsolute,
+	.RELATIVE = GxElemRelative,	
+	.FIXED = GxElemFixed,
+	.DYNAMIC = GxElemDynamic,
+	.FORWARD = GxElemForward,
+	.BACKWARD = GxElemBackward,
 };
 
 

@@ -52,17 +52,17 @@ typedef struct GxRigidBody {
 
 GxRigidBody* GxCreateRigidBody_(GxElement* elem, const GxIni* ini) {
 
-	if(!(ini->modules & (GxBodyDynamic | GxBodyFixed))){
-		GxAssertInvalidArgument(ini->modules & GxBodyNone);
+	if(ini->body != GxElemFixed && ini->body != GxElemDynamic){
+		GxAssertInvalidArgument(ini->body == GxElemNone);
 		return NULL;
 	}
 
 	GxRigidBody* self = calloc(1, sizeof(GxRigidBody));
 	GxAssertAllocationFailure(self);
-	self->type = ini->modules & GxBodyFixed ? GxBodyFixed : GxBodyDynamic;
+	self->type = ini->body == GxElemFixed ? GxElemFixed : GxElemDynamic;
 	elem->body = self;
 	self->cmask = ini->cmask ? *(ini->cmask): (
-		self->cmask == GxBodyDynamic ? *(GxCmaskDynamic) : *(GxCmaskFixed)
+		self->cmask == GxElemDynamic ? *(GxCmaskDynamic) : *(GxCmaskFixed)
 	);
 	self->velocity.x = ini->velocity.x;
 	self->velocity.y = ini->velocity.y;
@@ -70,9 +70,9 @@ GxRigidBody* GxCreateRigidBody_(GxElement* elem, const GxIni* ini) {
 	self->restitution = ini->restitution? *ini->restitution : 1.0;
 	self->friction = ini->friction ? ini->friction : false;
 	self->preference = ini->preference ? *ini->preference : (
-		self->type == GxBodyDynamic ? 1 : INT_MAX
+		self->type == GxElemDynamic ? 1 : INT_MAX
 	);
-	self->maxgvel = self->type == GxBodyDynamic? -20 : 0;
+	self->maxgvel = self->type == GxElemDynamic? -20 : 0;
 	self->maxgvel = ini->maxgvel ? ini->maxgvel : self->maxgvel;
 	self->maxgvel = self->maxgvel > 0 ? -self->maxgvel : self->maxgvel;
 	self->mcflag = false;
@@ -95,12 +95,12 @@ void GxDestroyRigidBody_(GxRigidBody* self) {
 
 bool GxElemHasDynamicBody(GxElement* self) {
 	validateElem(self, false, false);
-	return self->body && self->body->type == GxBodyDynamic;
+	return self->body && self->body->type == GxElemDynamic;
 }
 
 bool GxElemHasFixedBody(GxElement* self) {
 	validateElem(self, false, false);
-	return self->body && self->body->type == GxBodyFixed;
+	return self->body && self->body->type == GxElemFixed;
 }
 
 bool GxElemIsOnGround(GxElement* self) {

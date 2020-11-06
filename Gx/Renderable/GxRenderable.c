@@ -116,15 +116,15 @@ static void updateLabel(GxRenderable* renderable);
 
 //constructors and destructors
 GxRenderable* GxCreateRenderable_(GxElement* elem, const GxIni* ini) {
-
-	if(!(ini->modules & (GxDisplayAbsolute | GxDisplayRelative))){
-		GxAssertInvalidArgument(ini->modules & GxDisplayNone);
+	
+	if(ini->display != GxElemAbsolute && ini->display != GxElemRelative){
+		GxAssertInvalidArgument(ini->display == GxElemNone);
 		return NULL;
 	}
 
 	GxRenderable* self = calloc(1, sizeof(GxRenderable));
 	GxAssertAllocationFailure(self);
-	self->type = ini->modules & GxDisplayAbsolute ? GxDisplayAbsolute : GxDisplayRelative;
+	self->type = ini->display == GxElemAbsolute ? GxElemAbsolute : GxElemRelative;
 	self->zIndex = ini->zIndex;
 	elem->renderable = self;
 	//... folders
@@ -199,12 +199,12 @@ void GxDestroyRenderable_(GxRenderable* self) {
 
 bool GxElemHasRelativePosition(GxElement* self) {
 	validateElem(self, false, false);
-	return self->renderable && self->renderable->type == GxDisplayRelative;
+	return self->renderable && self->renderable->type == GxElemRelative;
 }
 
 bool GxElemHasAbsolutePosition(GxElement* self) {
 	validateElem(self, false, false);
-	return self->renderable && self->renderable->type == GxDisplayAbsolute;
+	return self->renderable && self->renderable->type == GxElemAbsolute;
 }
 
 
@@ -501,7 +501,7 @@ static inline SDL_Rect* calcRelativeImagePos(GxElement* self, SDL_Rect* pos, GxI
 
  SDL_Rect* GxElemCalcImagePos(GxElement* self, SDL_Rect* pos, GxImage* image) {
 	return (
-		self->renderable->type == GxDisplayAbsolute ?
+		self->renderable->type == GxElemAbsolute ?
 		calcAbsoluteImagePos(self, pos, image) :
 		calcRelativeImagePos(self, pos, image)
 	);
@@ -510,7 +510,7 @@ static inline SDL_Rect* calcRelativeImagePos(GxElement* self, SDL_Rect* pos, GxI
 SDL_Rect GxGetElemPositionOnWindow(GxElement* self) {
 	validateElem(self, false, true);
 	return (
-		self->renderable->type == GxDisplayAbsolute ?
+		self->renderable->type == GxElemAbsolute ?
 		calcAbsolutePos(self) :
 		calcRelativePos(self)
 	);

@@ -47,17 +47,7 @@ enum GxConstantsAliases {
 	EventOnContactEnd = GxEventContactEnd,
 	EventOnTimeout = GxEventTimeout,
 	EventOnDestroy = GxEventOnDestroy,
-	EventOnElemRemoval = GxEventOnElemRemoval,
-
-	//.. elem
-	DisplayAbsolute = GxDisplayAbsolute,
-	DisplayRelative = GxDisplayRelative,
-	DisplayNone = GxDisplayNone,
-	BodyFixed = GxBodyFixed,
-	BodyDynamic = GxBodyDynamic,
-	BodyNone = GxBodyNone,
-	ElemForward = GxElemForward,
-	ElemBackward = GxElemBackward,
+	EventOnElemRemoval = GxEventOnElemRemoval,	
 };
 
 //... TYPES ALIASES

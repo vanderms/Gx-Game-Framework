@@ -75,7 +75,7 @@ GxElement* GxCreateTileMap(const char* tilePath, const GxIni* ini) {
 	
 	GxAssertInvalidArgument(ini->position && ini->position->w && ini->position->h &&
 		ini->matrix.nr && ini->matrix.nc && tilePath);
-	GxAssertInvalidArgument(ini->modules & (GxDisplayRelative | GxDisplayAbsolute));
+	GxAssertInvalidArgument(ini->display == GxElemAbsolute || ini->display == GxElemRelative);
 	
 	Tilemap* self = calloc(1, sizeof(Tilemap));
 	GxAssertAllocationFailure(self);

@@ -192,7 +192,16 @@ typedef struct GxElemNamespace {
 	SDL_Rect (*getPositionOnWindow)(GxElement* self);
 
 	void* (*send)(GxElement* receiver, const char* description, void* data);
-}GxElemNamespace;
+
+	const int NONE;
+	const int ABSOLUTE;
+	const int RELATIVE;
+	const int FIXED;
+	const int DYNAMIC;
+	const int FORWARD;
+	const int BACKWARD;
+
+} GxElemNamespace;
 
 
 typedef struct GxFolderNamespace {	

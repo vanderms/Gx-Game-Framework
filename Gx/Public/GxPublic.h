@@ -159,19 +159,14 @@ typedef enum GxEventType {
 } GxEventType;
 
 
-enum GxElemModuleType {
-	GxDisplayAbsolute = 1 << 0,
-	GxDisplayRelative = 1 << 1,
-	GxDisplayNone = 1 << 2,
-	GxBodyFixed = 1 << 3,
-	GxBodyDynamic = 1 << 4,
-	GxBodyNone = 1 << 6,
-};
-
-typedef enum GxElemOrientation {
+enum GxElemConstants {
+	GxElemNone = 1,
+	GxElemAbsolute = 2,
+	GxElemRelative = 3,	
+	GxElemFixed = 4,
+	GxElemDynamic = 5,	
 	GxElemForward = SDL_FLIP_NONE,
 	GxElemBackward = SDL_FLIP_HORIZONTAL,
-}GxElemOrientation;
-
+};
 
 #endif // !GX_PUBLIC_H
