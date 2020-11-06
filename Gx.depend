@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1604537868 source:c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.c
+1604629332 source:c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.c
 	"../Utilities/GxUtil.h"
 	"../App/GxApp.h"
 	"../Ini/GxIni.h"
@@ -15,10 +15,10 @@
 	"../Array/GxArray.h"
 	"../List/GxList.h"
 
-1604072429 c:\users\vande\documents\programacao\c\gxframework\gx\utilities\gxutil.h
+1604629822 c:\users\vande\documents\programacao\c\gxframework\gx\utilities\gxutil.h
 	"../Public/GxPublic.h"
 
-1604255815 c:\users\vande\documents\programacao\c\gxframework\gx\public\gxpublic.h
+1604629753 c:\users\vande\documents\programacao\c\gxframework\gx\public\gxpublic.h
 	"SDL.h"
 	"SDL_mixer.h"
 	"SDL_ttf.h"
@@ -402,7 +402,7 @@
 	"begin_code.h"
 	"close_code.h"
 
-1604537868 c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.h
+1604629332 c:\users\vande\documents\programacao\c\gxframework\gx\app\gxapp.h
 	"../Utilities/GxUtil.h"
 	<SDL_ttf.h>
 
@@ -432,7 +432,7 @@
 1603331548 c:\users\vande\documents\programacao\c\gxframework\gx\list\gxlist.h
 	"../Utilities/GxUtil.h"
 
-1603890719 source:c:\users\vande\documents\programacao\c\gxframework\gx\array\gxarray.c
+1604628256 source:c:\users\vande\documents\programacao\c\gxframework\gx\array\gxarray.c
 	"../Utilities/GxUtil.h"
 	"../Array/GxArray.h"
 	<stdlib.h>
@@ -441,7 +441,7 @@
 	<string.h>
 	<stdbool.h>
 
-1604545403 source:c:\users\vande\documents\programacao\c\gxframework\gx\button\gxbutton.c
+1604629822 source:c:\users\vande\documents\programacao\c\gxframework\gx\button\gxbutton.c
 	"../Utilities/GxUtil.h"
 	"../Button/GxButton.h"
 	"../Element/GxElement.h"
@@ -466,7 +466,7 @@
 	"../Utilities/GxUtil.h"
 	"../Element/GxElement.h"
 
-1604175692 source:c:\users\vande\documents\programacao\c\gxframework\gx\element\gxelement.c
+1604628256 source:c:\users\vande\documents\programacao\c\gxframework\gx\element\gxelement.c
 	"../Utilities/GxUtil.h"
 	"../Private/GxPrivate.h"
 	"../Element/GxElement.h"
@@ -480,7 +480,7 @@
 	"../Renderable/GxRenderable.h"
 	"../Map/GxMap.h"
 
-1604172307 c:\users\vande\documents\programacao\c\gxframework\gx\private\gxprivate.h
+1604628256 c:\users\vande\documents\programacao\c\gxframework\gx\private\gxprivate.h
 	"../Utilities/GxUtil.h"
 
 1603333998 c:\users\vande\documents\programacao\c\gxframework\gx\graphics\gxgraphics.h
@@ -535,7 +535,7 @@
 	"../Array/GxArray.h"
 	"../Map/GxMap.h"
 
-1604537868 source:c:\users\vande\documents\programacao\c\gxframework\gx\namespace\gxnamespace.c
+1604629905 source:c:\users\vande\documents\programacao\c\gxframework\gx\namespace\gxnamespace.c
 	"GxNamespace.h"
 	"../Utilities/GxUtil.h"
 	"../Array/GxArray.h"
@@ -551,7 +551,7 @@
 	"../Folder/GxFolder.h"
 	"../Tilemap/GxTilemap.h"
 
-1604537560 c:\users\vande\documents\programacao\c\gxframework\gx\namespace\gxnamespace.h
+1604629822 c:\users\vande\documents\programacao\c\gxframework\gx\namespace\gxnamespace.h
 	"../Public/GxPublic.h"
 	"../Ini/GxIni.h"
 
@@ -638,7 +638,7 @@
 	<string.h>
 	<stdio.h>
 
-1604546460 source:c:\users\vande\documents\programacao\c\gxframework\main.c
+1604629822 source:c:\users\vande\documents\programacao\c\gxframework\main.c
 	"Gx/Gx.h"
 
 1603976636 c:\users\vande\documents\programacao\c\gxframework\gx.h
