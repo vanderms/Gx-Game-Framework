@@ -9,6 +9,7 @@ struct GxSDLNamespace {
 	SDL_Renderer* (*getRenderer)(void);	
 };
 
+
 typedef struct GxAppNamespace {
 	GxScene* (*create)(const GxIni* ini);	
 	void (*run)(void);
@@ -69,7 +70,6 @@ typedef struct GxButtonNamespace {
 	const Uint32 DOWN;
 	const Uint32 UP;
 } GxButtonNamespace;
-
 
 
 typedef struct GxElemNamespace {
