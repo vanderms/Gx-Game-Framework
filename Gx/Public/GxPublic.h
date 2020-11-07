@@ -98,20 +98,19 @@ typedef struct GxResponse {
 }GxResponse;
 
 //...ASSERTIONS
-#define GxAssertNullPointer(pointer) GxAssertion_((pointer), "Null Pointer", __func__)
-#define GxAssertInvalidArgument(condition) GxAssertion_((condition), "Invalid argument", __func__)
-#define GxAssertAllocationFailure(pointer) GxAssertion_((pointer), "Failed to allocate memory", __func__)
-#define GxAssertNotImplemented(condition) GxAssertion_((condition), "Trying to access not implemented module", __func__)
-#define GxAssertInvalidHash(condition) GxAssertion_((condition), "Invalid hash", __func__)
-#define GxAssertOutOfRange(condition) GxAssertion_((condition), "Out of range", __func__)
-#define GxAssertInvalidOperation(condition) GxAssertion_((condition), "Invalid operation", __func__)
-#define GxAssertNotFoundAsset(condition) GxAssertion_((condition), "Not found asset", __func__);
+#define GxAssertNullPointer(pointer) GxAssertion_((pointer), "Null Pointer")
+#define GxAssertInvalidArgument(condition) GxAssertion_((condition), "Invalid argument")
+#define GxAssertAllocationFailure(pointer) GxAssertion_((pointer), "Failed to allocate memory")
+#define GxAssertNotImplemented(condition) GxAssertion_((condition), "Trying to access not implemented module")
+#define GxAssertInvalidHash(condition) GxAssertion_((condition), "Invalid hash")
+#define GxAssertOutOfRange(condition) GxAssertion_((condition), "Out of range")
+#define GxAssertInvalidOperation(condition) GxAssertion_((condition), "Invalid operation")
+#define GxAssertNotFoundAsset(condition) GxAssertion_((condition), "Not found asset");
 
-static inline void GxAssertion_(bool condition, const char* message, const char* func) {
-	if (!condition) {
-		char error[1024];
-        snprintf(error, 1024, "In %s(): %s.", func, message);
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", error, NULL);
+static inline void GxAssertion_(bool condition, const char* error) {
+	if (!condition) {		
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Runtime Error", error, NULL);
+		SDL_TriggerBreakpoint();
         exit(EXIT_FAILURE);
     }
 }

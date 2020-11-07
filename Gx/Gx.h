@@ -3,7 +3,7 @@
 #include "Namespace/GxNamespace.h"
 #include "XMacros/GxXMacros.h"
 
-//... CONSTANTS: MACRO
+//... MACROS
 #define	CmaskNone GxCmaskNone
 #define	CmaskAll GxCmaskAll
 #define	CmaskCamera GxCmaskCamera
@@ -18,37 +18,6 @@
 #define assertOutOfRange GxAssertOutOfRange
 #define assertInvalidOperation GxAssertInvalidOperation
 
-//...CONSTANTS:: ENUM
-enum GxConstantsAliases {
-
-	//...status
-	StatusNone = GxStatusNone,
-	StatusLoading = GxStatusLoading,
-	StatusLoaded = GxStatusLoaded,
-	StatusRunning = GxStatusRunning,
-	StatusPaused = GxStatusPaused,
-	StatusReady = GxStatusReady,
-	StatusUnloading = GxStatusUnloading,
-
-	//..events
-	EventOnLoad = GxEventOnLoad,
-	EventOnLoopBegin = GxEventOnLoopBegin,
-	EventOnUpdate = GxEventOnUpdate,
-	EventOnPreGraphical = GxEventOnPreGraphical,
-	EventOnPreRender = GxEventOnPreRender,
-	EventOnLoopEnd = GxEventOnLoopEnd,
-	EventOnUnload = GxEventOnUnload,
-	EventOnKeyboard = GxEventOnKeyboard,
-	EventOnMouse = GxEventMouse,
-	EventOnFinger = GxEventFinger,
-	EventOnSDLDefault = GxEventSDLDefault,
-	EventOnPreContact = GxEventPreContact,
-	EventOnContactBegin = GxEventContactBegin,
-	EventOnContactEnd = GxEventContactEnd,
-	EventOnTimeout = GxEventTimeout,
-	EventOnDestroy = GxEventOnDestroy,
-	EventOnElemRemoval = GxEventOnElemRemoval,	
-};
 
 //... TYPES ALIASES
 typedef SDL_Rect Rect;

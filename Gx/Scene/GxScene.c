@@ -450,7 +450,9 @@ void GxSceneRemoveElement_(GxScene* self, GxElement* elem) {
 }
 
 void GxSceneOnLoopBegin_(GxScene* self) {	
-	sceneExecuteListeners(self, GxEventOnLoopBegin, NULL);		
+	if(self->status == GxStatusRunning){
+		sceneExecuteListeners(self, GxEventOnLoopBegin, NULL);		
+	}
 }
 
 void GxSceneOnUpdate_(GxScene* self) {
@@ -490,10 +492,15 @@ void GxSceneOnUpdate_(GxScene* self) {
 }
 
 void GxSceneOnLoopEnd_(GxScene* self) {
-	sceneExecuteListeners(self, GxEventOnLoopEnd, NULL);
+	if(self->status == GxStatusRunning){
+		sceneExecuteListeners(self, GxEventOnLoopEnd, NULL);
+	}
 }
 
 void GxSceneOnSDLEvent_(GxScene* self, SDL_Event* e) {	
+	if (self->status != GxStatusRunning) {
+		return;
+	}
 
 	switch (e->type) {
 		case SDL_KEYDOWN:
