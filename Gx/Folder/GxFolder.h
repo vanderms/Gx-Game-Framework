@@ -56,9 +56,11 @@ const char* GxImageGetId_(GxImage* self);
 
 void GxImageTextureSetResource_(GxImage* self, void* resource, GxSize* size);
 
-void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererFlip orientation);
+void GxImageRender_(GxImage* self, SDL_Rect* target, 
+    double angle, SDL_RendererFlip orientation, Uint8 opacity
+);
 
-void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target);
+void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target, Uint8 opacity);
 
 void GxLoadAnimation(const char* id, const char* pathF,
     int start, int end, int interval, double proportion, bool continuous);

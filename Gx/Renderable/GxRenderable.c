@@ -79,6 +79,7 @@ typedef struct GxRenderable {
 	SDL_RendererFlip orientation;
 	char* asset;
 	GxArray* folders;
+	Uint8 opacity;
 	GxImage* image;
 	GxAnimation* animation;
 	uint32_t animCounter;
@@ -127,6 +128,7 @@ GxRenderable* GxCreateRenderable_(GxElement* elem, const GxIni* ini) {
 	self->type = ini->display == GxElemAbsolute ? GxElemAbsolute : GxElemRelative;
 	self->zIndex = ini->zIndex;
 	elem->renderable = self;
+	self->opacity = 255;
 	//... folders
 	if (ini->folders) {
 		self->folders = GmArraySplit(ini->folders, "|");
@@ -216,6 +218,16 @@ int GxElemGetZIndex(GxElement* self) {
 void GxElemSetZIndex(GxElement* self, int value) {
 	validateElem(self, false, true);
 	self->renderable->zIndex = value;
+}
+
+Uint8 GxElemGetOpacity(GxElement* self) {
+	validateElem(self, false, true);
+	self->renderable->opacity;
+}
+
+void GxElemSetOpacity(GxElement* self, Uint8 value) {
+	validateElem(self, false, true);
+	self->renderable->opacity = value;
 }
 
 int GxElemGetOrientation(GxElement* self) {
@@ -583,7 +595,9 @@ void GxElemRender_(GxElement* self) {
 
 	if (image) {
 		GxElemCalcImagePos(self, &pos, image);
-		GxImageRender_(image, &pos, self->renderable->angle, self->renderable->orientation);
+		GxImageRender_(image, &pos, self->renderable->angle, 
+			self->renderable->orientation, self->renderable->opacity
+		);
 	}
 
 	//finally, render label
@@ -592,7 +606,9 @@ void GxElemRender_(GxElement* self) {
 	}
 	if (self->renderable->label) {
 		GxElemCalcImagePos(self, &labelPos, self->renderable->label);
-		GxImageRender_(self->renderable->label, &labelPos, 0.0, (SDL_RendererFlip) GxElemForward);
+		GxImageRender_(self->renderable->label, &labelPos, 0.0, 
+			(SDL_RendererFlip) GxElemForward, self->renderable->opacity
+		);
 	}
 }
 

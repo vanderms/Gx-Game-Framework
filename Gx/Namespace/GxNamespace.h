@@ -156,6 +156,9 @@ typedef struct GxElemNamespace {
 	int (*getZIndex)(GxElement* self);
 	void (*setZIndex)(GxElement* self, int index);
 
+	Uint8 (*getOpacity)(GxElement* self);
+	void (*setOpacity)(GxElement* self, Uint8 value);
+
 	int (*getOrientation)(GxElement* self);
 	void (*setOrientation)(GxElement* self, int value);
 

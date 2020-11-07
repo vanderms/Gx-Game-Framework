@@ -388,7 +388,7 @@ void GxImageTextureSetResource_(GxImage* self, void* resource, GxSize* size) {
     folderIncreaseAssetsLoaded(self->folder);
 }
 
-void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererFlip orientation) {
+void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity) {
 
     if (self->type == Texture || self->type == Opaque || self->type == Text){
         void* resource = NULL;
@@ -401,7 +401,10 @@ void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererF
             resource =  self->source->resource;
             src = self->src;
         }
-	    if (resource) {
+	    if (resource && opacity) {
+            if (opacity != 255) {
+                 SDL_SetTextureAlphaMod(resource, opacity);
+            }           
             SDL_Renderer* renderer = GxGetSDLRenderer();
             SDL_Rect* dst = ( self->type == Text ? 
                 GxAppCalcLabelDest(target, &(SDL_Rect){0}) 
@@ -414,14 +417,17 @@ void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererF
             else {
                 SDL_RenderCopy(renderer, resource, src, dst);
             }
+            if(opacity != 255){
+                SDL_SetTextureAlphaMod(resource, 255);
+            }
         }
 	}
 	else if (self->type == Palette) {
-		GxImageRenderTilePalette_(self, target);
+		GxImageRenderTilePalette_(self, target, opacity);
 	}
 }
 
-void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target) {
+void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target, Uint8 opacity) {
 
     if (self->folder->status != GxStatusReady){ return; }
 
@@ -468,7 +474,7 @@ void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target) {
                 .w = child->size.w,
                 .h = child->size.h
             };           
-            GxImageRender_(child, &pos, 0.0, SDL_FLIP_NONE);
+            GxImageRender_(child, &pos, 0.0, SDL_FLIP_NONE, opacity);
         }
     }
 }

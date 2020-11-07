@@ -137,6 +137,8 @@ const GxElemNamespace GxElemNamespaceInstance = {
 	//renderable	
 	.getZIndex = GxElemGetZIndex,
 	.setZIndex = GxElemSetZIndex,
+	.getOpacity = GxElemGetOpacity,
+	.setOpacity = GxElemSetOpacity,
 	.getOrientation = GxElemGetOrientation,
 	.setOrientation = GxElemSetOrientation,
 	.getImage = GxElemGetImage,

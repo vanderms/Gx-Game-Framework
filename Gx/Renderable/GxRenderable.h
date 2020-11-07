@@ -7,6 +7,9 @@
 int GxElemGetZIndex(GxElement* self);
 void GxElemSetZIndex(GxElement* self, int index);
 
+Uint8 GxElemGetOpacity(GxElement* self);
+void GxElemSetOpacity(GxElement* self, Uint8 value);
+
 int GxElemGetOrientation(GxElement* self);
 void GxElemSetOrientation(GxElement* self, int value);
 
