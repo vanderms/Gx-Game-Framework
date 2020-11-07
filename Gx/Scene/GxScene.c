@@ -410,6 +410,15 @@ void GxSceneUnload_(GxScene* self) {
 	//delete buttons_;
 	
 	sceneExecuteListeners(self, GxEventOnUnload, NULL);
+	
+	for(Listener* listener = GxListBegin(self->listeners[GxEventOnDestroy]); 
+		listener != NULL; listener = GxListNext(self->listeners[GxEventOnDestroy]))
+	{		
+		listener->handler(&(GxEvent) {
+			.target = listener->e.target,
+			.type = GxEventOnDestroy,				
+		});			
+	}
 	GxDestroyArray(self->elements);	
 	
 	if(self->folders){

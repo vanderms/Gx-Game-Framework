@@ -434,6 +434,9 @@ void GxAppRun() {
         SDL_RenderClear(self->renderer);
     }
     destroyApp_();
+#ifdef _MSC_VER
+    _CrtDumpMemoryLeaks();
+#endif
 }
 
 void GxLoadScene(GxScene* scene) {
@@ -637,9 +640,10 @@ GxArray* GxTokenize(const char* str, const char* sep){
 }
 
 static inline GxData* createData() {
-    GxData* self = malloc(sizeof(GxData));
-    GxAssertAllocationFailure(self);
-    return self;
+    GxData* data = malloc(sizeof(GxData));
+    GxAssertAllocationFailure(data);
+    GxArrayPush(self->temporary, data, free);
+    return data;
 }
 /*
 typedef union GxData {
