@@ -99,19 +99,19 @@ GxScene* GxCreateApp(const GxIni* ini) {
    
 	  //init SDL modules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
-       GxFatalError(SDL_GetError());
+       GxRuntimeError(SDL_GetError());
     }
 
     if (TTF_Init() != 0) {
-         GxFatalError(SDL_GetError());
+         GxRuntimeError(SDL_GetError());
     }
 
     if (IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) == 0) {
-        GxFatalError(SDL_GetError());
+        GxRuntimeError(SDL_GetError());
     }
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) != 0) {
-        GxFatalError(SDL_GetError());
+        GxRuntimeError(SDL_GetError());
     }
 
     SDL_DisplayMode mode;
@@ -147,12 +147,12 @@ GxScene* GxCreateApp(const GxIni* ini) {
       
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
-        GxFatalError(SDL_GetError());
+        GxRuntimeError(SDL_GetError());
     }
 
     if (!(self->renderer = SDL_CreateRenderer(self->window, -1, 
         SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED))) {
-         GxFatalError(SDL_GetError());
+         GxRuntimeError(SDL_GetError());
     }
 
     //present window
@@ -304,7 +304,7 @@ static inline void mainLoadAsset(Asset* asset) {
                     self->renderer, surface
                 );
                 SDL_FreeSurface(surface);
-                if (!texture) GxFatalError(SDL_GetError());
+                if (!texture) GxRuntimeError(SDL_GetError());
                 GxImageTextureSetResource_(asset->mod, texture, &size);
                 break;
             }
@@ -341,7 +341,7 @@ static inline int threadLoadAsset() {
                 }
             }
         }
-        if (!asset->resource) GxFatalError(SDL_GetError());
+        if (!asset->resource) GxRuntimeError(SDL_GetError());
     }
 
 
@@ -470,8 +470,11 @@ void GxAlert(const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", message, NULL);
 }
 
- void GxFatalError(const char* message) {
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", message, NULL);
+ void GxRuntimeError(const char* message) {
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Runtime Error", message, NULL);
+#ifndef NDEBUG
+    SDL_TriggerBreakpoint();
+#endif
 	exit(EXIT_FAILURE);
 }
 
@@ -576,7 +579,7 @@ void GxAddFont(const char* name, const char* path){
     GxAssertNullPointer(path);
     TTF_Font* teste = TTF_OpenFont(path, 16);
     if (!teste) {
-        GxFatalError(GxF("Could not open path %s", path));
+        GxRuntimeError(GxF("Could not open path %s", path));
     }
     TTF_CloseFont(teste);
     GxMapSet(self->fonts, name, GmCreateString(path), free);

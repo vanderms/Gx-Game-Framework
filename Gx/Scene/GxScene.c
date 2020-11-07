@@ -14,7 +14,10 @@
 #include <string.h>
 
 
+
+
 typedef struct GxScene {
+	Uint32 hash;
 	char* name;	
 	GxSize size;	
 	int status;
@@ -51,6 +54,7 @@ GxScene* GxCreateScene(const GxIni* ini) {
 
 	GxScene* self = calloc(1, sizeof(GxScene));	
 	GxAssertAllocationFailure(self);
+	self->hash = GxHashScene_;
 
 	//set id
 	if (ini->name){ 
@@ -139,6 +143,7 @@ void GxDestroyScene_(GxScene* self) {
 		}
 		free(self->handlers);
 		free(self->name);
+		self->hash = 0;
 		free(self);
 	}
 }
@@ -147,6 +152,7 @@ void GxDestroyScene_(GxScene* self) {
 void GxSceneAddRequestHandler(GxScene* self, 
 	const char* request, GxRequestHandler handler
 ){	
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	if (self->rHandlers == NULL) {
 		self->rHandlers = GmCreateMap();
 	}
@@ -155,6 +161,7 @@ void GxSceneAddRequestHandler(GxScene* self,
 
 
 GxData* GxSceneSend(GxScene* receiver, const char* request, GxData* data) {
+	GxAssertInvalidHash((*(Uint32*) receiver) == GxHashScene_);
 	GxRequestHandler handler = GxMapGet(receiver->rHandlers, request);
 	GxAssertNotImplemented(handler);
 	GxResponse response = {.value = NULL};
@@ -164,14 +171,17 @@ GxData* GxSceneSend(GxScene* receiver, const char* request, GxData* data) {
 
 
 const char* GxSceneGetName(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->name;
 }
 
 GxSize GxSceneGetSize(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->size;
 }
 
 GxElement* GxSceneGetCamera(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->camera;
 }
 
@@ -184,14 +194,17 @@ GxGraphics* GxSceneGetGraphics(GxScene* self) {
 }
 
 bool GxSceneHasStatus(GxScene* self, int status) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->status == status;
 }
 
 int GxSceneGetStatus(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->status;
 }
 
 GxElement* GxSceneGetElement(GxScene* self, Uint32 id) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	if (id > GxArraySize(self->elements)) {
 		return NULL;
 	}
@@ -199,30 +212,36 @@ GxElement* GxSceneGetElement(GxScene* self, Uint32 id) {
 }
 
 int GxSceneGetGravity(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->gravity;
 }
 
 bool GxSceneHasGravity(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->gravity;
 }
 
 void GxScenePause(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	if (self->status == GxStatusRunning) {
 		self->status = GxStatusPaused;
 	}
 }
 
 void GxSceneResume(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	if (self->status == GxStatusPaused) {
 		self->status = GxStatusRunning;
 	}
 }
 
 void GxSceneSetGravity(GxScene* self, int gravity) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	self->gravity = gravity > 0 ? -gravity : gravity;
 }
 
 Uint32 GxSceneGetPercLoaded(GxScene* self) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	
 	if (!self->folders || !GxArraySize(self->folders)) {
 		return 100;
@@ -254,6 +273,7 @@ void GxSceneExecuteElemChildDtor_(GxScene* self, void* child) {
 }
 
 void GxSceneSetTimeout(GxScene* self, int interval, GxHandler callback, void* target) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	Timer* timer = malloc(sizeof(Timer));
 	GxAssertAllocationFailure(timer);
 	timer->callback = callback;
@@ -263,6 +283,7 @@ void GxSceneSetTimeout(GxScene* self, int interval, GxHandler callback, void* ta
 }
 
 Uint32 GxSceneAddElement_(GxScene* self, GxElement* elem) {
+	
 	GxAssertInvalidOperation(self->status == GxStatusLoaded || self->status == GxStatusRunning);	
 	GxArrayPush(self->elements, elem, (GxDestructor) GxDestroyElement_);	
 	GxGraphicsInsertElement_(self->graphics, elem);
@@ -296,8 +317,10 @@ void GxSceneUnsubscribeElemListeners_(GxScene* self, GxElement* elem) {
 }
 
 void GxSceneAddEventListener(GxScene* self, int type, GxHandler handler, void* target) {
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	GxAssertInvalidArgument(type >= 0 && type < GxEventTotalHandlers);
-	GxAssertNullPointer(handler && target);
+	GxAssertNullPointer(handler);
+	GxAssertNullPointer(target);
 	Listener* listener = malloc(sizeof(Listener));
 	GxAssertAllocationFailure(listener);
 	listener->e.target = target;
@@ -308,10 +331,12 @@ void GxSceneAddEventListener(GxScene* self, int type, GxHandler handler, void* t
 
 bool GxSceneRemoveEventListener(GxScene* self, int type, GxHandler handler, void* target) {
 	
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	if (self->status == GxStatusUnloading) { return true; }
 
 	GxAssertInvalidArgument(type >= 0 && type < GxEventTotalHandlers);
-	GxAssertNullPointer(handler && target);
+	GxAssertNullPointer(handler);
+	GxAssertNullPointer(target);
 	for(Listener* listener = GxListBegin(self->listeners[type]);
 		listener != NULL; listener = GxListNext(self->listeners[type])) {
 		if (listener->handler == handler && listener->e.target == target) {

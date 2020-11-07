@@ -4,19 +4,6 @@
 #include "XMacros/GxXMacros.h"
 
 //... MACROS
-#define	CmaskNone GxCmaskNone
-#define	CmaskAll GxCmaskAll
-#define	CmaskCamera GxCmaskCamera
-#define	CmaskDynamic GxCmaskDynamic
-#define	CmaskFixed GxCmaskFixed
-
-#define assertNullPointer GxAssertNullPointer
-#define assertInvalidArgument GxAssertInvalidArgument
-#define assertAllocationFailure GxAssertAllocationFailure
-#define assertNotImplemented GxAssertNotImplemented
-#define assertInvalidHash GxAssertInvalidHash
-#define assertOutOfRange GxAssertOutOfRange
-#define assertInvalidOperation GxAssertInvalidOperation
 
 
 //... TYPES ALIASES
@@ -58,7 +45,5 @@ static const GxUtilNamespace* util = &GxUtilNamespaceInstance;
 #ifdef __GNUC__
    #pragma GCC diagnostic pop
 #endif
-
-static const int teste = 0;
 
 #endif // !GX_NAMESPACE_H

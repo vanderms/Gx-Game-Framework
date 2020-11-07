@@ -38,7 +38,7 @@ void gxPushMusicToLoad_(GxMusic* music, const char* path);
 
 //... Error handling
 void GxAlert(const char* message);
-void GxFatalError(const char* message);
+void GxRuntimeError(const char* message);
 
 //audio
 void GxPlayMusic(const char* path, int loops);

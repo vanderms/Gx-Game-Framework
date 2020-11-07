@@ -97,15 +97,6 @@ typedef struct GxResponse {
 	GxData* value;
 }GxResponse;
 
-//...ASSERTIONS
-#define GxAssertNullPointer(pointer) GxAssertion_((pointer), "Null Pointer")
-#define GxAssertInvalidArgument(condition) GxAssertion_((condition), "Invalid argument")
-#define GxAssertAllocationFailure(pointer) GxAssertion_((pointer), "Failed to allocate memory")
-#define GxAssertNotImplemented(condition) GxAssertion_((condition), "Trying to access not implemented module")
-#define GxAssertInvalidHash(condition) GxAssertion_((condition), "Invalid hash")
-#define GxAssertOutOfRange(condition) GxAssertion_((condition), "Out of range")
-#define GxAssertInvalidOperation(condition) GxAssertion_((condition), "Invalid operation")
-#define GxAssertNotFoundAsset(condition) GxAssertion_((condition), "Not found asset");
 
 static inline void GxAssertion_(bool condition, const char* error) {
 	if (!condition) {		
@@ -116,8 +107,8 @@ static inline void GxAssertion_(bool condition, const char* error) {
 }
 
 //.. CONSTANTS
-#define	GxCmaskNone &(Uint32) {0},
-#define	GxCmaskAll &(Uint32) {~0},
+#define	GxCmaskNone &(Uint32) {0}
+#define	GxCmaskAll &(Uint32) {~0}
 #define	GxCmaskCamera &(Uint32){1u << 30}
 #define	GxCmaskDynamic &(Uint32){1 << 0}
 #define	GxCmaskFixed &(Uint32){1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7}

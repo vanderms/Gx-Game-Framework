@@ -20,7 +20,7 @@ typedef struct GxAppNamespace {
 	GxScene* (*getRunningScene)(void);
 	GxScene* (*getMainScene)(void);
 	void (*alert)(const char* message);
-	void (*fatalError)(const char* message);
+	void (*runtimeError)(const char* message);
 	void (*playMusic)(const char* path, int loops);
 	void (*playChunk)(const char* path, int loops);
 	int (*stopMusic)(void);
@@ -289,6 +289,11 @@ typedef struct GxContactNamespace {
 	const GxContactConstant DOWN;
 	const GxContactConstant VERTICAL;
 	const GxContactConstant ALL;
+	const Uint32* CMASKNONE;
+	const Uint32* CMASKALL;
+	const Uint32* CMASKCAMERA;
+	const Uint32* CMASKDYNAMIC;
+	const Uint32* CMASKFIXED;
 }GxContactNamespace;
 
 
@@ -329,7 +334,12 @@ typedef struct GxUtilNamespace {
 	int (*abs)(int value);
 	int (*random)(uint32_t* seed, int start, int end);
 	void (*printMask)(Uint32 mask);
-}GxUtilNamespace;
+	bool (*assertNullPointer)(const void* ptr); 
+	bool (*assertArgument)(bool condition);
+	bool (*assertState)(bool condition);
+	void* (*assertAlloc)(void* ptr);
+	bool (*assertOutOfRange)(bool condition);
+} GxUtilNamespace;
 
 //... INSTANCES
 extern const GxAppNamespace GxAppNamespaceInstance;

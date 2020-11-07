@@ -32,9 +32,20 @@ typedef enum GxHash {
 	GxHashContact_ = 804125936,
 } GxHash;
 
+//...ASSERTIONS
+bool GxAssertNullPointer(const void* ptr); 
+bool GxAssertInvalidArgument(bool condition);
+void* GxAssertAllocationFailure(void* ptr);
+bool GxAssertNotImplemented(bool condition);
+bool GxAssertInvalidHash(bool condition);
+bool GxAssertOutOfRange(bool condition);
+bool GxAssertInvalidOperation(bool condition);
+bool GxAssertResourceNotFound(bool condition);
 
-
-
-
+bool GxUserAssertNullPointer(const void* ptr);
+bool GxUserAssertArgumnent(bool condition);
+bool GxUserAssertState(bool condition);
+void* GxUserAssertAlloc(void* pointer);
+bool GxUserAssertOutOfRange(bool condition);
 
 #endif // !UTILITIES_H

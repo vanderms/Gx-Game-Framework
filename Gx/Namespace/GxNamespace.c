@@ -27,7 +27,7 @@ const GxAppNamespace GxAppNamespaceInstance = {
 	.getRunningScene = GxGetRunningScene,
 	.getMainScene = GxGetMainScene,
 	.alert = GxAlert,
-	.fatalError = GxFatalError,
+	.runtimeError = GxRuntimeError,
 	.playMusic = GxPlayMusic,
 	.playChunk = GxPlayChunk,
 	.stopMusic = Mix_HaltMusic,
@@ -245,7 +245,12 @@ const GxContactNamespace GxContactNamespaceInstance = {
 	.UP = GxContactUp,
 	.DOWN = GxContactDown,
 	.VERTICAL = GxContactVertical,
-	.ALL = GxContactAll
+	.ALL = GxContactAll,
+	.CMASKNONE = GxCmaskNone,
+	.CMASKALL = GxCmaskAll,
+	.CMASKCAMERA = GxCmaskCamera,
+	.CMASKDYNAMIC = GxCmaskDynamic,
+	.CMASKFIXED = GxCmaskFixed,
 };
 
 
@@ -284,4 +289,9 @@ const GxUtilNamespace GxUtilNamespaceInstance = {
 	.abs = GxAbs,
 	.random = GxRandom,
 	.printMask = GxPrintMask,
+	.assertNullPointer = GxUserAssertNullPointer,
+	.assertArgument = GxUserAssertArgumnent,
+	.assertState = GxUserAssertState,
+	.assertAlloc = GxUserAssertAlloc,
+	.assertOutOfRange = GxUserAssertOutOfRange,
 };

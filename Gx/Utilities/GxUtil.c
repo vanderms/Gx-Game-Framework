@@ -1,6 +1,7 @@
 #include "../Utilities/GxUtil.h"
 #include "../Ini/GxIni.h"
 #include "../Array/GxArray.h"
+#include "../App/GxApp.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -114,4 +115,93 @@ char* GxTrim(const char* str, char* buffer, size_t bSize) {
 
 int GxAbs(int value) {
 	return value > 0 ? value : - value;
+}
+
+bool GxAssertNullPointer(const void* ptr) {
+    if (!ptr) {
+        GxRuntimeError("In Gx: null pointer error.");
+    }
+    return ptr;
+}
+
+bool GxAssertInvalidArgument(bool condition){
+    if (!condition) {
+        GxRuntimeError("In Gx: invalid argument error.");
+    }    
+    return condition;
+}
+
+void* GxAssertAllocationFailure(void* ptr){
+    if (!ptr) {
+        GxRuntimeError("In Gx: Failed to allocate memory.");
+    }
+    return ptr;
+}
+
+bool GxAssertNotImplemented(bool condition) {
+    if (!condition) {
+        GxRuntimeError("In Gx: module not implemented error.");
+    }    
+    return condition;
+}
+bool GxAssertInvalidHash(bool condition) {
+    if (!condition) {
+        GxRuntimeError("In Gx: invalid hash error.");
+    }    
+    return condition;
+}
+bool GxAssertOutOfRange(bool condition){
+    if (!condition) {
+        GxRuntimeError("In Gx: out of range error.");
+    }    
+    return condition;
+}
+
+bool GxAssertInvalidOperation(bool condition) {
+    if (!condition) {
+        GxRuntimeError("In Gx: invalid hash error.");
+    }    
+    return condition;
+}
+
+bool GxAssertResourceNotFound(bool condition) {
+    if (!condition) {
+        GxRuntimeError("In Gx: invalid hash error.");
+    }    
+    return condition;
+}
+
+bool GxUserAssertNullPointer(const void* ptr) {
+    if (!ptr) {
+        GxRuntimeError("In Game: null pointer error.");
+    }
+    return ptr;
+}
+
+bool GxUserAssertArgumnent(bool condition) {    
+    if (!condition) {
+        GxRuntimeError("In Game: invalid argument error.");
+    }    
+    return condition;
+}
+
+bool GxUserAssertState(bool condition){    
+    if (!condition) {
+        GxRuntimeError("In Game: invalid state error.");
+    }    
+    return condition;
+}
+
+void* GxUserAssertAlloc(void* ptr){    
+    if (!ptr) {
+        GxRuntimeError("In Game: failed to allocate memory.");
+    }    
+    return ptr;
+}
+
+bool GxUserAssertOutOfRange(bool condition){    
+    if (!condition) {
+        GxRuntimeError("In Game: out of range error.");
+    }    
+    return condition;
 }

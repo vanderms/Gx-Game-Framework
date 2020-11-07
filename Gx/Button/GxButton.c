@@ -221,7 +221,7 @@ GxElement* GxCreateButton(const GxIni* ini, Uint32 inputs, int keyCode) {
 		GxSceneAddEventListener(scene, GxEventFinger, onFinger, self);
 	}
 	if (inputs & GxButtonMouse) {
-		GxSceneAddEventListener(scene, GxEventMouse, onKeyboard, self);
+		GxSceneAddEventListener(scene, GxEventMouse, onMouse, self);
 	}
 	return self->base;
 }

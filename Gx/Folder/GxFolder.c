@@ -230,11 +230,11 @@ GxImage* GxImageCreateText_(const char* text, const char* fontName, int size, SD
 #endif
     TTF_Font* font = TTF_OpenFont(fontPath, size);
     if(!font){
-        GxFatalError(TTF_GetError());
+        GxRuntimeError(TTF_GetError());
     }
     SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text, *color);
     if (!surface){
-        GxFatalError(TTF_GetError());
+        GxRuntimeError(TTF_GetError());
     }
     self->size.w = surface->w;
     self->size.h = surface->h;
@@ -347,7 +347,7 @@ GxImage* GxCreateTilePalette_(GxFolder* folder, const char* group,
             stringImage = group;
         }
         image = image ? image : GxMapGet(folder->assets, stringImage);
-        GxAssertNotFoundAsset(image);
+        GxAssertResourceNotFound(image);
         GxArrayPush(self->children, image, NULL);
     }
     return self;

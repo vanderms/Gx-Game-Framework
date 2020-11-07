@@ -44,8 +44,8 @@ typedef struct GxIni {
 	const char* font;
 	
 	//body
-	Uint32* cmask;
-	int* preference;
+	const Uint32* cmask;
+	const int* preference;
 	GxVector velocity;
 	double* elasticity;
 	double* restitution;

@@ -15,13 +15,14 @@ static void onLoad(Event* e){
 
 
     button->create(&(Ini){
-        .modules = DisplayAbsolute | BodyNone,
+        .display = elem->ABSOLUTE,
+        .body = elem->NONE,
         .position = &(Rect){270, 150, 100, 60},
         .text = "Gx!",
         .color = "White",
         .fontSize = 32,
         .onUpdate = onUpdate,
-    }, button->KEYBOARD | button->FINGER, SDLK_UP);
+    }, button->KEYBOARD | button->FINGER | button->MOUSE, SDLK_UP);
 }
 
 int main(int argc, char** argv){
