@@ -61,20 +61,14 @@ GxRigidBody* GxCreateRigidBody_(GxElement* elem, const GxIni* ini) {
 	GxAssertAllocationFailure(self);
 	self->type = ini->body == GxElemFixed ? GxElemFixed : GxElemDynamic;
 	elem->body = self;
-	self->cmask = ini->cmask ? *(ini->cmask): (
-		self->cmask == GxElemDynamic ? *(GxCmaskDynamic) : *(GxCmaskFixed)
-	);
+	self->cmask = self->cmask == GxElemDynamic ? GxCmaskDynamic : GxCmaskFixed;	
 	self->velocity.x = ini->velocity.x;
 	self->velocity.y = ini->velocity.y;
-	self->elasticity = ini->elasticity ? *ini->elasticity : 0.0;
-	self->restitution = ini->restitution? *ini->restitution : 1.0;
+	self->elasticity = 0.0;
+	self->restitution = 1.0;
 	self->friction = ini->friction ? ini->friction : false;
-	self->preference = ini->preference ? *ini->preference : (
-		self->type == GxElemDynamic ? 1 : INT_MAX
-	);
-	self->maxgvel = self->type == GxElemDynamic? -20 : 0;
-	self->maxgvel = ini->maxgvel ? ini->maxgvel : self->maxgvel;
-	self->maxgvel = self->maxgvel > 0 ? -self->maxgvel : self->maxgvel;
+	self->preference = self->type == GxElemDynamic ? 1 : INT_MAX;
+	self->maxgvel = self->type == GxElemDynamic? -20 : 0;		
 	self->mcflag = false;
 	self->movflag = false;
 	self->dflag = 0;

@@ -417,9 +417,10 @@ static void GxSceneLoad_(GxScene* self) {
 		.display = GxElemNone,
 		.body = GxElemFixed,
 		.className = "__CAMERA__",		
-		.position = &(SDL_Rect){ 0, 0, size.w, size.h },		
-		.cmask = GxCmaskCamera
+		.position = &(SDL_Rect){ 0, 0, size.w, size.h },				
 	});
+
+	GxElemSetCmask(self->camera, GxCmaskCamera);
 	
 	//execute onload callbacks 
 	sceneExecuteListeners(self, GxEventOnLoad, NULL);

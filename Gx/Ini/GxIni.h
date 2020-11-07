@@ -43,13 +43,8 @@ typedef struct GxIni {
 	int fontSize;
 	const char* font;
 	
-	//body
-	const Uint32* cmask;
-	const int* preference;
-	GxVector velocity;
-	double* elasticity;
-	double* restitution;
-	int maxgvel;
+	//body	
+	GxVector velocity;	
 	bool friction;
 
 	//callbacks

@@ -107,11 +107,11 @@ static inline void GxAssertion_(bool condition, const char* error) {
 }
 
 //.. CONSTANTS
-#define	GxCmaskNone &(Uint32) {0}
-#define	GxCmaskAll &(Uint32) {~0}
-#define	GxCmaskCamera &(Uint32){1u << 30}
-#define	GxCmaskDynamic &(Uint32){1 << 0}
-#define	GxCmaskFixed &(Uint32){1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7}
+#define	GxCmaskNone 0
+#define	GxCmaskAll ~0u
+#define	GxCmaskCamera 1u << 30
+#define	GxCmaskDynamic 1 << 0
+#define	GxCmaskFixed (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7)
 
 #define GxButtonKeyboard (1u << 0)
 #define	GxButtonFinger (1u << 1)

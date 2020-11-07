@@ -289,11 +289,11 @@ typedef struct GxContactNamespace {
 	const GxContactConstant DOWN;
 	const GxContactConstant VERTICAL;
 	const GxContactConstant ALL;
-	const Uint32* CMASKNONE;
-	const Uint32* CMASKALL;
-	const Uint32* CMASKCAMERA;
-	const Uint32* CMASKDYNAMIC;
-	const Uint32* CMASKFIXED;
+	const Uint32 CMASKNONE;
+	const Uint32 CMASKALL;
+	const Uint32 CMASKCAMERA;
+	const Uint32 CMASKDYNAMIC;
+	const Uint32 CMASKFIXED;
 }GxContactNamespace;
 
 

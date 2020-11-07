@@ -542,21 +542,20 @@ void GxPhysicsCreateWalls_(GxPhysics* self) {
 	GxIni ini = {
 		.className = "__WALL__",				
 		.display = GxElemNone,
-		.body = GxElemFixed,	
-		.cmask = GxCmaskAll
+		.body = GxElemFixed,			
 	};
 	
 	ini.position = &(SDL_Rect) { -1, -1, size.w + 2, 1 };
-	GxCreateElement(&ini);
+	GxElemSetCmask(GxCreateElement(&ini), GxCmaskAll);
 
 	ini.position = &(SDL_Rect) {size.w, -1, 1, size.h + 2 };
-	GxCreateElement(&ini);
+	GxElemSetCmask(GxCreateElement(&ini), GxCmaskAll);
 
 	ini.position = &(SDL_Rect) { -1, size.h, size.w + 2, 1 };
-	GxCreateElement(&ini);
+	GxElemSetCmask(GxCreateElement(&ini), GxCmaskAll);
 
 	ini.position = &(SDL_Rect) { -1, -1, 1, size.h + 2  };
-	GxCreateElement(&ini);
+	GxElemSetCmask(GxCreateElement(&ini), GxCmaskAll);
 }
 
 #define CHECK_CONTACT_HASH(contact)\
