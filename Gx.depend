@@ -18,7 +18,7 @@
 1604760022 c:\users\vande\documents\programacao\c\gxframework\gx\utilities\gxutil.h
 	"../Public/GxPublic.h"
 
-1604759802 c:\users\vande\documents\programacao\c\gxframework\gx\public\gxpublic.h
+1604765366 c:\users\vande\documents\programacao\c\gxframework\gx\public\gxpublic.h
 	<stdlib.h>
 	<crtdbg.h>
 	"SDL.h"
@@ -408,7 +408,7 @@
 	"../Utilities/GxUtil.h"
 	<SDL_ttf.h>
 
-1604759775 c:\users\vande\documents\programacao\c\gxframework\gx\ini\gxini.h
+1604765290 c:\users\vande\documents\programacao\c\gxframework\gx\ini\gxini.h
 	"../Public/GxPublic.h"
 
 1604700919 c:\users\vande\documents\programacao\c\gxframework\gx\scene\gxscene.h
@@ -553,7 +553,7 @@
 	"../Folder/GxFolder.h"
 	"../Tilemap/GxTilemap.h"
 
-1604760838 c:\users\vande\documents\programacao\c\gxframework\gx\namespace\gxnamespace.h
+1604765377 c:\users\vande\documents\programacao\c\gxframework\gx\namespace\gxnamespace.h
 	"../Public/GxPublic.h"
 	"../Ini/GxIni.h"
 
