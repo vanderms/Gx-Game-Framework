@@ -1,4 +1,4 @@
 /obj
 /bin
-Gx.depend
-Gx.layout
+*.depend
+*.layout
