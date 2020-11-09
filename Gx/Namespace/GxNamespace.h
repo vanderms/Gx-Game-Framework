@@ -9,10 +9,31 @@ struct GxSDLNamespace {
 	SDL_Renderer* (*getRenderer)(void);	
 };
 
+struct GxEventNamespace {
+	const int LOAD;
+	const int LOOP_BEGIN;
+	const int UPDATE;
+	const int PRE_GRAPHICAL;
+	const int PRE_RENDER;
+	const int LOOP_END;
+	const int UNLOAD;
+	const int KEYBOARD;
+	const int MOUSE;
+	const int FINGER;
+	const int SDL_DEFAULT;
+	const int PRE_CONTACT;
+	const int CONTACT_BEGIN;
+	const int CONTACT_END;
+	const int TIMEOUT;
+	const int DESTROY;
+	const int ELEM_REMOVAL;
+};
+
 typedef struct GxAppNamespace {
 	GxScene* (*create)(const GxIni* ini);	
 	void (*run)(void);
 	const struct GxSDLNamespace* SDL;
+	const struct GxEventNamespace* event;
 	GxScene* (*getScene)(const char* id);
 	GxSize (*getWindowSize)(void);
 	void (*loadScene)(GxScene* scene);
@@ -85,8 +106,7 @@ typedef struct GxElemNamespace {
 	
 	//...Element
 	GxElement* (*create)(const GxIni* ini);	
-	GxElement* (*createTilemap)(const char* tilePath, const GxIni* ini);
-	void (*updateTilemap)(GxElement* elem, int* sequence);
+	GxElement* (*createTilemap)(const char* tilePath, const GxIni* ini);	
 	void (*remove)(GxElement* self);	
 	void* (*getTarget)(GxElement* self);
 	Uint32 (*getID)(GxElement* self);
@@ -300,6 +320,15 @@ typedef struct GxContactNamespace {
 }GxContactNamespace;
 
 
+struct GxStatusNamespace {
+	const int NONE;
+	const int LOADING;
+	const int LOADED;
+	const int RUNNING;
+	const int PAUSED;
+	const int UNLOADING;
+};
+
 typedef struct GxSceneNamespace {
 		
 	GxScene* (*create)(const GxIni* ini);	
@@ -319,8 +348,8 @@ typedef struct GxSceneNamespace {
 	void (*setGravity)(GxScene* self, int gravity);
 	void (*setTimeout)(GxScene* self, int interval, GxHandler callback, void* target);	
 	void (*addEventListener)(GxScene* self, int type, GxHandler handler, void* target);
-	bool (*removeEventListener)(GxScene* self, int type, GxHandler handler, void* target);
-
+	bool (*removeEventListener)(GxScene* self, int type, GxHandler handler, void* target);	
+	const struct GxStatusNamespace* status;
 }GxSceneNamespace;
 
 
@@ -337,6 +366,7 @@ typedef struct GxUtilNamespace {
 	int (*abs)(int value);
 	int (*random)(uint32_t* seed, int start, int end);
 	void (*printMask)(Uint32 mask);
+	SDL_Point (*calcDistance)(const SDL_Point* pointA, const SDL_Point* pointB);
 	bool (*assertNullPointer)(const void* ptr); 
 	bool (*assertArgument)(bool condition);
 	bool (*assertState)(bool condition);

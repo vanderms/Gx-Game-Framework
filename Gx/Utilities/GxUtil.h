@@ -32,6 +32,9 @@ typedef enum GxHash {
 	GxHashContact_ = 804125936,
 } GxHash;
 
+
+SDL_Point GxCalcDistance(const SDL_Point* pointA, const SDL_Point* pointB);
+
 //...ASSERTIONS
 bool GxAssertNullPointer(const void* ptr); 
 bool GxAssertInvalidArgument(bool condition);

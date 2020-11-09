@@ -20,6 +20,25 @@ const GxAppNamespace GxAppNamespaceInstance = {
 		.getWindow = GxGetSDLWindow,
 		.getRenderer = GxGetSDLRenderer
 	},
+	.event = &(struct GxEventNamespace) {
+		.LOAD = GxEventOnLoad,
+		.LOOP_BEGIN = GxEventOnLoopBegin,
+		.UPDATE = GxEventOnUpdate,
+		.PRE_GRAPHICAL = GxEventOnPreGraphical,
+		.PRE_RENDER = GxEventOnPreRender,
+		.LOOP_END = GxEventOnLoopEnd,
+		.UNLOAD = GxEventOnUnload,
+		.KEYBOARD = GxEventOnKeyboard,
+		.MOUSE = GxEventMouse,
+		.FINGER = GxEventFinger,
+		.SDL_DEFAULT = GxEventSDLDefault,
+		.PRE_CONTACT = GxEventPreContact,
+		.CONTACT_BEGIN = GxEventContactBegin,
+		.CONTACT_END = GxEventContactEnd,
+		.TIMEOUT = GxEventTimeout,
+		.DESTROY = GxEventOnDestroy,
+		.ELEM_REMOVAL = GxEventOnElemRemoval,
+	},
 	.getScene = GxGetScene,
 	.getWindowSize = GxGetWindowSize,
 	.loadScene = GxLoadScene,
@@ -88,8 +107,7 @@ const GxButtonNamespace GxButtonNamespaceInstance = {
 const GxElemNamespace GxElemNamespaceInstance = {
 	
 	.create = GxCreateElement,	
-	.createTilemap = GxCreateTileMap,
-	.updateTilemap = GxTilemapUpdate,
+	.createTilemap = GxCreateTileMap,	
 	.remove = GxElemRemove,
 	.getTarget = GxElemGetTarget,	
 	.addRequestHandler = GxElemAddRequestHandler,
@@ -274,7 +292,15 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 	.setGravity = GxSceneSetGravity,
 	.setTimeout = GxSceneSetTimeout,
 	.addEventListener = GxSceneAddEventListener,
-	.removeEventListener = GxSceneRemoveEventListener
+	.removeEventListener = GxSceneRemoveEventListener,
+	.status = &(const struct GxStatusNamespace){
+		.NONE = GxStatusNone,
+		.LOADING = GxStatusLoading,
+		.LOADED = GxStatusLoaded,
+		.RUNNING = GxStatusRunning,
+		.PAUSED = GxStatusPaused,
+		.UNLOADING = GxStatusLoading,
+	},	
 };
 
 
@@ -291,6 +317,7 @@ const GxUtilNamespace GxUtilNamespaceInstance = {
 	.abs = GxAbs,
 	.random = GxRandom,
 	.printMask = GxPrintMask,
+	.calcDistance = GxCalcDistance,
 	.assertNullPointer = GxUserAssertNullPointer,
 	.assertArgument = GxUserAssertArgumnent,
 	.assertState = GxUserAssertState,

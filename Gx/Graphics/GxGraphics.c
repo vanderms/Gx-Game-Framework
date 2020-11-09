@@ -70,7 +70,7 @@ static inline int compareIndexes_(GxElement* lhs, GxElement* rhs) {
 	return i01 == i02 ? 0 : (i01 > i02 ? 1 : -1);
 }
 
-void GxGraphicsUpdate_(GxGraphics* self) {
+void GxGraphicsUpdate_(GxGraphics* self) {	
 		
 	GxArrayReserve(self->renderables, 200);
 

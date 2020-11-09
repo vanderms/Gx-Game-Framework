@@ -3,9 +3,6 @@
 #include "Namespace/GxNamespace.h"
 #include "XMacros/GxXMacros.h"
 
-//... MACROS
-
-
 //... TYPES ALIASES
 typedef SDL_Rect Rect;
 typedef SDL_Point Point;

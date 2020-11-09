@@ -222,7 +222,7 @@ void GxElemSetZIndex(GxElement* self, int value) {
 
 Uint8 GxElemGetOpacity(GxElement* self) {
 	validateElem(self, false, true);
-	self->renderable->opacity;
+	return self->renderable->opacity;
 }
 
 void GxElemSetOpacity(GxElement* self, Uint8 value) {

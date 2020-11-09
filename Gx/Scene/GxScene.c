@@ -153,6 +153,7 @@ void GxSceneAddRequestHandler(GxScene* self,
 	const char* request, GxRequestHandler handler
 ){	
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
+	
 	if (self->rHandlers == NULL) {
 		self->rHandlers = GmCreateMap();
 	}
@@ -494,8 +495,8 @@ void GxSceneOnUpdate_(GxScene* self) {
 	}
 
 	for (Timer* timer = GxListBegin(self->listeners[GxEventTimeout]); timer != NULL;
-		timer = GxListNext(self->listeners[GxEventTimeout]))
-	{						
+		timer = GxListNext(self->listeners[GxEventTimeout])
+	){						
 		if (--timer->counter <= 0) {
 			timer->callback(&(GxEvent){
 				.target = timer->target,

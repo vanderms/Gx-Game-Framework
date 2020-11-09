@@ -89,6 +89,7 @@ void GxElemRemove(GxElement* self) {
 GxData* GxElemSend(Uint32 receiverid, const char* request, GxData* data){
 	GxElement* receiver = GxSceneGetElement(GxGetRunningScene(), receiverid);
 	GxAssertInvalidArgument(receiver != NULL);
+	GxAssertNotImplemented(receiver->handlers);
 	GxRequestHandler handler = GxMapGet(receiver->rHandlers, request);
 	GxAssertInvalidArgument(handler);
 	GxResponse response = {.value = NULL};

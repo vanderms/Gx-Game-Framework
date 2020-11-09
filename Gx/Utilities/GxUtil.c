@@ -117,6 +117,14 @@ int GxAbs(int value) {
 	return value > 0 ? value : - value;
 }
 
+
+SDL_Point GxCalcDistance(const SDL_Point* pointA, const SDL_Point* pointB) {
+    return (SDL_Point) {
+        pointB->x - pointA->x,
+        pointB->y - pointA->y
+    };
+}
+
 bool GxAssertNullPointer(const void* ptr) {
     if (!ptr) {
         GxRuntimeError("In Gx: null pointer error.");
@@ -166,7 +174,7 @@ bool GxAssertInvalidOperation(bool condition) {
 
 bool GxAssertResourceNotFound(bool condition) {
     if (!condition) {
-        GxRuntimeError("In Gx: invalid hash error.");
+        GxRuntimeError("In Gx: resource not found.");
     }    
     return condition;
 }

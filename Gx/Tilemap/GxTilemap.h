@@ -4,7 +4,6 @@
 
 
 GxElement* GxCreateTileMap(const char* tilePath, const GxIni* ini);
-void GxTilemapUpdate(GxElement* elem, int* sequence);
 bool GxIsTilemap(GxElement* elem);
 
 #endif // !GX_TILEMAP_H

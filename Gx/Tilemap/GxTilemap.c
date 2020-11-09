@@ -18,48 +18,11 @@ typedef struct Tilemap {
 
 static const Uint32 tilemapHash = 1118096401;
 
-//... methods
-void GxTilemapUpdate(GxElement* elem, int* sequence) {
-	
-	Tilemap* self = GxElemGetChild(elem);
-	GxAssertInvalidHash(self->hash == tilemapHash);
-	
-	bool shouldUpdatePallete = false;
-
-	if (self->sequence && !sequence) {
-		free(self->sequence);
-		self->sequence = NULL;
-		shouldUpdatePallete = true;
-	}
-	else if (!self->sequence && sequence) {
-		self->sequence = malloc(self->size * sizeof(int));
-		GxAssertAllocationFailure(self->sequence);
-		memcpy(self->sequence, sequence, self->size * sizeof(int));
-		shouldUpdatePallete = true;
-	}
-	else if (self->sequence && sequence) {
-		for (Uint32 i = 0; i < self->size; i++) {		
-			if (self->sequence[i] != sequence[i]) {
-				shouldUpdatePallete = true;
-				self->sequence[i] = sequence[i];
-			}
-		}
-	}
-
-	if (shouldUpdatePallete) {
-		GxDestroyImage_(self->pallete);
-		const SDL_Rect* pos = GxElemGetPosition(self->base);
-		self->pallete =  GxCreateTilePalette_(GxGetFolder_(self->folder), 
-			self->group, (GxSize) { pos->w, pos->h }, self->matrix, self->sequence
-		);
-	}
-}
 
 bool GxIsTilemap(GxElement* elem) {
 	Tilemap* self = GxElemGetChild(elem);
 	return self && (self->hash == tilemapHash);
 }
-
 
 static void onDestroyTilemap(GxEvent* e) {
 	Tilemap* self = e->target;
