@@ -360,7 +360,6 @@ void GxAppRun() {
 
     while (self->status == GxStatusRunning) {
 
-
         bool activeIsReady =  self->snActive ?
             GxSceneGetStatus(self->snActive) == GxStatusRunning : false;
 

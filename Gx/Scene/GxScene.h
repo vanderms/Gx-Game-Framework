@@ -19,6 +19,9 @@ void GxSceneExecuteElemChildDtor_(GxScene* self, void* child);
 void GxSceneAddRequestHandler(GxScene* receiver, 
 	const char* request, GxRequestHandler handler
 );
+void GxSceneDelegate(GxScene* self, const char* sceneReq, 
+	GxElemID elem, const char* elemReq
+);
 GxSize GxSceneGetSize(GxScene* self);
 bool GxSceneHasStatus(GxScene* self, int status);
 int GxSceneGetStatus(GxScene* self);
@@ -28,8 +31,6 @@ bool GxSceneHasGravity(GxScene* self);
 GxPhysics* GxSceneGetPhysics(GxScene* self);
 GxGraphics* GxSceneGetGraphics(GxScene* self);
 GxElement* GxSceneGetCamera(GxScene* self);
-void GxScenePause(GxScene* self);
-void GxSceneResume(GxScene* self);
 void GxSceneSetGravity(GxScene* self, int gravity);
 void GxSceneSetTimeout(GxScene* self, int interval, GxHandler callback, void* target);
 Uint32 GxSceneAddElement_(GxScene* self, GxElement* elem);

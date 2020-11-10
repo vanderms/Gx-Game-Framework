@@ -3,6 +3,7 @@
 #include "../Scene/GxScene.h"
 #include "../App/GxApp.h"
 #include "../Element/GxElement.h"
+#include "../Event/GxEvent.h"
 #include "../RigidBody/GxRigidBody.h"
 #include "../Map/GxMap.h"
 #include "../List/GxList.h"
@@ -130,6 +131,7 @@ void GxDestroyScene_(GxScene* self) {
 				.type = GxEventOnDestroy,
 			});
 		}	
+
 		if(self->folders){
 			for (Uint32 i = 0; i < GxArraySize(self->folders); i++) {
 				GxFolder* folder = GxArrayAt(self->folders, i);
@@ -153,40 +155,62 @@ void GxSceneAddRequestHandler(GxScene* self,
 	const char* request, GxRequestHandler handler
 ){	
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
-	
+	GxAssertNullPointer(request);
+	GxAssertNullPointer(handler);
+	GxRequestData* data = GxCreateRequestData_(self->target, request, handler);
 	if (self->rHandlers == NULL) {
 		self->rHandlers = GmCreateMap();
 	}
-	GxMapSet(self->rHandlers, request, handler, NULL);
+	GxMapSet(self->rHandlers, request, data, GxDestroyRequestData_);
 }
 
+void GxSceneDelegate(GxScene* self, const char* sceneReq, 
+	GxElemID elem, const char* elemReq
+){
+	GxAssertNullPointer(self);
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
+	GxAssertNullPointer(sceneReq);
+	GxAssertNullPointer(elemReq);
+	GxElement* element = GxSceneGetElement(self, elem);
+	GxAssertInvalidArgument(element != NULL);
+	GxRequestData* data = GxElemGetRequestData_(element, elemReq);
+	GxAssertInvalidArgument(data != NULL);
+	if (self->rHandlers == NULL) {
+		self->rHandlers = GmCreateMap();
+	}
+	GxMapSet(self->rHandlers, sceneReq, data, NULL);
+}
 
 GxData* GxSceneSend(GxScene* receiver, const char* request, GxData* data) {
+	GxAssertNullPointer(receiver);
 	GxAssertInvalidHash((*(Uint32*) receiver) == GxHashScene_);
-	GxRequestHandler handler = GxMapGet(receiver->rHandlers, request);
+	GxRequestData* handler = GxMapGet(receiver->rHandlers, request);
 	GxAssertNotImplemented(handler);
 	GxResponse response = {.value = NULL};
-	handler(&(GxRequest){ receiver->target, request, data }, &response);
+	handler->handler(&(GxRequest){ handler->target, handler->request, data }, &response);
 	return response.value;
 }
 
 
 const char* GxSceneGetName(GxScene* self) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->name;
 }
 
 GxSize GxSceneGetSize(GxScene* self) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->size;
 }
 
 GxElement* GxSceneGetCamera(GxScene* self) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->camera;
 }
 
-GxPhysics* GxSceneGetPhysics(GxScene* self) {
+GxPhysics* GxSceneGetPhysics(GxScene* self) {	
 	return self->physics;
 }
 
@@ -195,16 +219,19 @@ GxGraphics* GxSceneGetGraphics(GxScene* self) {
 }
 
 bool GxSceneHasStatus(GxScene* self, int status) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->status == status;
 }
 
 int GxSceneGetStatus(GxScene* self) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->status;
 }
 
 GxElement* GxSceneGetElement(GxScene* self, Uint32 id) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	if (id > GxArraySize(self->elements)) {
 		return NULL;
@@ -213,35 +240,25 @@ GxElement* GxSceneGetElement(GxScene* self, Uint32 id) {
 }
 
 int GxSceneGetGravity(GxScene* self) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->gravity;
 }
 
 bool GxSceneHasGravity(GxScene* self) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	return self->gravity;
 }
 
-void GxScenePause(GxScene* self) {
-	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
-	if (self->status == GxStatusRunning) {
-		self->status = GxStatusPaused;
-	}
-}
-
-void GxSceneResume(GxScene* self) {
-	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
-	if (self->status == GxStatusPaused) {
-		self->status = GxStatusRunning;
-	}
-}
-
 void GxSceneSetGravity(GxScene* self, int gravity) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	self->gravity = gravity > 0 ? -gravity : gravity;
 }
 
 Uint32 GxSceneGetPercLoaded(GxScene* self) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	
 	if (!self->folders || !GxArraySize(self->folders)) {
@@ -258,6 +275,7 @@ Uint32 GxSceneGetPercLoaded(GxScene* self) {
 }
 
 void GxSceneExecuteElemChildDtor_(GxScene* self, void* child) {
+	
 	if(self->status == GxStatusUnloading){return ;}
 
 	for(Listener* listener = GxListBegin(self->listeners[GxEventOnDestroy]);
@@ -274,6 +292,7 @@ void GxSceneExecuteElemChildDtor_(GxScene* self, void* child) {
 }
 
 void GxSceneSetTimeout(GxScene* self, int interval, GxHandler callback, void* target) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	Timer* timer = malloc(sizeof(Timer));
 	GxAssertAllocationFailure(timer);
@@ -318,6 +337,7 @@ void GxSceneUnsubscribeElemListeners_(GxScene* self, GxElement* elem) {
 }
 
 void GxSceneAddEventListener(GxScene* self, int type, GxHandler handler, void* target) {
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	GxAssertInvalidArgument(type >= 0 && type < GxEventTotalHandlers);
 	GxAssertNullPointer(handler);
@@ -331,7 +351,7 @@ void GxSceneAddEventListener(GxScene* self, int type, GxHandler handler, void* t
 }
 
 bool GxSceneRemoveEventListener(GxScene* self, int type, GxHandler handler, void* target) {
-	
+	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
 	if (self->status == GxStatusUnloading) { return true; }
 
@@ -488,34 +508,34 @@ void GxSceneOnUpdate_(GxScene* self) {
 		if (GxSceneGetPercLoaded(self) == 100) {
 			self->status = GxStatusLoaded;
 			GxSceneLoad_(self);
-		}
-		else {	
-			return;
-		}
+		}		
 	}
 
-	for (Timer* timer = GxListBegin(self->listeners[GxEventTimeout]); timer != NULL;
-		timer = GxListNext(self->listeners[GxEventTimeout])
-	){						
-		if (--timer->counter <= 0) {
-			timer->callback(&(GxEvent){
-				.target = timer->target,
-				.type = GxEventTimeout
-			});	
-			GxListRemove(self->listeners[GxEventTimeout], timer);
+	if(self->status == GxStatusRunning){
+
+		for (Timer* timer = GxListBegin(self->listeners[GxEventTimeout]); timer != NULL;
+			timer = GxListNext(self->listeners[GxEventTimeout])
+		){						
+			if (--timer->counter <= 0) {
+				timer->callback(&(GxEvent){
+					.target = timer->target,
+					.type = GxEventTimeout
+				});	
+				GxListRemove(self->listeners[GxEventTimeout], timer);
+			}
 		}
-	}
 	
-	//execute update callbacks, then update physics
-	sceneExecuteListeners(self, GxEventOnUpdate, NULL);
-	GxPhysicsUpdate_(self->physics);	
+		//execute update callbacks, then update physics
+		sceneExecuteListeners(self, GxEventOnUpdate, NULL);
+		GxPhysicsUpdate_(self->physics);	
 
-	//execute preGraphical callbacks, then update graphics
-	sceneExecuteListeners(self, GxEventOnPreGraphical, NULL);
-	GxGraphicsUpdate_(self->graphics);
+		//execute preGraphical callbacks, then update graphics
+		sceneExecuteListeners(self, GxEventOnPreGraphical, NULL);
+		GxGraphicsUpdate_(self->graphics);
 
-	//execute prerender callbacks 
-	sceneExecuteListeners(self, GxEventOnPreRender, NULL);
+		//execute prerender callbacks 
+		sceneExecuteListeners(self, GxEventOnPreRender, NULL);
+	}
 }
 
 void GxSceneOnLoopEnd_(GxScene* self) {

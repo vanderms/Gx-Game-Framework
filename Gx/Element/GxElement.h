@@ -20,6 +20,12 @@ void* GxElemGetTarget(GxElement* self);
 void GxElemAddRequestHandler(GxElement* self, 
 	const char* request, GxRequestHandler handler
 );
+void GxElemDelegate(GxElement* self, const char* sceneReq, 
+	GxElemID elem, const char* elemReq
+);
+
+GxRequestData* GxElemGetRequestData_(GxElement* self, const char* request);
+
 Uint32 GxElemGetId(GxElement* self);
 const char* GxElemGetClassName(GxElement* self);
 bool GxElemHasHandler(GxElement* self, int type);

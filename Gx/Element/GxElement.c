@@ -90,10 +90,10 @@ GxData* GxElemSend(Uint32 receiverid, const char* request, GxData* data){
 	GxElement* receiver = GxSceneGetElement(GxGetRunningScene(), receiverid);
 	GxAssertInvalidArgument(receiver != NULL);
 	GxAssertNotImplemented(receiver->handlers);
-	GxRequestHandler handler = GxMapGet(receiver->rHandlers, request);
-	GxAssertInvalidArgument(handler);
+	GxRequestData* handler = GxMapGet(receiver->rHandlers, request);
+	GxAssertNotImplemented(handler);
 	GxResponse response = {.value = NULL};
-	handler(&(GxRequest){ receiver->target, request, data }, &response);
+	handler->handler(&(GxRequest){ handler->target, handler->request, data }, &response);
 	return response.value;
 }
 
@@ -105,11 +105,35 @@ void* GxElemGetTarget(GxElement* self) {
 void GxElemAddRequestHandler(GxElement* self, 
 	const char* request, GxRequestHandler handler
 ){
-	validateElem(self, false, false);
+	validateElem(self, false, false);	
+	GxAssertNullPointer(request);
+	GxAssertNullPointer(handler);
+	GxRequestData* data = GxCreateRequestData_(self->target, request, handler);
 	if (self->rHandlers == NULL) {
 		self->rHandlers = GmCreateMap();
 	}
-	GxMapSet(self->rHandlers, request, handler, NULL);
+	GxMapSet(self->rHandlers, request, data, GxDestroyRequestData_);
+}
+
+GxRequestData* GxElemGetRequestData_(GxElement* self, const char* request) {
+	return self->rHandlers ? GxMapGet(self->rHandlers, request) : NULL;	
+}
+
+void GxElemDelegate(GxElement* self, const char* sceneReq, 
+	GxElemID elem, const char* elemReq
+){
+	GxAssertNullPointer(self);
+	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
+	GxAssertNullPointer(sceneReq);
+	GxAssertNullPointer(elemReq);
+	GxElement* other = GxSceneGetElement(self->scene, elem);
+	GxAssertInvalidArgument(other != NULL);
+	GxRequestData* data = GxElemGetRequestData_(self, elemReq);
+	GxAssertInvalidArgument(data != NULL);
+	if (self->rHandlers == NULL) {
+		self->rHandlers = GmCreateMap();
+	}
+	GxMapSet(self->rHandlers, sceneReq, data, NULL);
 }
 
 Uint32 GxElemGetId(GxElement* self) {

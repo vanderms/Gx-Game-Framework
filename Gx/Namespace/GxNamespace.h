@@ -224,6 +224,7 @@ typedef struct GxElemNamespace {
 	SDL_Rect (*getPositionOnWindow)(GxElement* self);
 
 	GxData* (*send)(Uint32 receiverID, const char* description, GxData* data);
+	void (*delegate)(GxElement* self, const char* sceneReq, GxElemID elem, const char* elemReq);
 
 	const int NONE;
 	const int ABSOLUTE;
@@ -324,8 +325,7 @@ struct GxStatusNamespace {
 	const int NONE;
 	const int LOADING;
 	const int LOADED;
-	const int RUNNING;
-	const int PAUSED;
+	const int RUNNING;	
 	const int UNLOADING;
 };
 
@@ -334,6 +334,7 @@ typedef struct GxSceneNamespace {
 	GxScene* (*create)(const GxIni* ini);	
 	GxData* (*send)(GxScene* receiver, const char* description, GxData* data);	
 	void (*addRequestHandler)(GxScene* receiver, const char* request, GxRequestHandler handler);
+	void (*delegate)(GxScene* self, const char* sceneReq, GxElemID elem, const char* elemReq);	
 	Uint32 (*getPercLoaded)(GxScene* self);
 	const char* (*getName)(GxScene* self);
 	GxSize (*getSize)(GxScene* self);
@@ -342,9 +343,7 @@ typedef struct GxSceneNamespace {
 	GxElement* (*getElem)(GxScene* self, Uint32 id);
 	int (*getGravity)(GxScene* self);
 	bool (*hasGravity)(GxScene* self);
-	GxElement* (*getCamera)(GxScene* self);
-	void (*pause)(GxScene* self);
-	void (*resume)(GxScene* self);
+	GxElement* (*getCamera)(GxScene* self);	
 	void (*setGravity)(GxScene* self, int gravity);
 	void (*setTimeout)(GxScene* self, int interval, GxHandler callback, void* target);	
 	void (*addEventListener)(GxScene* self, int type, GxHandler handler, void* target);

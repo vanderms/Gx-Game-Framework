@@ -188,6 +188,7 @@ const GxElemNamespace GxElemNamespaceInstance = {
 	.setColor = GxElemSetColor,
 	.getPositionOnWindow = GxGetElemPositionOnWindow,
 	.send = GxElemSend,
+	.delegate = GxElemDelegate,
 
 	.NONE = GxElemNone,
 	.ABSOLUTE = GxElemAbsolute,
@@ -278,6 +279,7 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 	.create = GxCreateScene,
 	.send = GxSceneSend,	
 	.addRequestHandler = GxSceneAddRequestHandler,
+	.delegate = GxSceneDelegate,
 	.getPercLoaded = GxSceneGetPercLoaded,
 	.getName = GxSceneGetName,
 	.getSize = GxSceneGetSize,
@@ -286,9 +288,7 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 	.getElem = GxSceneGetElement,
 	.getGravity = GxSceneGetGravity,
 	.hasGravity = GxSceneHasGravity,
-	.getCamera = GxSceneGetCamera,
-	.pause = GxScenePause,
-	.resume = GxSceneResume,
+	.getCamera = GxSceneGetCamera,	
 	.setGravity = GxSceneSetGravity,
 	.setTimeout = GxSceneSetTimeout,
 	.addEventListener = GxSceneAddEventListener,
@@ -297,12 +297,10 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 		.NONE = GxStatusNone,
 		.LOADING = GxStatusLoading,
 		.LOADED = GxStatusLoaded,
-		.RUNNING = GxStatusRunning,
-		.PAUSED = GxStatusPaused,
+		.RUNNING = GxStatusRunning,		
 		.UNLOADING = GxStatusLoading,
 	},	
 };
-
 
 const GxUtilNamespace GxUtilNamespaceInstance = {
 	.createInt = GxUtilCreateInt,

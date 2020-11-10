@@ -36,3 +36,19 @@ bool GxEventIniHasHandler_(const GxIni* ini) {
 void GxFreeTarget(GxEvent* e) {
     free(e->target);
 }
+
+
+GxRequestData* GxCreateRequestData_(void* target,
+    const char* request, GxRequestHandler handler
+){
+    GxRequestData* self = malloc(sizeof(GxRequestData));
+    GxAssertNullPointer(self);
+    self->target = target;
+    self->request = GmCreateString(request);
+    self->handler = handler;
+    return self;
+}
+void GxDestroyRequestData_(GxRequestData* self){
+    free(self->request);
+    free(self);
+};
