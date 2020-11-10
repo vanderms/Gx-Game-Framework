@@ -416,6 +416,20 @@ void GxAppRun() {
                 self->aLoaded = NULL;
             }
         }
+        
+        {
+        /* 
+            Correct android screen initialization: without this block, in Android
+            the first screen shows strange colored images.
+            It's not clear the origin of the bug or if it occurs jut in Android.
+        */
+            static int firstScreen = 0;
+            if(firstScreen < 30){
+                SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);
+                SDL_RenderClear(self->renderer);
+                firstScreen++;
+            }
+        }
 
         //... present
         SDL_RenderPresent(self->renderer);
@@ -428,7 +442,7 @@ void GxAppRun() {
         GxSceneOnLoopEnd_(self->snMain);
         GxArrayClean(self->temporary);
 
-        //clear window
+         //clear window
         SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);
         SDL_RenderClear(self->renderer);
     }
