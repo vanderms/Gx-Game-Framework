@@ -595,7 +595,7 @@ void GxAddFont(const char* name, const char* path){
         GxRuntimeError(GxF("Could not open path %s", path));
     }
     TTF_CloseFont(teste);
-    GxMapSet(self->fonts, name, GmCreateString(path), free);
+    GxMapSet(self->fonts, name, GmCreateString(path), free);    
 }
 
 const char* GxGetFontPath_(const char* name) {

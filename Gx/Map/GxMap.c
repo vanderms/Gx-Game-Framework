@@ -131,10 +131,10 @@ void GxMapSet(GxMap* self, const char* key, void* value, GxDestructor dtor) {
 	{		
 		GxInt* index = GxListNext(bucket);
 		if (strcmp(lsKey, key) == 0) {
-			Entry entry = self->entries[index->value];
-			if(entry.dtor) entry.dtor(entry.value);
-			entry.value = value;
-			entry.dtor = dtor;
+			Entry* entry = &self->entries[index->value];
+			if(entry->dtor) entry->dtor(entry->value);
+			entry->value = value;
+			entry->dtor = dtor;
 			contains = true;				
 			break;
 		}

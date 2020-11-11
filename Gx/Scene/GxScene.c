@@ -14,9 +14,6 @@
 #include "../Event/GxEvent.h"
 #include <string.h>
 
-
-
-
 typedef struct GxScene {
 	Uint32 hash;
 	char* name;	
@@ -35,6 +32,10 @@ typedef struct GxScene {
 	void* target;
 	GxHandler* handlers;	
 	GxMap* rHandlers;
+
+
+	//...
+	Uint32 elemCounter;
 } GxScene;
 
 typedef struct Timer {
@@ -88,6 +89,7 @@ GxScene* GxCreateScene(const GxIni* ini) {
 	}	
 	
 	self->rHandlers = NULL;
+	self->elemCounter = 0;
 
 	//set folders
 	if (ini->folders) {
@@ -191,7 +193,6 @@ GxData* GxSceneSend(GxScene* receiver, const char* request, GxData* data) {
 	return response.value;
 }
 
-
 const char* GxSceneGetName(GxScene* self) {
 	GxAssertNullPointer(self);
 	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
@@ -236,7 +237,26 @@ GxElement* GxSceneGetElement(GxScene* self, Uint32 id) {
 	if (id > GxArraySize(self->elements)) {
 		return NULL;
 	}
-	else return GxArrayAt(self->elements, id);   
+	Uint32 l = 0;
+	Uint32 r = GxArraySize(self->elements);
+	
+	while (l <= r) { 
+        Uint32 m = l + (r - l) / 2; 		
+		       
+		GxElement* elem = GxArrayAt(self->elements, m);
+		Uint32 elemID = GxElemSceneGetId_(elem);
+        if (elemID == id){
+            return elem; 
+        }
+        else if (elemID < id){
+            l = m + 1; 
+        }
+        else {
+            r = m - 1; 
+		}
+    }
+	
+    return NULL;
 }
 
 int GxSceneGetGravity(GxScene* self) {
@@ -302,14 +322,13 @@ void GxSceneSetTimeout(GxScene* self, int interval, GxHandler callback, void* ta
 	GxListPush(self->listeners[GxEventTimeout], timer, free);
 }
 
-Uint32 GxSceneAddElement_(GxScene* self, GxElement* elem) {
-	
+Uint32 GxSceneAddElement_(GxScene* self, GxElement* elem) {	
 	GxAssertInvalidOperation(self->status == GxStatusLoaded || self->status == GxStatusRunning);	
 	GxArrayPush(self->elements, elem, (GxDestructor) GxDestroyElement_);	
 	GxGraphicsInsertElement_(self->graphics, elem);
 	GxPhysicsInsertElement_(self->physics, elem);
 	GxSceneSubscribeElemListeners_(self, elem);
-	Uint32 id = GxArraySize(self->elements) - 1;
+	Uint32 id = self->elemCounter++;
 	return id;
 }
 
@@ -411,6 +430,7 @@ void GxScenePreLoad_(GxScene* self) {
 	GxAssertInvalidOperation(self->status == GxStatusNone);
 
 	self->status = GxStatusLoading;
+	self->elemCounter = 0;
 
 	//initialize containers and folders
 	self->graphics = GxCreateGraphics_(self);
@@ -489,11 +509,11 @@ void GxSceneUnload_(GxScene* self) {
 	self->status = GxStatusNone;
 }
 
-void GxSceneRemoveElement_(GxScene* self, GxElement* elem) {
+void GxSceneRemoveElement_(GxScene* self, GxElement* elem) {	
 	if (GxElemIsPhysical(elem)) GxPhysicsRemoveElement_(self->physics, elem);
 	if (GxElemIsRenderable(elem)) GxGraphicsRemoveElement_(self->graphics, elem);
 	if (elem != self->camera) GxSceneUnsubscribeElemListeners_(self, elem);
-	GxArrayInsert(self->elements, GxElemGetId(elem), NULL, NULL);	
+	GxArrayRemoveByValue(self->elements, elem);	
 }
 
 void GxSceneOnLoopBegin_(GxScene* self) {	

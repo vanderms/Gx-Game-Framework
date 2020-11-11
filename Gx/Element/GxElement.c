@@ -136,6 +136,10 @@ void GxElemDelegate(GxElement* self, const char* sceneReq,
 	GxMapSet(self->rHandlers, sceneReq, data, NULL);
 }
 
+Uint32 GxElemSceneGetId_(GxElement* self) {
+	return self->id;
+}
+
 Uint32 GxElemGetId(GxElement* self) {
 	validateElem(self, false, false);
 	return self->id;

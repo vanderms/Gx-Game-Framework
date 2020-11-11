@@ -24,6 +24,8 @@ void GxElemDelegate(GxElement* self, const char* sceneReq,
 	GxElemID elem, const char* elemReq
 );
 
+Uint32 GxElemSceneGetId_(GxElement* self);
+
 GxRequestData* GxElemGetRequestData_(GxElement* self, const char* request);
 
 Uint32 GxElemGetId(GxElement* self);
