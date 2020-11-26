@@ -1,5 +1,5 @@
 #include "../Utilities/GxUtil.h"
-#include "../Private/GxPrivate.h"
+#include "../Private/GxElement.h"
 #include "../Element/GxElement.h"
 #include "../Event/GxEvent.h"
 #include "../Array/GxArray.h"
@@ -25,6 +25,10 @@ GxElement* GxCreateElement(const GxIni* ini){
 	self->scene = GxGetRunningScene();
 	self->target = ini->target ? ini->target : self;
 	self->child = NULL;
+
+	if (ini->target) {
+		GxAssertInvalidArgument(ini->onDestroy);
+	}
 		
 	//event handler module
 	if (GxEventIniHasHandler_(ini)) {

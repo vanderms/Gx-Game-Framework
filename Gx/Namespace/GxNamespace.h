@@ -65,7 +65,6 @@ typedef struct GxAppNamespace {
 	GxData* (*point)(const SDL_Point* point);
 	GxData* (*size)(const GxSize* size);
 	GxData* (*matrix)(const GxMatrix* matrix);	
-	void (*freeTarget)(GxEvent* e);
 } GxAppNamespace;
 
 
@@ -371,6 +370,8 @@ typedef struct GxUtilNamespace {
 	bool (*assertState)(bool condition);
 	void* (*assertAlloc)(void* ptr);
 	bool (*assertOutOfRange)(bool condition);
+	void (*onDestroyFreeTarget)(GxEvent* e);
+	void(*onDestroyDoNothing)(GxEvent* e);
 } GxUtilNamespace;
 
 //... INSTANCES

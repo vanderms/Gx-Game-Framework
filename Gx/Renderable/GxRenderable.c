@@ -1,5 +1,5 @@
 #include "../Utilities/GxUtil.h"
-#include "../Private/GxPrivate.h"
+#include "../Private/GxElement.h"
 #include "../Renderable/GxRenderable.h"
 #include "../Folder/GxFolder.h"
 #include "../Scene/GxScene.h"
@@ -7,21 +7,8 @@
 #include "../Tilemap/GxTilemap.h"
 #include <string.h>
 
-//... AUXILIARY STRUCTS
-typedef struct Alignment{
-	bool changed;
-	char last[25];
-	const char* horizontal;
-	const char* vertical;
-	int x;
-	int y;
-} Alignment;
 
-typedef struct Color {
-	char* last;
-	SDL_Color* value;
-} Color;
-
+//...COLOR 
 static Color* createColor(const char* value) {
 	Color* self = calloc(1, sizeof(Color));
 	GxAssertAllocationFailure(self);
@@ -65,55 +52,6 @@ static void destroyColor(Color* color) {
 		free(color);
 	}
 }
-
-
-typedef struct Border {
-	int size;
-	Color* color;
-} Border;
-
-//... MAIN TYPE
-typedef struct GxRenderable {
-	int type;
-	int zIndex;
-	SDL_RendererFlip orientation;
-	char* asset;
-	GxArray* folders;
-	Uint8 opacity;
-	GxImage* image;
-	GxAnimation* animation;
-	uint32_t animCounter;
-	Uint32 animCurrent;
-	Alignment* alignment;
-	bool hidden;
-	double angle;
-	double proportion;
-	Border border;
-	Color* backgroundColor;
-	//label
-	char* font;
-	char* text;
-	int fontSize;
-	Color* color;
-	bool shouldUpdateLabel;
-	GxImage* label;
-
-	//...
-	Uint32 wflag;
-} GxRenderable;
-
-
-//... ALIGNMENT CONSTANTS
-static const char* sRight = "right";
-static const char* sLeft = "left";
-static const char* sBottom = "bottom";
-static const char* sTop = "top";
-static const char* sCenter = "center";
-static const char* sNum = "number";
-static const char* sCenterCenter = "center|center";
-
-//forward declaration
-static void updateLabel(GxRenderable* renderable);
 
 //constructors and destructors
 GxRenderable* GxCreateRenderable_(GxElement* elem, const GxIni* ini) {
@@ -190,11 +128,11 @@ void GxDestroyRenderable_(GxRenderable* self) {
 		free(self->alignment);
 		free(self->text);
 		free(self->font);
-		destroyColor(self->color);
-		destroyColor(self->backgroundColor);
-		destroyColor(self->border.color);
-		GxDestroyImage_(self->label);
-		GxDestroyArray(self->folders);
+		if(self->color) destroyColor(self->color);
+		if(self->backgroundColor) destroyColor(self->backgroundColor);
+		if(self->border.color) destroyColor(self->border.color);
+		if(self->label) GxDestroyImage_(self->label);
+		if(self->folders) GxDestroyArray(self->folders);
 		free(self);
 	}
 }
@@ -455,162 +393,6 @@ void GxElemSetWFlag_(GxElement* self, uint32_t value) {
 }
 
 
-//element render methods
-static inline SDL_Rect calcAbsolutePos(GxElement* self) {
-	int y = GxGetWindowSize().h - (self->pos->y + self->pos->h);
-	return (SDL_Rect) { self->pos->x, y, self->pos->w, self->pos->h };
-}
-
-static inline SDL_Rect calcRelativePos(GxElement* self) {
-	const SDL_Rect* cpos = GxSceneGetCamera(self->scene)->pos;
-	int x = self->pos->x - cpos->x;
-	int y = (cpos->y + cpos->h) - (self->pos->y + self->pos->h);
-	return (SDL_Rect) { x, y, self->pos->w, self->pos->h };
-}
-
-static inline void applyWidgetData(GxElement* self, SDL_Rect* pos, GxImage* image) {
-
-	GxSize imgsize = GxImageGetSize_(image);
-	pos->w = (int) (imgsize.w * self->renderable->proportion + 0.5);
-	pos->h = (int) (imgsize.h * self->renderable->proportion + 0.5);
-
-	//horizontal alignment -> (left is default)
-	if(!self->renderable->alignment ||
-		self->renderable->alignment->horizontal == sCenter) {
-		pos->x += (self->pos->w - pos->w) / 2;
-	}
-	else if (self->renderable->alignment->horizontal ==  sRight){
-		pos->x += self->pos->w - pos->w;
-	}
-	else if(self->renderable->alignment->horizontal == sNum) {
-		pos->x += (self->pos->w - pos->w) / 2; //first set default
-		pos->x += self->renderable->alignment->x;
-	}
-
-	//vertical alignment (top is default)
-	if (!self->renderable->alignment ||
-		self->renderable->alignment->vertical == sCenter){
-		pos->y += (self->pos->h - pos->h) / 2;
-	}
-	else if (self->renderable->alignment->vertical == sBottom) {
-		pos->y += (self->pos->h - pos->h);
-	}
-	else if(self->renderable->alignment->vertical == sNum) {
-		pos->y += (self->pos->h - pos->h) / 2; //first set default
-		pos->y -= self->renderable->alignment->y;
-	}
-}
-
-static inline SDL_Rect* calcAbsoluteImagePos(GxElement* self, SDL_Rect* pos, GxImage* image) {
-	applyWidgetData(self, pos, image);
-	return pos;
-}
-
-static inline SDL_Rect* calcRelativeImagePos(GxElement* self, SDL_Rect* pos, GxImage* image) {
-	applyWidgetData(self, pos, image);
-	return pos;
-}
-
- SDL_Rect* GxElemCalcImagePos(GxElement* self, SDL_Rect* pos, GxImage* image) {
-	return (
-		self->renderable->type == GxElemAbsolute ?
-		calcAbsoluteImagePos(self, pos, image) :
-		calcRelativeImagePos(self, pos, image)
-	);
-}
-
-SDL_Rect GxGetElemPositionOnWindow(GxElement* self) {
-	validateElem(self, false, true);
-	return (
-		self->renderable->type == GxElemAbsolute ?
-		calcAbsolutePos(self) :
-		calcRelativePos(self)
-	);
-}
-
-static inline void renderBorder(SDL_Renderer* renderer, SDL_Rect* pos, int quantity) {
-	if (quantity <= 0) return;
-	if (pos->w == 0 || pos->h == 0) return;	
-	SDL_RenderDrawRect(renderer, pos);
-	pos->x++;
-	pos->y++;
-	pos->w -= 2;
-	pos->h -= 2;
-	renderBorder(renderer, pos, quantity - 1);
-}
-
-
-void GxElemRender_(GxElement* self) {
-
-	SDL_Renderer* renderer = GxGetSDLRenderer();
-	SDL_Rect pos = GxGetElemPositionOnWindow(self);
-	SDL_Rect labelPos = pos;
-	SDL_Color* color = self->renderable->backgroundColor->value;
-
-	//first backgrund color
-	if (color && color->a != 0) {
-		int bs = self->renderable->border.size;
-		SDL_Rect square = {pos.x + bs, pos.y + bs, pos.w - 2*bs, pos.h - 2*bs};
-		SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, color->a);
-		SDL_Rect* dst = GxAppCalcDest(&square, &(SDL_Rect){0});
-		SDL_RenderFillRect(renderer, dst);
-		//SDL_RenderDrawRect(renderer, &pos);
-	}
-
-	//then borders
-	SDL_Color* borderColor = self->renderable->border.color->value;
-	int bsize = self->renderable->border.size;
-
-	if (bsize > 0 && borderColor && borderColor->a) {
-		SDL_SetRenderDrawColor(renderer,
-			borderColor->r, borderColor->g, borderColor->b, borderColor->a
-		);
-		SDL_Rect* dst = GxAppCalcDest(&pos, &(SDL_Rect){0});
-		renderBorder(renderer, dst, bsize);
-	}
-
-	//then image or animation
-	GxImage* image = NULL;
-	if (self->renderable->image) {
-		image = self->renderable->image;
-	}
-	else if (self->renderable->animation) {
-		GxAnimation* anim = self->renderable->animation; //create alias
-		self->renderable->animCounter++; //to avoid counter starting with 0.
-		if (self->renderable->animCurrent >= GxAnimGetQuantity_(anim)) {
-			self->renderable->animCurrent = 0;
-		}
-		image = GxAnimGetImage_(anim, self->renderable->animCurrent);
-
-		if (self->renderable->animCounter % GxAnimGetInterval_(anim) == 0)
-			self->renderable->animCurrent++;
-
-			//if it's the last frame in animation and there's no repeat set renderable->animation to NULL
-		if (self->renderable->animCurrent >= GxAnimGetQuantity_(anim) && !GxAnimIsContinous_(anim)) {
-			self->renderable->animation = NULL;
-			self->renderable->animCounter = 0;
-			self->renderable->animCurrent = 0;
-		}
-	}
-
-	if (image) {
-		GxElemCalcImagePos(self, &pos, image);
-		GxImageRender_(image, &pos, self->renderable->angle, 
-			self->renderable->orientation, self->renderable->opacity
-		);
-	}
-
-	//finally, render label
-	if (self->renderable->shouldUpdateLabel) {
-		updateLabel(self->renderable);
-	}
-	if (self->renderable->label) {
-		GxElemCalcImagePos(self, &labelPos, self->renderable->label);
-		GxImageRender_(self->renderable->label, &labelPos, 0.0, 
-			(SDL_RendererFlip) GxElemForward, self->renderable->opacity
-		);
-	}
-}
 
 enum AssetType{IMAGE, ANIMATION};
 
@@ -677,22 +459,7 @@ void GxElemSetAnimation(GxElement* self, const char* apath) {
 }
 
 
-static void updateLabel(GxRenderable* renderable) {
 
-	GxDestroyImage_(renderable->label);
-	renderable->shouldUpdateLabel = false;
-
-	if(renderable->text && renderable->fontSize > 0 &&
-		renderable->font && renderable->color->value
-	){
-		renderable->label = GxImageCreateText_(renderable->text,
-			renderable->font, renderable->fontSize, renderable->color->value
-		);
-	}
-	else {
-		renderable->label = NULL;
-	}
-}
 
 void GxElemSetText(GxElement* self, const char* format, ...) {
 
@@ -766,4 +533,23 @@ void GxElemSetFont(GxElement* self, const char* font) {
 const char* GxElemGetFont(GxElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->font;
+}
+
+void GxElementUpdateLabel_(GxRenderable* renderable) {
+
+	if(renderable->label){
+		GxDestroyImage_(renderable->label);
+	}
+	renderable->shouldUpdateLabel = false;
+
+	if(renderable->text && renderable->fontSize > 0 &&
+		renderable->font && renderable->color->value
+	){
+		renderable->label = GxImageCreateText_(renderable->text,
+			renderable->font, renderable->fontSize, renderable->color->value
+		);
+	}
+	else {
+		renderable->label = NULL;
+	}
 }

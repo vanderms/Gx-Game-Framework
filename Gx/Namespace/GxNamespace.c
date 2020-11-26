@@ -12,6 +12,7 @@
 #include "../Button/GxButton.h"
 #include "../Folder/GxFolder.h"
 #include "../Tilemap/GxTilemap.h"
+#include "../Graphics/GxGraphics.h"
 
 const GxAppNamespace GxAppNamespaceInstance = {
 	.create = GxCreateApp,
@@ -69,8 +70,7 @@ const GxAppNamespace GxAppNamespaceInstance = {
 	.vector = GxDataVector,
 	.point = GxDataPoint,
 	.size = GxDataSize,
-	.matrix = GxDataMatrix,
-	.freeTarget = GxFreeTarget,
+	.matrix = GxDataMatrix,	
 };
 
 const GxArrayNamespace GxArrayNamespaceInstance = {
@@ -321,4 +321,6 @@ const GxUtilNamespace GxUtilNamespaceInstance = {
 	.assertState = GxUserAssertState,
 	.assertAlloc = GxUserAssertAlloc,
 	.assertOutOfRange = GxUserAssertOutOfRange,
+	.onDestroyFreeTarget = GxOnDestroyFreeTarget,
+	.onDestroyDoNothing = GxOnDestroyDoNothing,
 };

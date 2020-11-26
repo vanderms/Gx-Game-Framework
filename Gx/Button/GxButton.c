@@ -2,6 +2,7 @@
 #include "../Button/GxButton.h"
 #include "../Element/GxElement.h"
 #include "../Renderable/GxRenderable.h"
+#include "../Graphics/GxGraphics.h"
 #include "../Array/GxArray.h"
 #include "../Scene/GxScene.h"
 #include "../App/GxApp.h"
@@ -182,7 +183,7 @@ static void onDestroy(GxEvent* e) {
 	GxScene* scene = GxElemGetScene(self->base);
 
 	GxSceneRemoveEventListener(scene, GxEventOnLoopBegin, onLoopBegin, self);
-	GxSceneRemoveEventListener(scene, GxEventOnDestroy, GxFreeTarget, self);
+	GxSceneRemoveEventListener(scene, GxEventOnDestroy, GxOnDestroyFreeTarget, self);
 
 	if (self->input & GxButtonKeyboard) {
 		GxSceneRemoveEventListener(scene, GxEventOnKeyboard, onKeyboard, self);

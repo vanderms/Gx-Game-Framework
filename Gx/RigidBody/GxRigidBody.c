@@ -1,5 +1,5 @@
 #include "../Utilities/GxUtil.h"
-#include "../Private/GxPrivate.h"
+#include "../Private/GxElement.h"
 #include "../RigidBody/GxRigidBody.h"
 #include "../Physics/GxPhysics.h"
 #include "../Array/GxArray.h"

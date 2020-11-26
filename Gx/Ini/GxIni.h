@@ -24,7 +24,7 @@ typedef struct GxIni {
 	const char* className;
 	int display;
 	int body;
-	const SDL_Rect* position;
+	SDL_Rect* position;
 
 	//widget
 	int zIndex;

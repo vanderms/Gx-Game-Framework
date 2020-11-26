@@ -44,10 +44,6 @@ const SDL_Color* GxElemGetBorderColor(GxElement* self);
 uint32_t GxElemGetWFlag_(GxElement* self);
 void GxElemSetWFlag_(GxElement* self, uint32_t value);
 
-void GxElemRender_(GxElement* self);
-SDL_Rect GxGetElemPositionOnWindow(GxElement* self);
- SDL_Rect* GxElemCalcImagePos(GxElement* self, SDL_Rect* pos, GxImage* image);
-
 void GxElemSetText(GxElement* self, const char* text, ...);
 const char* GxElemGetText(GxElement* self);
 
@@ -59,6 +55,8 @@ const char* GxElemGetFont(GxElement* self);
 
 const SDL_Color* GxElemGetColor(GxElement* self);
 void GxElemSetColor(GxElement* self, const char* color);
+
+void GxElementUpdateLabel_(GxRenderable* renderable);
 
 #endif // !GX_WIDGET_H
 

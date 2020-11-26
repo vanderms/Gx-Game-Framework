@@ -1,4 +1,5 @@
 #include "../Folder/GxFolder.h"
+#include "../Private/GxGraphicAssets.h"
 #include "../Map/GxMap.h"
 #include "../Utilities/GxUtil.h"
 #include "../Scene/GxScene.h"
@@ -30,45 +31,6 @@ typedef struct GxFolder {
 } GxFolder;
 
 static GxFolder* sFolder = NULL;
-
-typedef enum ImageType{
-	Fill,
-	Draw,
-	Texture,
-	Text,
-	Palette,
-	Opaque,
-	Blank,
-} ImageType;
-
-typedef struct GxImage {
-
-    char* id;
-    GxFolder* folder;
-	ImageType type;
-    GxSize size;
-
-    //texture
-    SDL_Texture* resource;
-    SDL_Rect* src;
-    double proportion;
-
-    //opaque
-    GxImage* source;
-
-     //palette
-    GxArray* children;
-    GxMatrix matrix;
-} GxImage;
-
-
-typedef struct GxAnimation {
-    char* id;
-    GxArray* images;
-    Uint32 interval;
-    Uint32 quantity;
-    bool continuous;
-} GxAnimation;
 
 typedef struct GxSound {
     char* id;
@@ -363,7 +325,7 @@ GxSize GxFolderGetImageSize(const char* path) {
     char imageId[32];
     GxSplitAssetPath_(path, folderId, imageId);
     GxFolder* folder = GxGetFolder_(folderId);
-    GxAssertInvalidArgument(path);
+    GxAssertInvalidArgument(folder);
     GxImage* image = GxFolderGetImage_(folder, imageId);
     GxAssertInvalidArgument(image);
     return image->size;
@@ -386,97 +348,6 @@ void GxImageTextureSetResource_(GxImage* self, void* resource, GxSize* size) {
         self->size.h = (int)(size->h * self->proportion + 0.5);
     }
     folderIncreaseAssetsLoaded(self->folder);
-}
-
-void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity) {
-
-    if (self->type == Texture || self->type == Opaque || self->type == Text){
-        void* resource = NULL;
-        void* src = NULL;
-        if (self->type == Texture || self->type == Text) {
-            resource = self->resource;
-            src = self->src;
-        }
-        else { // === Opaque
-            resource =  self->source->resource;
-            src = self->src;
-        }
-	    if (resource && opacity) {
-            if (opacity != 255) {
-                 SDL_SetTextureAlphaMod(resource, opacity);
-            }           
-            SDL_Renderer* renderer = GxGetSDLRenderer();
-            SDL_Rect* dst = ( self->type == Text ? 
-                GxAppCalcLabelDest(target, &(SDL_Rect){0}) 
-                : GxAppCalcDest(target, &(SDL_Rect){0, 0, 0, 0})
-            );
-             
-            if ((angle <= -1.0 || angle >= 1.0) || orientation != SDL_FLIP_NONE) {
-                SDL_RenderCopyEx(renderer, resource, src, dst, angle, NULL, orientation);
-            }
-            else {
-                SDL_RenderCopy(renderer, resource, src, dst);
-            }
-            if(opacity != 255){
-                SDL_SetTextureAlphaMod(resource, 255);
-            }
-        }
-	}
-	else if (self->type == Palette) {
-		GxImageRenderTilePalette_(self, target, opacity);
-	}
-}
-
-void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target, Uint8 opacity) {
-
-    if (self->folder->status != GxStatusReady){ return; }
-
-    int w = (self->size.w / self->matrix.nc);
-    int h = (self->size.h / self->matrix.nr);
-
-    int rowStart = 0;
-    int rowEnd = self->matrix.nr;
-    int columnStart = 0;
-    int columnEnd =  self->matrix.nc;
-
-    GxSize windowSize = GxGetWindowSize();
-
-    //... calc renderable area of the matrix
-    if (target->x < 0) {
-        columnStart = -target->x / w;
-    }
-    if (target->x + target->w > windowSize.w) {
-        columnEnd -= (target->x + target->w - windowSize.w) / w;
-    }
-    if (target->y < 0) {
-        rowStart = -target->y / h;
-    }
-    if (target->y + target->h > windowSize.h) {
-        rowEnd -= (target->y + target->h - windowSize.h) / h;
-    }
-
-    //...
-    for (int rows = rowStart; rows < rowEnd; rows++) {
-
-       int y = target->y + rows * h;
-
-        for (int columns = columnStart; columns < columnEnd; columns++) {
-
-            int index = rows * self->matrix.nc + columns;
-            GxImage* child = GxArrayAt(self->children, index);
-            if(child->type == Blank){ continue; }
-            int x = (target->x + columns * w);
-
-            //calc child pos
-            SDL_Rect pos = {
-                .x  = x - ((child->size.w - w) / 2), //...xcenter texture
-                .y = y - ((child->size.h - h) / 2), //... ycenter texture
-                .w = child->size.w,
-                .h = child->size.h
-            };           
-            GxImageRender_(child, &pos, 0.0, SDL_FLIP_NONE, opacity);
-        }
-    }
 }
 
 static void destroyAnimation(GxAnimation* self) {

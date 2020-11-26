@@ -33,9 +33,14 @@ bool GxEventIniHasHandler_(const GxIni* ini) {
         ini->onContactBegin || ini->onContactEnd || ini->onDestroy);
 }
 
-void GxFreeTarget(GxEvent* e) {
+void GxOnDestroyFreeTarget(GxEvent* e) {
     free(e->target);
 }
+
+void GxOnDestroyDoNothing(GxEvent* e) {
+    (void) e;
+}
+
 
 
 GxRequestData* GxCreateRequestData_(void* target,

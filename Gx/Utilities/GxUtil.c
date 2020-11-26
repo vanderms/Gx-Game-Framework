@@ -167,7 +167,7 @@ bool GxAssertOutOfRange(bool condition){
 
 bool GxAssertInvalidOperation(bool condition) {
     if (!condition) {
-        GxRuntimeError("In Gx: invalid hash error.");
+        GxRuntimeError("In Gx: invalid operation.");
     }    
     return condition;
 }
