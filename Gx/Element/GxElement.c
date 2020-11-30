@@ -1,8 +1,8 @@
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "../Private/GxElement.h"
 #include "../Element/GxElement.h"
 #include "../Event/GxEvent.h"
-#include "../Array/GxArray.h"
+#include "../Array/Array.h"
 #include "../Folder/GxFolder.h"
 #include "../Graphics/GxGraphics.h"
 #include "../Physics/GxPhysics.h"
@@ -16,24 +16,24 @@
 GxElement* GxCreateElement(const GxIni* ini){
 
 	GxElement* self = malloc(sizeof(GxElement));
-	GxAssertAllocationFailure(self);
-	self->hash = GxHashElement_;	
+	nsUtil->assertAlloc(self);
+	self->hash = nsUtil->hash->ELEMENT;	
 
 	//set type, scene and target 
-	self->className = ini->className ? GmCreateString(ini->className) : NULL;
-	self->classList = ini->className ? GmArraySplit(ini->className, "|") : NULL;
-	self->scene = GxGetRunningScene();
+	self->className = ini->className ? nsUtil->createString(ini->className) : NULL;
+	self->classList = ini->className ? nsUtil->split(ini->className, "|") : NULL;
+	self->scene = nsApp->getRunningScene();
 	self->target = ini->target ? ini->target : self;
 	self->child = NULL;
 
 	if (ini->target) {
-		GxAssertInvalidArgument(ini->onDestroy);
+		nsUtil->assertArgument(ini->onDestroy);
 	}
 		
 	//event handler module
 	if (GxEventIniHasHandler_(ini)) {
 		self->handlers = calloc(GxEventTotalHandlers, sizeof(GxHandler));
-		GxAssertAllocationFailure(self->handlers);
+		nsUtil->assertAlloc(self->handlers);
 		GxEventSetHandlers_(self->handlers, ini);
 	}
 	else {
@@ -45,9 +45,9 @@ GxElement* GxCreateElement(const GxIni* ini){
 
 	//set position
 	if (self->renderable || self->body) {
-		GxAssertInvalidArgument(ini->position);
+		nsUtil->assertArgument(ini->position);
 		self->pos = malloc(sizeof(SDL_Rect));
-		GxAssertAllocationFailure(self->pos);
+		nsUtil->assertAlloc(self->pos);
 		*self->pos = *ini->position; 
 	}
 	else {
@@ -76,7 +76,7 @@ void GxDestroyElement_(GxElement* self) {
 		GxDestroyMap(self->rHandlers);
 		GxDestroyRigidBody_(self->body);
 		GxDestroyRenderable_(self->renderable);
-		GxDestroyArray(self->classList);
+		nsArr->destroy(self->classList);
 		self->hash = 0;
 		free(self->handlers);
 		free(self->pos);
@@ -90,17 +90,6 @@ void GxElemRemove(GxElement* self) {
 	GxSceneRemoveElement_(self->scene, self);
 }
 
-GxData* GxElemSend(Uint32 receiverid, const char* request, GxData* data){
-	GxElement* receiver = GxSceneGetElement(GxGetRunningScene(), receiverid);
-	GxAssertInvalidArgument(receiver != NULL);
-	GxAssertNotImplemented(receiver->handlers);
-	GxRequestData* handler = GxMapGet(receiver->rHandlers, request);
-	GxAssertNotImplemented(handler);
-	GxResponse response = {.value = NULL};
-	handler->handler(&(GxRequest){ handler->target, handler->request, data }, &response);
-	return response.value;
-}
-
 void* GxElemGetTarget(GxElement* self) {
 	validateElem(self, false, false);
 	return self->target;
@@ -110,8 +99,8 @@ void GxElemAddRequestHandler(GxElement* self,
 	const char* request, GxRequestHandler handler
 ){
 	validateElem(self, false, false);	
-	GxAssertNullPointer(request);
-	GxAssertNullPointer(handler);
+	nsUtil->assertNullPointer(request);
+	nsUtil->assertNullPointer(handler);
 	GxRequestData* data = GxCreateRequestData_(self->target, request, handler);
 	if (self->rHandlers == NULL) {
 		self->rHandlers = GmCreateMap();
@@ -126,14 +115,14 @@ GxRequestData* GxElemGetRequestData_(GxElement* self, const char* request) {
 void GxElemDelegate(GxElement* self, const char* sceneReq, 
 	GxElemID elem, const char* elemReq
 ){
-	GxAssertNullPointer(self);
-	GxAssertInvalidHash((*(Uint32*) self) == GxHashScene_);
-	GxAssertNullPointer(sceneReq);
-	GxAssertNullPointer(elemReq);
+	nsUtil->assertNullPointer(self);
+	nsUtil->assertHash((*(Uint32*) self) == nsUtil->hash->SCENE);
+	nsUtil->assertNullPointer(sceneReq);
+	nsUtil->assertNullPointer(elemReq);
 	GxElement* other = GxSceneGetElement(self->scene, elem);
-	GxAssertInvalidArgument(other != NULL);
+	nsUtil->assertArgument(other != NULL);
 	GxRequestData* data = GxElemGetRequestData_(self, elemReq);
-	GxAssertInvalidArgument(data != NULL);
+	nsUtil->assertArgument(data != NULL);
 	if (self->rHandlers == NULL) {
 		self->rHandlers = GmCreateMap();
 	}
@@ -181,18 +170,18 @@ bool GxElemHasClass(GxElement* self, const char* type) {
 		return false;
 	}
 
-	GxArray* types = GxTokenize(type, "|");
+	sArray* types = nsApp->tokenize(type, "|");
 	Uint32 matches = 0;
 		
-	for(Uint32 i = 0; i < GxArraySize(types); i++){
-		for (Uint32 j = 0; j < GxArraySize(self->classList); j++) {
-			char* token = GxArrayAt(self->classList, j);
-			if(strcmp(token, GxArrayAt(types, i)) == 0){
+	for(Uint32 i = 0; i < nsArr->size(types); i++){
+		for (Uint32 j = 0; j < nsArr->size(self->classList); j++) {
+			char* token = nsArr->at(self->classList, j);
+			if(strcmp(token, nsArr->at(types, i)) == 0){
 				matches++;
 			}
 		}		
 	}
-	return matches == GxArraySize(types);
+	return matches == nsArr->size(types);
 }
 
 GxScene* GxElemGetScene(GxElement* self) {
@@ -233,7 +222,7 @@ bool GxElemIsRenderable(GxElement* self) {
 
 void GxElemSetChild(GxElement* self, void* child) {
 	validateElem(self, false, false);
-	GxAssertInvalidOperation(!self->child);
+	nsUtil->assertState(!self->child);
 	self->child = child;
 }
 

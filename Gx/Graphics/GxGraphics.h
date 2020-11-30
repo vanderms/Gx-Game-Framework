@@ -1,6 +1,6 @@
 #ifndef GX_GRAPHICS_H
 #define GX_GRAPHICS_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 
 typedef struct GxGraphics GxGraphics;
 

@@ -13,11 +13,7 @@ typedef struct GxIni {
 	//scene
 	GxSize size;
 	int gravity;
-	const char* folders;
-
-	//tilemap
-	int* sequence;
-	GxMatrix matrix;
+	const char* folders;	
 	
 	//element
 	const char* name;

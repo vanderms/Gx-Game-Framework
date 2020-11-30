@@ -1,10 +1,10 @@
 #include "../Folder/GxFolder.h"
 #include "../Private/GxGraphicAssets.h"
 #include "../Map/GxMap.h"
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "../Scene/GxScene.h"
 #include "../Element/GxElement.h"
-#include "../App/GxApp.h"
+#include "../App/App.h"
 #include <stdbool.h>
 #include <string.h>
 #include "SDL_ttf.h"
@@ -48,15 +48,15 @@ typedef struct GxMusic {
 void GxCreateFolder(const char* id, void(*loader)(void)) {
 
     GxFolder* self = malloc(sizeof(GxFolder));
-    GxAssertAllocationFailure(self);
-    self->id = GmCreateString(id);
+    nsUtil->assertAlloc(self);
+    self->id = nsUtil->createString(id);
     self->status = loader ? GxStatusNone : GxStatusReady;
     self->assetsLoaded = 0;
     self->totalAssets = 0;
     self->assets = GmCreateMap();
     self->loader = loader;
     self->refCounter = 0;
-    GxAddFolder_(self);
+    nsApp->prv->addFolder(self);
 }
 
 void GxDestroyFolder_(GxFolder* self) {
@@ -82,32 +82,32 @@ GxImage* GxFolderGetImage_(GxFolder* self, const char* id) {
 }
 
 Mix_Music* GxFolderGetMusic(const char* path) {
-	GxArray* tokens = GxTokenize(path, "/");
-    GxAssertInvalidArgument(GxArraySize(tokens) == 2);
-    GxFolder* folder = GxGetFolder_(GxArrayAt(tokens, 0));
-    GxAssertInvalidArgument(folder);
-    GxMusic* asset = GxMapGet(folder->assets, GxArrayAt(tokens, 1));
-    GxAssertInvalidArgument(asset);
+	sArray* tokens = nsApp->tokenize(path, "/");
+    nsUtil->assertArgument(nsArr->size(tokens) == 2);
+    GxFolder* folder = nsApp->prv->getFolder(nsArr->at(tokens, 0));
+    nsUtil->assertArgument(folder);
+    GxMusic* asset = GxMapGet(folder->assets, nsArr->at(tokens, 1));
+    nsUtil->assertArgument(asset);
     return asset->music;
 }
 
 Mix_Chunk* GxFolderGetChunk(const char* path) {
-	GxArray* tokens = GxTokenize(path, "/");
-    GxAssertInvalidArgument(GxArraySize(tokens) == 2);
-    GxFolder* folder = GxGetFolder_(GxArrayAt(tokens, 0));
-    GxAssertInvalidArgument(folder);
-    GxSound* asset = GxMapGet(folder->assets, GxArrayAt(tokens, 1));
-    GxAssertInvalidArgument(asset);
+	sArray* tokens = nsApp->tokenize(path, "/");
+    nsUtil->assertArgument(nsArr->size(tokens) == 2);
+    GxFolder* folder = nsApp->prv->getFolder(nsArr->at(tokens, 0));
+    nsUtil->assertArgument(folder);
+    GxSound* asset = GxMapGet(folder->assets, nsArr->at(tokens, 1));
+    nsUtil->assertArgument(asset);
     return asset->chunk;
 }
 
 SDL_Texture* GxFolderGetTexture(const char* path) {
-	GxArray* tokens = GxTokenize(path, "/");
-    GxAssertInvalidArgument(GxArraySize(tokens) == 2);
-    GxFolder* folder = GxGetFolder_(GxArrayAt(tokens, 0));
-    GxAssertInvalidArgument(folder);
-    GxImage* asset = GxMapGet(folder->assets, GxArrayAt(tokens, 1));
-    GxAssertInvalidArgument(asset);
+	sArray* tokens = nsApp->tokenize(path, "/");
+    nsUtil->assertArgument(nsArr->size(tokens) == 2);
+    GxFolder* folder = nsApp->prv->getFolder(nsArr->at(tokens, 0));
+    nsUtil->assertArgument(folder);
+    GxImage* asset = GxMapGet(folder->assets, nsArr->at(tokens, 1));
+    nsUtil->assertArgument(asset);
     return asset->resource;
 }
 
@@ -146,8 +146,8 @@ void GxFolderIncRefCounter_(GxFolder* self) {
 }
 
 void GxFolderDecRefCounter_(GxFolder* self) {
-    if(GxAppIsRunning_()){
-        GxAssertInvalidOperation(self->refCounter > 0);
+    if(nsApp->isRunning()){
+        nsUtil->assertState(self->refCounter > 0);
         --self->refCounter;
         if (self->refCounter == 0) {
            folderUnload(self);
@@ -157,8 +157,8 @@ void GxFolderDecRefCounter_(GxFolder* self) {
 
 static GxImage* createImage(GxFolder* folder, const char* id, ImageType type) {
     GxImage* self = calloc(1, sizeof(GxImage));
-    GxAssertAllocationFailure(self);
-    self->id = GmCreateString(id);
+    nsUtil->assertAlloc(self);
+    self->id = nsUtil->createString(id);
     self->folder = folder;
     self->type = type;
     GxMapSet(folder->assets, id, self, GxDestroyImage_);
@@ -170,37 +170,47 @@ void GxDestroyImage_(GxImage* self) {
         if (self->resource){
             SDL_DestroyTexture(self->resource);
         }
-        GxDestroyArray(self->children);
+        nsArr->destroy(self->children);
         free(self->src);
         free(self->id);
         free(self);
     }
 }
 
+void GxFolderRemoveAsset(const char* path) {
+    char folderName[32];
+    char imageName[32];
+    nsUtil->splitAssetPath(path, folderName, imageName);
+    GxFolder* folder = nsApp->prv->getFolder(folderName);
+    nsUtil->assertArgument(folder);
+    GxMapRemove(folder->assets, imageName);
+
+}
+
 GxImage* GxImageCreateText_(const char* text, const char* fontName, int size, SDL_Color* color){
 
     GxImage* self = calloc(1, sizeof(GxImage));
-    GxAssertAllocationFailure(self);
+    nsUtil->assertAlloc(self);
     self->type = Text;
-    const char* fontPath = GxGetFontPath_(fontName);
+    const char* fontPath = nsApp->prv->getFontPath(fontName);
 #if 1
     //for some reason not working
     GxSize wsize = {0, 0};
-    SDL_GetRendererOutputSize(GxGetSDLRenderer(), &wsize.w, &wsize.h);
-    GxSize lsize = GxGetWindowSize();
+    SDL_GetRendererOutputSize(nsApp->SDLRenderer(), &wsize.w, &wsize.h);
+    GxSize lsize = nsApp->logicalSize();
     size = ((double) size * wsize.w) / lsize.w;
 #endif
     TTF_Font* font = TTF_OpenFont(fontPath, size);
     if(!font){
-        GxRuntimeError(TTF_GetError());
+        nsApp->runtimeError(TTF_GetError());
     }
     SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text, *color);
     if (!surface){
-        GxRuntimeError(TTF_GetError());
+        nsApp->runtimeError(TTF_GetError());
     }
     self->size.w = surface->w;
     self->size.h = surface->h;
-    self->resource = SDL_CreateTextureFromSurface(GxGetSDLRenderer(), surface);
+    self->resource = SDL_CreateTextureFromSurface(nsApp->SDLRenderer(), surface);
     SDL_FreeSurface(surface);
     return self;
 }
@@ -208,18 +218,18 @@ GxImage* GxImageCreateText_(const char* text, const char* fontName, int size, SD
 void GxLoadImage(const char* id, const char* path, SDL_Rect* src, double proportion) {
 
     GxFolder* self = sFolder;
-    GxAssertInvalidArgument(self->assets == NULL || GxMapGet(self->assets, id) == NULL);
-    GxAssertInvalidOperation(self->status == GxStatusLoading);
+    nsUtil->assertArgument(self->assets == NULL || GxMapGet(self->assets, id) == NULL);
+    nsUtil->assertState(self->status == GxStatusLoading);
     GxImage* img = createImage(self, id, Texture);
     img->proportion = proportion;
     img->resource = NULL;
 
     self->totalAssets++;
-    GxPushTextureToLoad_(img, path);
+    nsApp->prv->loadSDLSurface(img, path);
 
     if (src) {
         img->src = malloc(sizeof(SDL_Rect));
-        GxAssertAllocationFailure(img->src);
+        nsUtil->assertAlloc(img->src);
         *img->src = *src;
     }
     else img->src = NULL;
@@ -228,7 +238,7 @@ void GxLoadImage(const char* id, const char* path, SDL_Rect* src, double proport
 
 void GxLoadTileset(const char* id, const char* pathF, int start, int end, double proportion) {
 
-    GxAssertInvalidArgument(start >= 0);
+    nsUtil->assertArgument(start >= 0);
 
     for (int i = start; i <= end; i++) {
         char bId[64];
@@ -239,26 +249,17 @@ void GxLoadTileset(const char* id, const char* pathF, int start, int end, double
     }
 }
 
-void GxSplitAssetPath_(const char* path, char* folder, char* asset) {
-    char clone[64];
-    GxCloneString(path, clone, 64);
-    char* div = strstr(clone, "/");
-    GxAssertInvalidArgument(div);
-    div[0] = '\0';
-    GxCloneString(clone, folder, 32);
-    GxCloneString(div + 1, asset, 32);
-}
 
 
 void GxCreateTiles(const char* image, GxSize size, GxMatrix matrix) {
 
 	char folderId[32], imageId[32];
-    GxSplitAssetPath_(image, folderId, imageId);
+    nsUtil->splitAssetPath(image, folderId, imageId);
 
-    GxFolder* folder = GxGetFolder_(folderId);
-    GxAssertInvalidArgument(folder);
+    GxFolder* folder = nsApp->prv->getFolder(folderId);
+    nsUtil->assertArgument(folder);
     GxImage* source = GxMapGet(folder->assets, imageId);
-    GxAssertInvalidArgument(source);
+    nsUtil->assertArgument(source);
 
     int counter = 0;
 
@@ -268,7 +269,7 @@ void GxCreateTiles(const char* image, GxSize size, GxMatrix matrix) {
             snprintf(bId, 64, "%s|%d", source->id, ++counter);
             GxImage* self = createImage(folder, bId, Opaque);
             self->src = malloc(sizeof(SDL_Rect));
-            GxAssertAllocationFailure(self->src);
+            nsUtil->assertAlloc(self->src);
             *self->src = (SDL_Rect) { size.w * j, size.h * i, size.w, size.h };
             self->source = source;
             self->size = size;
@@ -276,17 +277,17 @@ void GxCreateTiles(const char* image, GxSize size, GxMatrix matrix) {
 	}
 }
 
-GxImage* GxCreateTilePalette_(GxFolder* folder, const char* group,
-    GxSize size, GxMatrix matrix, int* sequence) {
-
-    if(folder->status == GxStatusNone) folderLoad_(folder);
-    GxImage* self = calloc(1, sizeof(GxImage));
-    GxAssertAllocationFailure(self);
-    self->type = Palette;
+void GxFolderCreateTilemap(const char* folderName, const char* name, const char* group,
+    GxSize size, GxMatrix matrix, int* sequence
+){
+    GxFolder* folder = nsApp->prv->getFolder(folderName);
+    nsUtil->assertArgument(folder);
+    nsUtil->assertArgument(folder->status != GxStatusNone);    
+    GxImage* self = createImage(folder, name, Palette);
+    nsUtil->assertAlloc(self);    
     self->size = size;
-    self->matrix = matrix;
-    self->folder = folder;
-    self->children = GxCreateArray();
+    self->matrix = matrix;   
+    self->children = nsArr->create();
 
     //for jumps in the composed image
     static GxImage sBlank = {.type = Blank};
@@ -309,10 +310,9 @@ GxImage* GxCreateTilePalette_(GxFolder* folder, const char* group,
             stringImage = group;
         }
         image = image ? image : GxMapGet(folder->assets, stringImage);
-        GxAssertResourceNotFound(image);
-        GxArrayPush(self->children, image, NULL);
-    }
-    return self;
+        nsUtil->assertResourceNotFound(image);
+        nsArr->push(self->children, image, NULL);
+    }   
 }
 
 GxSize GxImageGetSize_(GxImage* self) {
@@ -320,14 +320,14 @@ GxSize GxImageGetSize_(GxImage* self) {
 }
 
 GxSize GxFolderGetImageSize(const char* path) {
-	GxAssertInvalidArgument(path);
+	nsUtil->assertArgument(path);
     char folderId[32];
     char imageId[32];
-    GxSplitAssetPath_(path, folderId, imageId);
-    GxFolder* folder = GxGetFolder_(folderId);
-    GxAssertInvalidArgument(folder);
+    nsUtil->splitAssetPath(path, folderId, imageId);
+    GxFolder* folder = nsApp->prv->getFolder(folderId);
+    nsUtil->assertArgument(folder);
     GxImage* image = GxFolderGetImage_(folder, imageId);
-    GxAssertInvalidArgument(image);
+    nsUtil->assertArgument(image);
     return image->size;
 }
 
@@ -352,7 +352,7 @@ void GxImageTextureSetResource_(GxImage* self, void* resource, GxSize* size) {
 
 static void destroyAnimation(GxAnimation* self) {
     if (self) {
-        GxDestroyArray(self->images);
+        nsArr->destroy(self->images);
         free(self->id);
         free(self);
     }
@@ -361,13 +361,13 @@ static void destroyAnimation(GxAnimation* self) {
 void GxLoadAnimation(const char* id, const char* pathF,
     int start, int end, int interval, double proportion, bool continuous)
 {
-    GxAssertInvalidArgument(start >= 0);
+    nsUtil->assertArgument(start >= 0);
 
     GxFolder* folder = sFolder;
     GxAnimation* self = malloc(sizeof(GxAnimation));
-    GxAssertAllocationFailure(self);
-    self->id = GmCreateString(id);
-    self->images = GxCreateArray();
+    nsUtil->assertAlloc(self);
+    self->id = nsUtil->createString(id);
+    self->images = nsArr->create();
 	self->interval = interval;
     self->continuous = continuous;
     self->quantity = end - start + 1;
@@ -378,7 +378,7 @@ void GxLoadAnimation(const char* id, const char* pathF,
         snprintf(bId, 64, "%s|%d", id, i);
         snprintf(bPath, 256, pathF, i);
         GxLoadImage(bId, bPath, NULL, proportion);
-        GxArrayPush(self->images, GxMapGet(folder->assets, bId), NULL);
+        nsArr->push(self->images, GxMapGet(folder->assets, bId), NULL);
 	}
     if (!folder->assets) folder->assets = GmCreateMap();
     GxMapSet(folder->assets, self->id, self, (GxDestructor) destroyAnimation);
@@ -397,7 +397,7 @@ Uint32 GxAnimGetQuantity_(GxAnimation* self) {
 }
 
 GxImage* GxAnimGetImage_(GxAnimation* self, Uint32 index) {
-    return GxArrayAt(self->images, index);
+    return nsArr->at(self->images, index);
 }
 
 const char* GxAnimGetId_(GxAnimation* self) {
@@ -419,11 +419,11 @@ void GxSoundSetChunk_(GxSound* self, Mix_Chunk* chunk) {
 void GxLoadChunk(const char* id, const char* path) {
 
     GxSound* self = malloc(sizeof(GxSound));
-    GxAssertAllocationFailure(self);
-    self->id = GmCreateString(id);
+    nsUtil->assertAlloc(self);
+    self->id = nsUtil->createString(id);
     self->folder = sFolder;
     self->chunk = NULL;
-    GxPushChunkToLoad_(self, path);
+    nsApp->prv->loadMixChunk(self, path);
     sFolder->totalAssets++;
     if (!sFolder->assets) sFolder->assets = GmCreateMap();
     GxMapSet(sFolder->assets, self->id, self, destroySound);
@@ -443,11 +443,11 @@ void GxMusicSetMixMusic_(GxMusic* self, Mix_Music* music) {
 
 void GxLoadMusic(const char* id, const char* path) {
     GxMusic* self = malloc(sizeof(GxMusic));
-    GxAssertAllocationFailure(self);
-    self->id = GmCreateString(id);
+    nsUtil->assertAlloc(self);
+    self->id = nsUtil->createString(id);
     self->folder = sFolder;
     self->music = NULL;
-    gxPushMusicToLoad_(self, path);
+    nsApp->prv->loadMixMusic(self, path);
     sFolder->totalAssets++;
     if (!sFolder->assets) sFolder->assets = GmCreateMap();
     GxMapSet(sFolder->assets, self->id, self, (GxDestructor) GxDestroyMusic_);

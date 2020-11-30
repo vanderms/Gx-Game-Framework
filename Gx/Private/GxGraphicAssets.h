@@ -1,4 +1,4 @@
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 
 typedef enum ImageType{
 	Fill,
@@ -26,14 +26,14 @@ typedef struct GxImage {
     GxImage* source;
 
      //palette
-    GxArray* children;
+    sArray* children;
     GxMatrix matrix;
 } GxImage;
 
 
 typedef struct GxAnimation {
     char* id;
-    GxArray* images;
+    sArray* images;
     Uint32 interval;
     Uint32 quantity;
     bool continuous;

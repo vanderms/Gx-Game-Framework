@@ -1,113 +1,24 @@
 #include "GxNamespace.h"
-#include "../Utilities/GxUtil.h"
-#include "../Array/GxArray.h"
+#include "../Utilities/Util.h"
+#include "../Array/Array.h"
 #include "../Map/GxMap.h"
 #include "../List/GxList.h"
 #include "../Element/GxElement.h"
 #include "../Renderable/GxRenderable.h"
 #include "../RigidBody/GxRigidBody.h"
-#include "../App/GxApp.h"
+#include "../App/App.h"
 #include "../Scene/GxScene.h"
 #include "../Physics/GxPhysics.h"
-#include "../Button/GxButton.h"
 #include "../Folder/GxFolder.h"
-#include "../Tilemap/GxTilemap.h"
 #include "../Graphics/GxGraphics.h"
 
-const GxAppNamespace GxAppNamespaceInstance = {
-	.create = GxCreateApp,
-	.run = GxAppRun,
-	.SDL = &(struct GxSDLNamespace){
-		.getWindow = GxGetSDLWindow,
-		.getRenderer = GxGetSDLRenderer
-	},
-	.event = &(struct GxEventNamespace) {
-		.LOAD = GxEventOnLoad,
-		.LOOP_BEGIN = GxEventOnLoopBegin,
-		.UPDATE = GxEventOnUpdate,
-		.PRE_GRAPHICAL = GxEventOnPreGraphical,
-		.PRE_RENDER = GxEventOnPreRender,
-		.LOOP_END = GxEventOnLoopEnd,
-		.UNLOAD = GxEventOnUnload,
-		.KEYBOARD = GxEventOnKeyboard,
-		.MOUSE = GxEventMouse,
-		.FINGER = GxEventFinger,
-		.SDL_DEFAULT = GxEventSDLDefault,
-		.PRE_CONTACT = GxEventPreContact,
-		.CONTACT_BEGIN = GxEventContactBegin,
-		.CONTACT_END = GxEventContactEnd,
-		.TIMEOUT = GxEventTimeout,
-		.DESTROY = GxEventOnDestroy,
-		.ELEM_REMOVAL = GxEventOnElemRemoval,
-	},
-	.getScene = GxGetScene,
-	.getWindowSize = GxGetWindowSize,
-	.loadScene = GxLoadScene,
-	.addFont = GxAddFont,
-	.getRunningScene = GxGetRunningScene,
-	.getMainScene = GxGetMainScene,
-	.alert = GxAlert,
-	.runtimeError = GxRuntimeError,
-	.playMusic = GxPlayMusic,
-	.playChunk = GxPlayChunk,
-	.stopMusic = Mix_HaltMusic,
-	.pauseMusic = Mix_PauseMusic,
-	.resumeMusic = Mix_ResumeMusic,
-	.isPlayingMusic = Mix_PlayingMusic,
-	.convertColor = GxConvertColor,	
-	.tokenize = GxTokenize,
-	.i = GxDataI,
-	.u = GxDataU, 
-	.f = GxDataF,
-	.b = GxDataB,
-	.c = GxDataC,
-	.sf = GxDataSF,
-	.ptr = GxDataPtr,
-	.list = GxDataList,
-	.array = GxDataArray,
-	.map = GxDataMap,
-	.rect = GxDataRect,
-	.vector = GxDataVector,
-	.point = GxDataPoint,
-	.size = GxDataSize,
-	.matrix = GxDataMatrix,	
-};
 
-const GxArrayNamespace GxArrayNamespaceInstance = {
-	.create = GxCreateArray,
-	.destroy = GxDestroyArray,
-	.size = GxArraySize,
-	.capacity = GxArrayCapacity,
-	.at = GxArrayAt,
-	.push = GxArrayPush,
-	.insert = GxArrayInsert,
-	.remove = GxArrayRemove,
-	.removeByValue = GxArrayRemoveByValue,
-	.indexOf = GxArrayIndexOf,
-	.reserve = GxArrayReserve,
-	.clean = GxArrayClean,
-	.sort = GxArraySort	
-};
 
-const GxButtonNamespace GxButtonNamespaceInstance = {
-	.create = GxCreateButton,
-	.getStatus = GxButtonGetStatus,
-	.hasStatus = GxButtonHasStatus,
-	.KEYBOARD = GxButtonKeyboard,
-	.FINGER = GxButtonFinger,
-	.MOUSE = GxButtonMouse,	
-	.NONE = GxButtonNone,
-	.ON = GxButtonOn,
-	.HOVER = GxButtonHover,
-	.CLICK = GxButtonClick,
-	.DOWN = GxButtonDown,
-	.UP = GxButtonUp,
-};
 
 const GxElemNamespace GxElemNamespaceInstance = {
 	
 	.create = GxCreateElement,	
-	.createTilemap = GxCreateTileMap,	
+	.createTilemap = NULL,	
 	.remove = GxElemRemove,
 	.getTarget = GxElemGetTarget,	
 	.addRequestHandler = GxElemAddRequestHandler,
@@ -186,9 +97,7 @@ const GxElemNamespace GxElemNamespaceInstance = {
 	.getFont = GxElemGetFont,
 	.getColor = GxElemGetColor, 
 	.setColor = GxElemSetColor,
-	.getPositionOnWindow = GxGetElemPositionOnWindow,
-	.send = GxElemSend,
-	.delegate = GxElemDelegate,
+	.getPositionOnWindow = GxGetElemPositionOnWindow,		
 
 	.NONE = GxElemNone,
 	.ABSOLUTE = GxElemAbsolute,
@@ -203,6 +112,8 @@ const GxElemNamespace GxElemNamespaceInstance = {
 const GxFolderNamespace GxFolderNamespaceInstance = {
 	.create = GxCreateFolder,
 	.loadImage = GxLoadImage,
+	.createTilemap = GxFolderCreateTilemap,
+	.removeAsset = GxFolderRemoveAsset,
 	.getImageSize = GxFolderGetImageSize,
 	.loadTileset = GxLoadTileset,
 	.createTiles = GxCreateTiles,
@@ -276,10 +187,8 @@ const GxContactNamespace GxContactNamespaceInstance = {
 
 
 const GxSceneNamespace GxSceneNamespaceInstance = {
-	.create = GxCreateScene,
-	.send = GxSceneSend,	
-	.addRequestHandler = GxSceneAddRequestHandler,
-	.delegate = GxSceneDelegate,
+	.create = GxCreateScene,	
+	.addRequestHandler = GxSceneAddRequestHandler,	
 	.getPercLoaded = GxSceneGetPercLoaded,
 	.getName = GxSceneGetName,
 	.getSize = GxSceneGetSize,
@@ -302,25 +211,3 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 	},	
 };
 
-const GxUtilNamespace GxUtilNamespaceInstance = {
-	.createInt = GxUtilCreateInt,
-	.createUint = GxUtilCreateUint,
-	.createBool = GxUtilCreateBool,
-	.createDouble = GxUtilCreateDouble,
-	.createString = GmCreateString,
-	.createStringF = GmCreateStringF,
-	.cloneString = GxCloneString,
-	.split = GmArraySplit,
-	.trim = GxTrim,
-	.abs = GxAbs,
-	.random = GxRandom,
-	.printMask = GxPrintMask,
-	.calcDistance = GxCalcDistance,
-	.assertNullPointer = GxUserAssertNullPointer,
-	.assertArgument = GxUserAssertArgumnent,
-	.assertState = GxUserAssertState,
-	.assertAlloc = GxUserAssertAlloc,
-	.assertOutOfRange = GxUserAssertOutOfRange,
-	.onDestroyFreeTarget = GxOnDestroyFreeTarget,
-	.onDestroyDoNothing = GxOnDestroyDoNothing,
-};

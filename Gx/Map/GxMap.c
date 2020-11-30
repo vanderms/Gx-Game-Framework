@@ -1,9 +1,9 @@
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
 #include "../List/GxList.h"
-#include "../Array/GxArray.h"
+#include "../Array/Array.h"
 #include "../Map/GxMap.h"
 #define SWAP(a, b) {void* temp = a; a = b; b = temp; }
 
@@ -11,7 +11,7 @@ typedef struct GxInt { int value; }GxInt;
 
 static inline GxInt* createInt(int value) {
 	GxInt* self = malloc(sizeof(GxInt));	
-	GxAssertAllocationFailure(self);
+	nsUtil->assertAlloc(self);
 	self->value = value;
 	return self;
 }
@@ -49,17 +49,17 @@ static inline int calcHash(const char* str, Uint32 max) {
 
 GxMap* GmCreateMap() {
 	GxMap* self = malloc(sizeof(GxMap));
-	GxAssertAllocationFailure(self);
+	nsUtil->assertAlloc(self);
 	self->size = 0;
 	self->capacity = 16;
 	
 	//create table
 	self->table = malloc(self->capacity * sizeof(GxList*));	
-	GxAssertAllocationFailure(self->table);
+	nsUtil->assertAlloc(self->table);
 	self->entries = malloc(self->capacity * sizeof(Entry));
-	GxAssertAllocationFailure(self->entries);
+	nsUtil->assertAlloc(self->entries);
 	self->keys = malloc(self->capacity * sizeof(char*));
-	GxAssertAllocationFailure(self->keys);
+	nsUtil->assertAlloc(self->keys);
 	
 	for (Uint32 i = 0; i < self->capacity; i++) {
 		self->table[i] = GxCreateList();
@@ -113,7 +113,7 @@ void* GxMapGet(GxMap* self, const char* key) {
 }
 
 void* GxMapAt(GxMap* self, Uint32 index) {
-	GxAssertOutOfRange(index < self->size);
+	nsUtil->assertOutOfRange(index < self->size);
 	return self->entries[index].value;
 }
 
@@ -142,7 +142,7 @@ void GxMapSet(GxMap* self, const char* key, void* value, GxDestructor dtor) {
 
 	if (!contains) {	
 		//fill bucket
-		char* k = GmCreateString(key);
+		char* k = nsUtil->createString(key);
 		GxInt* index = createInt(self->size);
 		GxListPush(bucket, k, NULL);
 		GxListPush(bucket, index, NULL);
@@ -165,7 +165,7 @@ void GxMapRehash(GxMap* self, Uint32 capacity) {
 
 	//create replacement table
 	GxList** table = malloc(capacity * sizeof(GxList*));
-	GxAssertAllocationFailure(table);
+	nsUtil->assertAlloc(table);
 	
 	for (Uint32 i = 0; i < capacity; i++) {
 		table[i] = GxCreateList();
@@ -186,9 +186,9 @@ void GxMapRehash(GxMap* self, Uint32 capacity) {
 	//swap table and realloc keys and entries
 	SWAP(self->table, table)	
 	self->keys = realloc(self->keys, capacity * sizeof(char*));
-	GxAssertAllocationFailure(self->keys);
+	nsUtil->assertAlloc(self->keys);
 	self->entries = realloc(self->entries, capacity* sizeof(Entry));
-	GxAssertAllocationFailure(self->entries);
+	nsUtil->assertAlloc(self->entries);
 	
 	//destroy previous table
 	for (Uint32 i = 0; i < self->capacity; i++) {
@@ -238,7 +238,7 @@ void GxMapRemove(GxMap* self, const char* key) {
 }
 
 void GxMapRemoveByIndex(GxMap* self, Uint32 index) {
-	GxAssertOutOfRange(index < self->size);
+	nsUtil->assertOutOfRange(index < self->size);
 	char* key = self->keys[index];
 	GxMapRemove(self, key);
 }

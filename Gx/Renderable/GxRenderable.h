@@ -1,6 +1,6 @@
 #ifndef GX_WIDGET_H
 #define GX_WIDGET_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "../Element/GxElement.h"
 
 

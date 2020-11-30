@@ -1,8 +1,8 @@
 #ifndef GX_ELEM_H
 #define GX_ELEM_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "../Ini/GxIni.h"
-#include "../App/GxApp.h"
+#include "../App/App.h"
 #include "../Event/GxEvent.h"
 #include <stdint.h>
 
@@ -14,8 +14,7 @@ GxElement* GxCreateElement(const GxIni* ini);
 void GxDestroyElement_(GxElement* self);
 void GxElemRemove(GxElement* self);
 
-//accessors and mutators
-GxData* GxElemSend(Uint32 receiverid, const char* description, GxData* data);
+
 void* GxElemGetTarget(GxElement* self);
 void GxElemAddRequestHandler(GxElement* self, 
 	const char* request, GxRequestHandler handler

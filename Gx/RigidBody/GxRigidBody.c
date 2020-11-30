@@ -1,8 +1,8 @@
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "../Private/GxElement.h"
 #include "../RigidBody/GxRigidBody.h"
 #include "../Physics/GxPhysics.h"
-#include "../Array/GxArray.h"
+#include "../Array/Array.h"
 #include "../List/GxList.h"
 #include "../Graphics/GxGraphics.h"
 #include "../Scene/GxScene.h"
@@ -47,18 +47,18 @@ typedef struct GxRigidBody {
 
 	//contacts
 	GxList* contacts;
-	GxArray* temp;
+	sArray* temp;
 } GxRigidBody;
 
 GxRigidBody* GxCreateRigidBody_(GxElement* elem, const GxIni* ini) {
 
 	if(ini->body != GxElemFixed && ini->body != GxElemDynamic){
-		GxAssertInvalidArgument(ini->body == GxElemNone);
+		nsUtil->assertArgument(ini->body == GxElemNone);
 		return NULL;
 	}
 
 	GxRigidBody* self = calloc(1, sizeof(GxRigidBody));
-	GxAssertAllocationFailure(self);
+	nsUtil->assertAlloc(self);
 	self->type = ini->body == GxElemFixed ? GxElemFixed : GxElemDynamic;
 	elem->body = self;
 	self->cmask = self->cmask == GxElemDynamic ? GxCmaskDynamic : GxCmaskFixed;	
@@ -74,14 +74,14 @@ GxRigidBody* GxCreateRigidBody_(GxElement* elem, const GxIni* ini) {
 	self->dflag = 0;
 	self->fflag = 0;
 	self->contacts = GxCreateList();
-	self->temp = GxCreateArray();
+	self->temp = nsArr->create();
 	self->groundFlag = 0;
 	return self;
 }
 
 void GxDestroyRigidBody_(GxRigidBody* self) {
 	if (self) {
-		GxDestroyArray(self->temp);
+		nsArr->destroy(self->temp);
 		GxDestroyList(self->contacts);
 		free(self);
 	}
@@ -213,16 +213,16 @@ void GxElemSetMaxgvel(GxElement* self, int value) {
 	if (self->body->maxgvel > 0) self->body->maxgvel *= -1;
 }
 
-GxArray* GxElemGetContacts(GxElement* self, int direction) {
+sArray* GxElemGetContacts(GxElement* self, int direction) {
 	validateElem(self, true, false);
 
-	GxArrayClean(self->body->temp);
+	nsArr->clean(self->body->temp);
 
 	for(GxContact* contact = GxListBegin(self->body->contacts); contact != NULL;
 		contact = GxListNext(self->body->contacts))
 	{
 		if (GxContactHasDirection(contact, direction)) {
-			GxArrayPush(self->body->temp, contact, NULL);
+			nsArr->push(self->body->temp, contact, NULL);
 		}
 	}
 	return self->body->temp;

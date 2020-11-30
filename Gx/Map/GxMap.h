@@ -1,7 +1,7 @@
 #ifndef GX_MAP_H
 #define GX_MAP_H
-#include "../Utilities/GxUtil.h"
-#include "../Array/GxArray.h"
+#include "../Utilities/Util.h"
+#include "../Array/Array.h"
 
 //struct declaration
 typedef struct GxMap GxMap;

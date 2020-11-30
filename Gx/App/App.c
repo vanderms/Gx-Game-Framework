@@ -1,5 +1,5 @@
-#include "../Utilities/GxUtil.h"
-#include "../App/GxApp.h"
+#include "../Utilities/Util.h"
+#include "../App/App.h"
 #include "../Ini/GxIni.h"
 #include "../Scene/GxScene.h"
 #include <stdbool.h>
@@ -10,13 +10,13 @@
 #include "SDL_mixer.h"
 #include "../Map/GxMap.h"
 #include "../Folder/GxFolder.h"
-#include "../Array/GxArray.h"
+#include "../Array/Array.h"
 #include "../List/GxList.h"
 
 #ifdef NDEBUG
-    #define GxDev 0
+    #define GX_DEV 0
 #else
-    #define GxDev 1
+    #define GX_DEV 1
 #endif
 
 //... #forward declarations
@@ -27,7 +27,7 @@ static GxMap* createFontMap(void);
 //struct
 enum AType { IMAGE, MUSIC, SOUND };
 
-typedef struct GxApp {
+typedef struct sApp {
 
     //...
     int status;    
@@ -49,7 +49,7 @@ typedef struct GxApp {
     GxMap* fonts;
 
     //... temporary resources
-    GxArray* temporary;
+    sArray* temporary;
 
     //...assets modules
     GxList* aToLoad;
@@ -57,7 +57,7 @@ typedef struct GxApp {
     GxList* aLoaded;
     uint32_t counter;
     SDL_atomic_t atom;
-} GxApp;
+} sApp;
 
 typedef struct Asset {
     enum AType type;
@@ -75,21 +75,21 @@ static inline void destroyAsset(Asset* self) {
 
 
 //static instance
-static GxApp* self = NULL;
+static sApp* self = NULL;
 
 //constructor and destructor
-GxScene* GxCreateApp(const GxIni* ini) {
+static GxScene* create(const GxIni* ini) {
 
     if(self){ return self->snMain; }
     
-    self = calloc(1, sizeof(GxApp));
-    GxAssertAllocationFailure(self);
+    self = calloc(1, sizeof(sApp));
+    nsUtil->assertAlloc(self);
     self->snActive = NULL;
     self->folders = GmCreateMap();
     self->scenes = GmCreateMap();
     self->colors = createColorMap();
     self->fonts = createFontMap();
-    self->temporary = GxCreateArray();
+    self->temporary = nsArr->create();
     self->aToLoad = GxCreateList();
     self->aLoading = NULL;
     self->aLoaded = NULL;
@@ -99,19 +99,19 @@ GxScene* GxCreateApp(const GxIni* ini) {
    
 	  //init SDL modules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
-       GxRuntimeError(SDL_GetError());
+       nsApp->runtimeError(SDL_GetError());
     }
 
     if (TTF_Init() != 0) {
-         GxRuntimeError(SDL_GetError());
+         nsApp->runtimeError(SDL_GetError());
     }
 
     if (IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) == 0) {
-        GxRuntimeError(SDL_GetError());
+        nsApp->runtimeError(SDL_GetError());
     }
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) != 0) {
-        GxRuntimeError(SDL_GetError());
+        nsApp->runtimeError(SDL_GetError());
     }
 
     SDL_DisplayMode mode;
@@ -119,40 +119,40 @@ GxScene* GxCreateApp(const GxIni* ini) {
     Uint32 bigger = mode.w > mode.h ? mode.w : mode.h;
     Uint32 smaller = mode.w > mode.h ? mode.h : mode.w;
 
-    GxAssertInvalidArgument(ini->window);
-    GxArray* wparams = GmArraySplit(ini->window, "|");
-    GxAssertInvalidArgument(GxArraySize(wparams) == 2);
+    nsUtil->assertArgument(ini->window);
+    sArray* wparams = nsUtil->split(ini->window, "|");
+    nsUtil->assertArgument(nsArr->size(wparams) == 2);
 
     if(strstr(ini->window, "Landscape")){
 	    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
-        self->size.h = atoi(GxArrayAt(wparams, 1));
-        GxAssertInvalidArgument(self->size.h);
+        self->size.h = atoi(nsArr->at(wparams, 1));
+        nsUtil->assertArgument(self->size.h);
         self->size.w = ((double) bigger * self->size.h) / smaller;       
     }
     else if (strstr(ini->window, "Portrait")) {
         SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
-        self->size.w = atoi(GxArrayAt(wparams, 1));
-        GxAssertInvalidArgument(self->size.w);
+        self->size.w = atoi(nsArr->at(wparams, 1));
+        nsUtil->assertArgument(self->size.w);
         self->size.h = ((double) bigger * self->size.w) / smaller;       
     }
-    GxDestroyArray(wparams);
+    nsArr->destroy(wparams);
 
     const char* title = ini->title ? ini->title : "Gx";
     Uint32 flags = SDL_WINDOW_RESIZABLE;
 
-    if (!(strcmp(SDL_GetPlatform(), "Windows") == 0 && GxDev) ||
+    if (!(strcmp(SDL_GetPlatform(), "Windows") == 0 && GX_DEV) ||
         ( strcmp(SDL_GetPlatform(), "Android") == 0)) {             
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     }   
       
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED, self->size.w, self->size.h, flags))) {
-        GxRuntimeError(SDL_GetError());
+        nsApp->runtimeError(SDL_GetError());
     }
 
     if (!(self->renderer = SDL_CreateRenderer(self->window, -1, 
         SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED))) {
-         GxRuntimeError(SDL_GetError());
+         nsApp->runtimeError(SDL_GetError());
     }
 
     //present window
@@ -169,10 +169,10 @@ GxScene* GxCreateApp(const GxIni* ini) {
 
 
 
-SDL_Rect* GxAppCalcDest(SDL_Rect* src, SDL_Rect* dest) {
+static SDL_Rect* calcDest(SDL_Rect* src, SDL_Rect* dest) {
 #define intround(x) ((x) >= 0.0 ? (int) ((x) + 0.5) : (int) ((x) - 0.5))
     GxSize wsize = {0, 0};
-    SDL_GetRendererOutputSize(GxGetSDLRenderer(), &wsize.w, &wsize.h);
+    SDL_GetRendererOutputSize(nsApp->SDLRenderer(), &wsize.w, &wsize.h);
     if (wsize.w == self->size.w) {
         *dest = *src;            
     }
@@ -188,8 +188,8 @@ SDL_Rect* GxAppCalcDest(SDL_Rect* src, SDL_Rect* dest) {
 #undef intround
 }
 
-SDL_Rect* GxAppCalcLabelDest(SDL_Rect* src, SDL_Rect* dest) {
-    GxAppCalcDest(src, dest);
+static SDL_Rect* calcLabelDest(SDL_Rect* src, SDL_Rect* dest) {
+    calcDest(src, dest);
     SDL_Point center = {dest->x + dest->w/2, dest->y + dest->h/2};
     dest->x = center.x - src->w/2;
     dest->y = center.y - src->h/2;
@@ -198,11 +198,11 @@ SDL_Rect* GxAppCalcLabelDest(SDL_Rect* src, SDL_Rect* dest) {
     return dest;
 }
 
-bool GxAppIsCreated_() {
+static bool isCreated() {
     return self;
 }
 
-static void destroyApp_() {
+static void destroy() {
     if (self) {
         SDL_DestroyRenderer(self->renderer);
         SDL_DestroyWindow(self->window);
@@ -211,7 +211,7 @@ static void destroyApp_() {
         GxDestroyList(self->aLoaded);
         GxDestroyMap(self->scenes);
         GxDestroyScene_(self->snMain);
-        GxDestroyArray(self->temporary);
+        nsArr->destroy(self->temporary);
         GxDestroyMap(self->folders);
         GxDestroyMap(self->colors);
         GxDestroyMap(self->fonts);
@@ -225,76 +225,76 @@ static void destroyApp_() {
 }
 
 //acessors and mutators
-SDL_Window* GxGetSDLWindow() {
+static SDL_Window* SDLWindow() {
     return self->window;
 }
 
-SDL_Renderer* GxGetSDLRenderer() {
+static SDL_Renderer* SDLRenderer() {
     return self->renderer;
 }
 
-GxSize GxGetWindowSize() {
+static GxSize logicalSize() {
     return self->size;
 }
 
-bool GxAppIsRunning_() {
+static bool isRunning() {
     return self->status == GxStatusRunning;
 }
 
-void GxAddScene_(GxScene* scene) {
+static void addScene(GxScene* scene) {
     if(self->snMain != NULL){
         GxMapSet(self->scenes, GxSceneGetName(scene), scene, (GxDestructor) GxDestroyScene_);
     }
 }
 
-GxScene* GxGetScene(const char* id) {
+static GxScene* getScene(const char* id) {
     return GxMapGet(self->scenes, id);
 }
 
-void GxAddFolder_(GxFolder* handler) {
+static void addFolder(GxFolder* handler) {
    void GxDestroyFolder_(GxFolder* self);
    GxMapSet(self->folders, GxFolderGetId_(handler), handler, (GxDestructor) GxDestroyFolder_);
 }
 
-GxFolder* GxGetFolder_(const char* id) {
+static GxFolder* getFolder(const char* id) {
     return GxMapGet(self->folders, id);
 }
 
-void GxPushTextureToLoad_(GxImage* image, const char* path) {
+static void loadSDLSurface(GxImage* image, const char* path) {
     Asset* asset = malloc(sizeof(Asset));
-    GxAssertAllocationFailure(asset);
+    nsUtil->assertAlloc(asset);
     *asset = (Asset) {
         .type = IMAGE,
         .mod = image,
-        .path = GmCreateString(path)
+        .path = nsUtil->createString(path)
     };
     GxListPush(self->aToLoad, asset, (GxDestructor) destroyAsset);
 }
 
-void GxPushChunkToLoad_(GxSound* sound, const char* path) {
+static void loadMixChunk(GxSound* sound, const char* path) {
     Asset* asset = malloc(sizeof(Asset));
-    GxAssertAllocationFailure(asset);
+    nsUtil->assertAlloc(asset);
     *asset = (Asset) {
         .type = SOUND,
         .mod = sound,
-        .path = GmCreateString(path)
+        .path = nsUtil->createString(path)
     };
     GxListPush(self->aToLoad, asset, (GxDestructor)  destroyAsset);
 }
 
-void gxPushMusicToLoad_(GxMusic* music, const char* path) {
+static void loadMixMusic(GxMusic* music, const char* path) {
      Asset* asset = malloc(sizeof(Asset));
-     GxAssertAllocationFailure(asset);
+     nsUtil->assertAlloc(asset);
     *asset = (Asset) {
         .type = MUSIC,
         .mod = music,
-        .path = GmCreateString(path)
+        .path = nsUtil->createString(path)
     };
     GxListPush(self->aToLoad, asset, (GxDestructor) destroyAsset);
 }
 
 
-static inline void mainLoadAsset(Asset* asset) {
+static void mainLoadAsset(Asset* asset) {
     if (asset) {
         switch (asset->type) {
             case IMAGE: {
@@ -304,7 +304,7 @@ static inline void mainLoadAsset(Asset* asset) {
                     self->renderer, surface
                 );
                 SDL_FreeSurface(surface);
-                if (!texture) GxRuntimeError(SDL_GetError());
+                if (!texture) nsApp->runtimeError(SDL_GetError());
                 GxImageTextureSetResource_(asset->mod, texture, &size);
                 break;
             }
@@ -320,7 +320,7 @@ static inline void mainLoadAsset(Asset* asset) {
     }
 }
 
-static inline int threadLoadAsset() {
+static int threadLoadAsset() {
 
     for(Asset* asset = GxListBegin(self->aLoading); asset != NULL;
         asset = GxListNext(self->aLoading)){
@@ -341,22 +341,21 @@ static inline int threadLoadAsset() {
                 }
             }
         }
-        if (!asset->resource) GxRuntimeError(SDL_GetError());
+        if (!asset->resource) nsApp->runtimeError(SDL_GetError());
     }
-
 
     SDL_AtomicSet(&self->atom, GxStatusLoaded);
     return 0;
 }
 
 
-void GxAppRun() {
-    GxAssertInvalidOperation(self);
+static void run() {
+    nsUtil->assertState(self);
     self->counter = SDL_GetTicks();
     
     //run
     self->status = GxStatusRunning;
-    GxLoadScene(self->snMain);
+    nsApp->loadScene(self->snMain);
 
     while (self->status == GxStatusRunning) {
 
@@ -421,7 +420,7 @@ void GxAppRun() {
         /* 
             Correct android screen initialization: without this block, in Android
             the first screen shows strange colored images.
-            It's not clear the origin of the bug or if it occurs jut in Android.
+            It's not clear the origin of the bug, if it occurs just in Android or if it occurs just in my old cellphone.
         */
             static int firstScreen = 0;
             if(firstScreen < 30){
@@ -440,19 +439,19 @@ void GxAppRun() {
 
         self->snRunning = self->snMain;
         GxSceneOnLoopEnd_(self->snMain);
-        GxArrayClean(self->temporary);
+        nsArr->clean(self->temporary);
 
          //clear window
         SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);
         SDL_RenderClear(self->renderer);
     }
-    destroyApp_();
+    destroy();
 #ifdef _MSC_VER
     _CrtDumpMemoryLeaks();
 #endif
 }
 
-void GxLoadScene(GxScene* scene) {
+static void loadScene(GxScene* scene) {
 
     if (scene == self->snActive) {
         return;
@@ -470,20 +469,20 @@ void GxLoadScene(GxScene* scene) {
     }
 }
 
-GxScene* GxGetRunningScene() {
+static GxScene* getRunningScene() {
     return self->snRunning;
 }
 
-GxScene* GxGetMainScene(void) {
+static GxScene* getMainScene(void) {
     return self->snMain;
 }
 
 
-void GxAlert(const char* message) {
+static void alert(const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", message, NULL);
 }
 
- void GxRuntimeError(const char* message) {
+ static void runtimeError(const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Runtime Error", message, NULL);
 #ifndef NDEBUG
     SDL_TriggerBreakpoint();
@@ -491,24 +490,24 @@ void GxAlert(const char* message) {
 	exit(EXIT_FAILURE);
 }
 
- void GxPlayMusic(const char* path, int loops) {
+ static void playMusic(const char* path, int loops) {
     Mix_Music* music = GxFolderGetMusic(path);
     Mix_PlayMusic(music, loops);
  }
 
- void GxPlayChunk(const char* path, int loops) {
+static void playChunk(const char* path, int loops) {
     Mix_Chunk* chunk = GxFolderGetChunk(path);
     Mix_PlayChannel(-1, chunk, loops);
  }
 
-static inline void createColor(GxMap* map, const char* name, SDL_Color* color) {
+static void createColor(GxMap* map, const char* name, SDL_Color* color) {
     SDL_Color* ncolor = malloc(sizeof(SDL_Color));
-    GxAssertAllocationFailure(ncolor);
+    nsUtil->assertAlloc(ncolor);
     *ncolor = *color;
     GxMapSet(map, name, ncolor, free);
 }
 
-static inline GxMap* createColorMap() {
+static GxMap* createColorMap() {
 
     GxMap* map = GmCreateMap();
 
@@ -540,11 +539,11 @@ static inline GxMap* createColorMap() {
     return map;
 }
 
-void GxConvertColor(SDL_Color* destination, const char* color) {
+static void convertColor(SDL_Color* destination, const char* color) {
 
     SDL_Color* mapcolor = NULL;
-    char* clone = GxCloneString(color, (char[32]){0}, 32);
-    clone = GxTrim(clone, (char[32]){'\0'}, 32);
+    char* clone = nsUtil->cloneString(color, (char[32]){0}, 32);
+    clone = nsUtil->trim(clone, (char[32]){'\0'}, 32);
     int len = (int) strlen(clone);
 
 	if(clone[0] == '(' && clone[len - 1] == ')'){
@@ -553,13 +552,13 @@ void GxConvertColor(SDL_Color* destination, const char* color) {
 		(clone++)[len - 1] = '\0';
 
 		//get tokens
-        GxArray* tokens = GxTokenize(clone, ",");
-        GxAssertInvalidArgument(GxArraySize(tokens) == 4);
+        sArray* tokens = nsApp->tokenize(clone, ",");
+        nsUtil->assertArgument(nsArr->size(tokens) == 4);
 
-        char* r = GxArrayAt(tokens, 0);
-        char* g = GxArrayAt(tokens, 1);
-        char* b = GxArrayAt(tokens, 2);
-        char* a = GxArrayAt(tokens, 3);
+        char* r = nsArr->at(tokens, 0);
+        char* g = nsArr->at(tokens, 1);
+        char* b = nsArr->at(tokens, 2);
+        char* a = nsArr->at(tokens, 3);
 
 		//assign color components
 		destination->r = (Uint8) atoi(r);
@@ -571,7 +570,7 @@ void GxConvertColor(SDL_Color* destination, const char* color) {
         *destination = *mapcolor;
 	}
     else {
-        GxAssertInvalidArgument(false);
+        nsUtil->assertArgument(false);
     }
 }
 
@@ -579,208 +578,85 @@ void GxConvertColor(SDL_Color* destination, const char* color) {
 static GxMap* createFontMap(void) {
     GxMap* fonts = GmCreateMap();
 #define FPATH "Gx/Font/PTSerif/PTSerif-"
-    GxMapSet(fonts, "Default", GmCreateString(FPATH "Regular.ttf"), free);
-    GxMapSet(fonts, "Italic", GmCreateString(FPATH "Italic.ttf"), free);
-    GxMapSet(fonts, "Bold", GmCreateString(FPATH "Bold.ttf"), free);
-    GxMapSet(fonts, "BoldItalic", GmCreateString(FPATH "BoldItalic.ttf"), free);
+    GxMapSet(fonts, "Default", nsUtil->createString(FPATH "Regular.ttf"), free);
+    GxMapSet(fonts, "Italic", nsUtil->createString(FPATH "Italic.ttf"), free);
+    GxMapSet(fonts, "Bold", nsUtil->createString(FPATH "Bold.ttf"), free);
+    GxMapSet(fonts, "BoldItalic", nsUtil->createString(FPATH "BoldItalic.ttf"), free);
 #undef FPATH
     return fonts;
 }
 
-void GxAddFont(const char* name, const char* path){
-    GxAssertNullPointer(name);
-    GxAssertNullPointer(path);
+static void addFont(const char* name, const char* path){
+   nsUtil->assertNullPointer(name);
+   nsUtil->assertNullPointer(path);
     TTF_Font* teste = TTF_OpenFont(path, 16);
     if (!teste) {
-        GxRuntimeError(GxF("Could not open path %s", path));
+        nsApp->runtimeError(nsApp->sf("Could not open path %s", path));
     }
     TTF_CloseFont(teste);
-    GxMapSet(self->fonts, name, GmCreateString(path), free);    
+    GxMapSet(self->fonts, name, nsUtil->createString(path), free);    
 }
 
-const char* GxGetFontPath_(const char* name) {
+static const char* getFontPath(const char* name) {
     return GxMapGet(self->fonts, name);
 }
 
 
 //... TEMPORARY RESOURCES FUNCTIONS
 
-char* GxF(const char* format, ...) {
-    //... buffer
+static char* sf(const char* format, ...) {   
     static char buffer[1024]; //1kb
-    //...
     va_list args;
 	va_start(args, format);
 	vsnprintf(buffer, 1024, format, args);
 	va_end(args);
-    char* value = GmCreateString(buffer);
-    GxArrayPush(self->temporary, value, free);
+    char* value = nsUtil->createString(buffer);
+    nsArr->push(self->temporary, value, free);
 	return value;
 }
 
-int* GxI(int value) {
-    int* num = malloc(sizeof(int));
-    GxAssertAllocationFailure(num);
-    *num = value;
-    GxArrayPush(self->temporary, num, free);
-    return num;
-}
-
-double* GxD(double value) {
-    double* num = malloc(sizeof(double));
-    GxAssertAllocationFailure(num);
-    *num = value;
-    GxArrayPush(self->temporary, num, free);
-    return num;
-}
-
-bool* GxB(bool value) {
-    bool* boolean = malloc(sizeof(bool));
-    GxAssertAllocationFailure(boolean);
-    *boolean = value;
-    GxArrayPush(self->temporary, boolean, free);
-    return boolean;
-}
-
-Uint32* GxU(Uint32 value) {
-    Uint32* num = malloc(sizeof(Uint32));
-    *num = value;
-    GxArrayPush(self->temporary, num, free);
-    return num;
-}
-
-GxArray* GxTokenize(const char* str, const char* sep){
-    GxArray* response = GmArraySplit(str, sep);
-    GxArrayPush(self->temporary, response, GxDestroyArray);
+static sArray* tokenize(const char* str, const char* sep){
+    sArray* response = nsUtil->split(str, sep);
+    nsArr->push(self->temporary, response, nsArr->destroy);
     return response;
 }
 
-static inline GxData* createData() {
-    GxData* data = malloc(sizeof(GxData));
-    GxAssertAllocationFailure(data);
-    GxArrayPush(self->temporary, data, free);
-    return data;
-}
-/*
-typedef union GxData {
-	int i;
-	Uint32 u;
-	double f;
-	char c;
-	const char* s;
-	void* ptr;
-	GxList* list;
-	GxArray* array;
-	GxMap* map;
-	SDL_Rect rect;
-	SDL_Color color;
-	GxVector vector;
-	GxSize size;
-	SDL_Point point;
-} GxData;
-*/
 
-GxData* GxDataI(const int value) {
-    GxData* data = createData();
-    data->i = value;  
-    return data;
-}
+const sAppNamespace* nsApp = &(sAppNamespace) { 
+	.create = create,
+	.run = run,
+    .isCreated = isCreated,
+    .isRunning = isRunning,
+	.SDLWindow = SDLWindow,
+    .SDLRenderer = SDLRenderer,
+	.getScene = getScene,
+	.logicalSize = logicalSize,
+	.loadScene = loadScene,
+	.addFont = addFont,
+	.getRunningScene = getRunningScene,
+	.getMainScene = getMainScene,
+	.alert = alert,
+	.runtimeError = runtimeError,
+	.playMusic = playMusic,
+	.playChunk = playChunk,
+	.stopMusic = Mix_HaltMusic,
+	.pauseMusic = Mix_PauseMusic,
+	.resumeMusic = Mix_ResumeMusic,
+	.isPlayingMusic = Mix_PlayingMusic,
+	.convertColor = convertColor,	
+	.tokenize = tokenize,
+    .sf = sf,
+    .calcDest = calcDest,
+    .calcLabelDest = calcLabelDest,
+    .prv = &(struct sAppPrivate) {
+		.addScene = addScene,
+		.addFolder = addFolder,
+		.getFolder = getFolder,
+		.getFontPath = getFontPath,
+		.loadSDLSurface = loadSDLSurface,
+		.loadMixChunk = loadMixChunk,
+		.loadMixMusic = loadMixMusic,
+	},
+};
 
-GxData* GxDataU(const Uint32 value) {
-    GxData* data = createData();
-    data->u = value;
-    return data;
-}
 
-GxData* GxDataF(const double value) {
-    GxData* data = createData();
-    data->f = value;
-    return data;
-}
-
-GxData* GxDataB(const bool value) {
-    GxData* data = createData();
-    data->b = value;  
-    return data;
-}
-
-GxData* GxDataC(const char value) {
-    GxData* data = createData();
-    data->c = value;
-    return data;
-}
-
-GxData* GxDataSF(const char* format, ...) {    
-    static char buffer[1024];    
-    va_list args;
-	va_start(args, format);
-	vsnprintf(buffer, 1024, format, args);
-	va_end(args);
-    char* value = GmCreateString(buffer);
-    GxArrayPush(self->temporary, value, free);
-    GxData* data = createData();
-    data->s = value;
-	return data;
-}
-
-GxData* GxDataPtr(const void* value) {
-    GxData* data = createData();
-    data->ptr = value;
-    return data;
-}
-
-GxData* GxDataList(void) {
-    GxData* data = createData();
-    data->list = GxCreateList();
-    GxArrayPush(self->temporary, data->list, GxDestroyList);
-    return data;
-}
-
-GxData* GxDataArray(void) {
-    GxData* data = createData();
-    data->array = GxCreateArray();
-    GxArrayPush(self->temporary, data->array, GxDestroyArray);
-    return data;
-}
-
-GxData* GxDataMap(void) {
-    GxData* data = createData();
-    data->map = GmCreateMap();
-    GxArrayPush(self->temporary, data->map, GxDestroyMap);
-    return data;
-}
-
-GxData* GxDataRect(const SDL_Rect* rect) {
-    GxAssertNullPointer(rect);
-    GxData* data = createData();
-    data->rect = *rect;
-    return data;
-}
-
-GxData* GxDataVector(const GxVector* vector) {
-    GxAssertNullPointer(vector);
-    GxData* data = createData();
-    data->vector = *vector;
-    return data;
-}
-
-GxData* GxDataPoint(const SDL_Point* point) {
-    GxAssertNullPointer(point);
-    GxData* data = createData();
-    data->point = *point;
-    return data;
-}
-
-GxData* GxDataSize(const GxSize* size) {
-    GxAssertNullPointer(size);
-    GxData* data = createData();
-    data->size = *size;
-    return data;
-}
-
-GxData* GxDataMatrix(const GxMatrix* matrix) {
-    GxAssertNullPointer(matrix);
-    GxData* data = createData();
-    data->matrix = *matrix;
-    return data;
-}

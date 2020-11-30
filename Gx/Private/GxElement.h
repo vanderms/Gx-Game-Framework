@@ -1,6 +1,6 @@
 #ifndef GX_PRIVATE_H
 #define GX_PRIVATE_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 
 //... MAIN STRUCT
 typedef struct GxElement {
@@ -9,7 +9,7 @@ typedef struct GxElement {
 	uint32_t hash;
 	Uint32 id;	
 	char* className;
-	GxArray* classList;
+	sArray* classList;
 	GxScene* scene;
 	SDL_Rect* pos;
 	
@@ -37,11 +37,11 @@ void GxDestroyRigidBody_(GxRigidBody* self);
 
 #define validateElem(self, body_, renderable_)\
 {\
-	GxAssertNullPointer(self);\
+	nsUtil->assertNullPointer(self);\
 	uint32_t hash = *(uint32_t*) (self);\
-	GxAssertInvalidHash(hash == GxHashElement_);\
-	if(body_) GxAssertNotImplemented(self->body);\
-	if(renderable_) GxAssertNotImplemented(self->renderable);\
+	nsUtil->assertHash(hash == nsUtil->hash->ELEMENT);\
+	if(body_) nsUtil->assertImplementation(self->body);\
+	if(renderable_) nsUtil->assertImplementation(self->renderable);\
 }
 
 
@@ -71,7 +71,7 @@ typedef struct GxRenderable {
 	int zIndex;
 	SDL_RendererFlip orientation;
 	char* asset;
-	GxArray* folders;
+	sArray* folders;
 	Uint8 opacity;
 	GxImage* image;
 	GxAnimation* animation;

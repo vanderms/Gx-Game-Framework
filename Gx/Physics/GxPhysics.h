@@ -1,6 +1,6 @@
 #ifndef GX_PHYSICS_H
 #define GX_PHYSICS_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 
 //constructor and destructors
 GxPhysics* GxCreatePhysics_(GxScene* scene);

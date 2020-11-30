@@ -1,6 +1,6 @@
 #ifndef GX_RIGID_BODY_H
 #define GX_RIGID_BODY_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "../Element/GxElement.h"
 
 bool GxElemIsOnGround(GxElement* self);
@@ -36,7 +36,7 @@ void GxElemSetRestitution(GxElement* self, double restitution);
 int GxElemGetMaxgvel(GxElement* self);
 void GxElemSetMaxgvel(GxElement* self, int value);
 
-GxArray* GxElemGetContacts(GxElement* self, int types);
+sArray* GxElemGetContacts(GxElement* self, int types);
 GxList* GxElemGetContactList_(GxElement* self);
 
 void elemAddContact_(GxElement * self, GxContact * contact);

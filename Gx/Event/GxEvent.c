@@ -33,13 +33,6 @@ bool GxEventIniHasHandler_(const GxIni* ini) {
         ini->onContactBegin || ini->onContactEnd || ini->onDestroy);
 }
 
-void GxOnDestroyFreeTarget(GxEvent* e) {
-    free(e->target);
-}
-
-void GxOnDestroyDoNothing(GxEvent* e) {
-    (void) e;
-}
 
 
 
@@ -47,9 +40,9 @@ GxRequestData* GxCreateRequestData_(void* target,
     const char* request, GxRequestHandler handler
 ){
     GxRequestData* self = malloc(sizeof(GxRequestData));
-    GxAssertNullPointer(self);
+   nsUtil->assertNullPointer(self);
     self->target = target;
-    self->request = GmCreateString(request);
+    self->request = nsUtil->createString(request);
     self->handler = handler;
     return self;
 }

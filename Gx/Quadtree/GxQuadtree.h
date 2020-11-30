@@ -1,6 +1,6 @@
 #ifndef GX_QUADTREE_H
 #define GX_QUADTREE_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 
 typedef struct GxQtree GxQtree;
 

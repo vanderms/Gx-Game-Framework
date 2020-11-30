@@ -1,6 +1,6 @@
 #ifndef GX_LIST_H
 #define GX_LIST_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 
 //struct declaration
 typedef struct GxList GxList;

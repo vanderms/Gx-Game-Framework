@@ -1,8 +1,8 @@
 #ifndef GX_SCENE_H
 #define GX_SCENE_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "../Event/GxEvent.h"
-#include "../App/GxApp.h"
+#include "../App/App.h"
 
 //struct declaration 
 typedef struct GxScene GxScene;
@@ -12,7 +12,6 @@ GxScene* GxCreateScene(const GxIni* ini);
 void GxDestroyScene_(GxScene* self);
 
 //acessors and mutators
-GxData* GxSceneSend(GxScene* self, const char* description, GxData* data);
 Uint32 GxSceneGetPercLoaded(GxScene* self);
 const char* GxSceneGetName(GxScene* self);
 void GxSceneExecuteElemChildDtor_(GxScene* self, void* child);

@@ -1,6 +1,6 @@
 #ifndef GX_MODULE_H
 #define GX_MODULE_H
-#include "../Utilities/GxUtil.h"
+#include "../Utilities/Util.h"
 #include "SDL.h"
 #include "SDL_mixer.h"
 
@@ -39,13 +39,15 @@ void GxLoadImage(const char* id, const char* path, SDL_Rect* src, double proport
 
 void GxDestroyImage_(GxImage* self);
 
+void GxFolderRemoveAsset(const char* path);
+
 void GxLoadTileset(const char* id, const char* pathF, int start, int end, double proportion);
 
-void GxSplitAssetPath_(const char* path, char* folder, char* asset);
+
 
 void GxCreateTiles(const char* image, GxSize size, GxMatrix matrix);
 
-GxImage* GxCreateTilePalette_(GxFolder* folder,
+void GxFolderCreateTilemap(const char* folderName, const char* name,
     const char* group, GxSize size, GxMatrix matrix, int* sequence
 );
 

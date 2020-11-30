@@ -7,8 +7,6 @@
 #include <crtdbg.h>
 #endif
 
-
-
 #include "SDL.h"
 #include "SDL_mixer.h"
 #include "SDL_ttf.h"
@@ -26,7 +24,7 @@ typedef Uint32 GxElemID;
 
 //... TYPES :: FORWARD DECLARATION
 typedef struct GxList GxList;
-typedef struct GxArray GxArray;
+typedef struct sArray sArray;
 typedef struct GxMap GxMap;
 typedef struct GxIni GxIni;
 typedef struct GxIEventHandler GxIEventHandler;
@@ -69,35 +67,6 @@ typedef struct GxEvent {
 	union { GxContact* contact; SDL_Event* sdle; };
 } GxEvent;
 
-typedef union GxData {
-	int i;
-	Uint32 u;
-	char c;
-	bool b;
-	double f;	
-	const char* s;
-	const void* ptr;
-	GxList* list;
-	GxArray* array;
-	GxMap* map;
-	SDL_Rect rect;	
-	GxVector vector;
-	GxSize size;
-	SDL_Point point;
-	GxMatrix matrix;
-} GxData;
-
-typedef struct GxRequest {
-	void* target;
-	const char* request;
-	GxData* data;
-} GxRequest;
-
-typedef struct GxResponse {
-	GxData* value;
-}GxResponse;
-
-
 static inline void GxAssertion_(bool condition, const char* error) {
 	if (!condition) {		
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Runtime Error", error, NULL);
@@ -112,19 +81,6 @@ static inline void GxAssertion_(bool condition, const char* error) {
 #define	GxCmaskCamera 1u << 30
 #define	GxCmaskDynamic 1 << 0
 #define	GxCmaskFixed (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7)
-
-#define GxButtonKeyboard (1u << 0)
-#define	GxButtonFinger (1u << 1)
-#define	GxButtonMouse (1u << 2)
-#define	GxButtonScreen (GxButtonFinger | GxButtonMouse)
-
-#define	GxButtonNone (0u)
-#define GxButtonOn (1u << 8)
-#define	GxButtonHover (1u << 9)
-#define	GxButtonClick (1u << 10)
-#define	GxButtonDown (1u << 11)
-#define	GxButtonUp  (1u << 12)
-
 
 typedef enum GxContactConstant {
 	GxContactRight = 1 << 0,
