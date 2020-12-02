@@ -18,26 +18,24 @@
 
 //... TYPES :: ALIAS
 typedef SDL_Rect SDL_Rect;
-typedef SDL_Point GxPoint;
-typedef SDL_Point GxVector;
+typedef SDL_Point sPoint;
+typedef SDL_Point sVector;
 typedef Uint32 GxElemID;
 
 //... TYPES :: FORWARD DECLARATION
 typedef struct GxList GxList;
 typedef struct sArray sArray;
 typedef struct GxMap GxMap;
-typedef struct GxIni GxIni;
+typedef struct sIni sIni;
 typedef struct GxIEventHandler GxIEventHandler;
 typedef struct GxEvent GxEvent;
 typedef struct GxRequest GxRequest;
 typedef struct GxResponse GxResponse;
 typedef struct GxScene GxScene;
-typedef struct GxElement GxElement;
+typedef struct sElement sElement;
 typedef struct GxGraphics GxGraphics;
 typedef struct GxPhysics GxPhysics;
 typedef struct GxContact GxContact;
-typedef struct GxRigidBody GxRigidBody;
-typedef struct GxRenderable GxRenderable;
 typedef struct GxImage GxImage;
 typedef struct GxAnimation GxAnimation;
 typedef struct GxFolder GxFolder;

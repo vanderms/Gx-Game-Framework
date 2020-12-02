@@ -8,7 +8,7 @@
 typedef struct GxScene GxScene;
 
 //constructor and destructor
-GxScene* GxCreateScene(const GxIni* ini);
+GxScene* GxCreateScene(const sIni* ini);
 void GxDestroyScene_(GxScene* self);
 
 //acessors and mutators
@@ -24,18 +24,18 @@ void GxSceneDelegate(GxScene* self, const char* sceneReq,
 GxSize GxSceneGetSize(GxScene* self);
 bool GxSceneHasStatus(GxScene* self, int status);
 int GxSceneGetStatus(GxScene* self);
-GxElement* GxSceneGetElement(GxScene* self, Uint32 id);
+sElement* GxSceneGetElement(GxScene* self, Uint32 id);
 int GxSceneGetGravity(GxScene* self);
 bool GxSceneHasGravity(GxScene* self);
 GxPhysics* GxSceneGetPhysics(GxScene* self);
 GxGraphics* GxSceneGetGraphics(GxScene* self);
-GxElement* GxSceneGetCamera(GxScene* self);
+sElement* GxSceneGetCamera(GxScene* self);
 void GxSceneSetGravity(GxScene* self, int gravity);
 void GxSceneSetTimeout(GxScene* self, int interval, GxHandler callback, void* target);
-Uint32 GxSceneAddElement_(GxScene* self, GxElement* elem);
-void GxSceneRemoveElement_ (GxScene* self, GxElement* elem);
-void GxSceneSubscribeElemListeners_(GxScene* self, GxElement* elem);
-void GxSceneUnsubscribeElemListeners_(GxScene* self, GxElement* elem);
+Uint32 GxSceneAddElement_(GxScene* self, sElement* elem);
+void GxSceneRemoveElement_ (GxScene* self, sElement* elem);
+void GxSceneSubscribeElemListeners_(GxScene* self, sElement* elem);
+void GxSceneUnsubscribeElemListeners_(GxScene* self, sElement* elem);
 void GxSceneAddEventListener(GxScene* self, int type, GxHandler handler, void* target);
 bool GxSceneRemoveEventListener(GxScene* self, int type, GxHandler handler, void* target);
 

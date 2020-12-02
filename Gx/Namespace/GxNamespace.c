@@ -3,9 +3,9 @@
 #include "../Array/Array.h"
 #include "../Map/GxMap.h"
 #include "../List/GxList.h"
-#include "../Element/GxElement.h"
-#include "../Renderable/GxRenderable.h"
-#include "../RigidBody/GxRigidBody.h"
+#include "../sElement/sElement.h"
+#include "../Renderable/sElemRenderable.h"
+#include "../RigidBody/sElemBody.h"
 #include "../App/App.h"
 #include "../Scene/GxScene.h"
 #include "../Physics/GxPhysics.h"
@@ -20,8 +20,7 @@ const GxElemNamespace GxElemNamespaceInstance = {
 	.create = GxCreateElement,	
 	.createTilemap = NULL,	
 	.remove = GxElemRemove,
-	.getTarget = GxElemGetTarget,	
-	.addRequestHandler = GxElemAddRequestHandler,
+	.getTarget = GxElemGetTarget,		
 	.getID = GxElemGetId,
 	.getScene = GxElemGetScene,
 	.getPos = GxElemGetPosition,
@@ -35,9 +34,7 @@ const GxElemNamespace GxElemNamespaceInstance = {
 	.hasDynamicBody = GxElemHasDynamicBody,	
 	.hasFixedBody = GxElemHasFixedBody,
 	.hasRelativePosition = GxElemHasRelativePosition,
-	.hasAbsolutePosition = GxElemHasAbsolutePosition,
-	.setChild = GxElemSetChild,
-	.getChild = GxElemGetChild,	
+	.hasAbsolutePosition = GxElemHasAbsolutePosition,	
 	//...body
 	.isOnGround = GxElemIsOnGround,
 	.getCmask = GxElemGetCmask,

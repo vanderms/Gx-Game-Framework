@@ -24,7 +24,7 @@ static sArray* create(void){
 	sArray* self = malloc(sizeof(sArray));	
 	//create attributes    
     self->entries = malloc(sizeof(ArrData) * 8);
-    nsUtil->assertAlloc(self->entries);
+    nUtil->assertAlloc(self->entries);
     self->capacity = 8;  
     self->size = 0;  
     return self;
@@ -54,7 +54,7 @@ static Uint32 getCapacity(sArray* self){
 
 //methods
 static void* at(sArray* self, Uint32 index) {    
-   nsUtil->assertOutOfRange(index < self->size);
+   nUtil->assertOutOfRange(index < self->size);
     return self->entries[index].value;
 }
 
@@ -84,7 +84,7 @@ static void push(sArray* self, void* value, GxDestructor dtor){
 
 
 static void removeByIndex(sArray* self, Uint32 index) {       
-   nsUtil->assertOutOfRange(index < self->size);
+   nUtil->assertOutOfRange(index < self->size);
     if (self->entries[index].dtor) {
         self->entries[index].dtor(self->entries[index].value);
     }
@@ -105,7 +105,7 @@ static int removeByValue(sArray* self, void* value) {
 static int64_t indexOf(sArray* self, void* value) {   
     int64_t index = -1;
     for (Uint32 i = 0; i < self->size; i++) {
-        if (value == nsArr->at(self, i)) {
+        if (value == nArr->at(self, i)) {
             index = i;
             break;
         }
@@ -116,7 +116,7 @@ static int64_t indexOf(sArray* self, void* value) {
 static void reserve(sArray* self, Uint32 capacity) {   
     if (self->capacity >= capacity) return;
     self->entries = realloc(self->entries, sizeof(ArrData) * capacity); 
-    nsUtil->assertAlloc(self->entries);
+    nUtil->assertAlloc(self->entries);
     self->capacity = capacity;
 }
 
@@ -127,7 +127,7 @@ static void clean(sArray* self) {
         }
         free(self->entries);
         self->entries = malloc(sizeof(ArrData) * 8); 
-        nsUtil->assertAlloc(self->entries);
+        nUtil->assertAlloc(self->entries);
         self->capacity = 8;
         self->size = 0;
     }
@@ -151,7 +151,7 @@ void sort(sArray* self, GxComp compare) {
 
 
 
-const sArrayNamespace* nsArr = &(sArrayNamespace){
+const sArrayNamespace* nArr = &(sArrayNamespace){
 	.create = create,
 	.destroy = destroy,
 	.size = getSize,

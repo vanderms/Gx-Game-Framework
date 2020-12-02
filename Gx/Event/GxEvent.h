@@ -9,8 +9,8 @@ typedef struct GxRequestData {
 }GxRequestData;
 
 
-void GxEventSetHandlers_(GxHandler* ihandlers, const GxIni* ini);
-bool GxEventIniHasHandler_(const GxIni* ini);
+void GxEventSetHandlers_(GxHandler* ihandlers, const sIni* ini);
+bool GxEventIniHasHandler_(const sIni* ini);
 void GxOnDestroyFreeTarget(GxEvent* e);
 void GxOnDestroyDoNothing(GxEvent* e);
 

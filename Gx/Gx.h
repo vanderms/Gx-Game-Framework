@@ -10,7 +10,7 @@ typedef SDL_Point Point;
 typedef SDL_Point Vector;
 typedef GxSize Size;
 typedef GxMatrix Matrix;
-typedef GxIni Ini;
+typedef sIni sIni;
 typedef GxList List;
 typedef sArray Array;
 typedef GxMap Map;
@@ -18,7 +18,7 @@ typedef GxEvent Event;
 typedef GxRequest Request;
 typedef GxResponse Response;
 typedef GxScene Scene;
-typedef GxElement Element;
+typedef sElement sElement;
 typedef GxContact Contact;
 typedef GxElemID ElemID;
 

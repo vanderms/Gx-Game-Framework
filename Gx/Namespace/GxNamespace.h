@@ -1,7 +1,7 @@
 #ifndef GX_H
 #define GX_H
 #include "../Public/GxPublic.h"
-#include "../Ini/GxIni.h"
+#include "../Ini/Ini.h"
 #include "../App/App.h"
 
 //... NAMESPACES
@@ -37,124 +37,124 @@ struct sEventNamespace {
 
 typedef struct GxElemNamespace {
 	
-	//...Element
-	GxElement* (*create)(const GxIni* ini);	
-	GxElement* (*createTilemap)(const char* tilePath, const GxIni* ini);	
-	void (*remove)(GxElement* self);	
-	void* (*getTarget)(GxElement* self);
-	Uint32 (*getID)(GxElement* self);
-	GxScene* (*getScene)(GxElement* self);
+	//...sElement
+	sElement* (*create)(const sIni* ini);	
+	sElement* (*createTilemap)(const char* tilePath, const sIni* ini);	
+	void (*remove)(sElement* self);	
+	void* (*getTarget)(sElement* self);
+	Uint32 (*getID)(sElement* self);
+	GxScene* (*getScene)(sElement* self);
 
-	const SDL_Rect* (*getPos)(GxElement* self);
-	void (*setPos)(GxElement* self, SDL_Rect pos);
-	GxPoint (*getCenter)(GxElement* self);
+	const SDL_Rect* (*getPos)(sElement* self);
+	void (*setPos)(sElement* self, SDL_Rect pos);
+	sPoint (*getCenter)(sElement* self);
 	
-	const char* (*getClassName)(GxElement* self);
-	bool (*hasClass)(GxElement* self, const char* type);
+	const char* (*getClassName)(sElement* self);
+	bool (*hasClass)(sElement* self, const char* type);
 	
-	bool (*hasHandler)(GxElement* self, int type);
-	GxHandler (*getHandler)(GxElement* self, int type);	
-	void (*addRequestHandler)(GxElement* self, const char* request, GxRequestHandler handler);
+	bool (*hasHandler)(sElement* self, int type);
+	GxHandler (*getHandler)(sElement* self, int type);	
+	void (*addRequestHandler)(sElement* self, const char* request, GxRequestHandler handler);
 	
-	bool (*isPhysical)(GxElement* self);
-	bool (*isRenderable)(GxElement* self);
-	bool (*hasDynamicBody)(GxElement* self);
-	bool (*hasFixedBody)(GxElement* self);
-	bool (*hasRelativePosition)(GxElement* self);
-	bool (*hasAbsolutePosition)(GxElement* self);	
+	bool (*isPhysical)(sElement* self);
+	bool (*isRenderable)(sElement* self);
+	bool (*hasDynamicBody)(sElement* self);
+	bool (*hasFixedBody)(sElement* self);
+	bool (*hasRelativePosition)(sElement* self);
+	bool (*hasAbsolutePosition)(sElement* self);	
 	
-	void (*setChild)(GxElement* self, void* child);
-	void* (*getChild)(GxElement* self);
+	void (*setChild)(sElement* self, void* child);
+	void* (*getChild)(sElement* self);
 	
 	//...RigidBody
-	bool (*isOnGround)(GxElement* self);
+	bool (*isOnGround)(sElement* self);
 
-	Uint32 (*getCmask)(GxElement* self);
-	void (*setCmask)(GxElement* self, Uint32 mask);
+	Uint32 (*getCmask)(sElement* self);
+	void (*setCmask)(sElement* self, Uint32 mask);
 
-	int (*getPreference)(GxElement* self);
-	void (*setPreference)(GxElement* self, int value);
+	int (*getPreference)(sElement* self);
+	void (*setPreference)(sElement* self, int value);
 
-	bool (*hasFriction)(GxElement* self);
-	void (*setFriction)(GxElement* self, bool value);
+	bool (*hasFriction)(sElement* self);
+	void (*setFriction)(sElement* self, bool value);
 
-	GxVector (*getVelocity)(GxElement* self);
-	void (*setVelocity)(GxElement* self, GxVector velocity);
+	sVector (*getVelocity)(sElement* self);
+	void (*setVelocity)(sElement* self, sVector velocity);
 
-	int (*getVely)(GxElement* self);
-	void (*setVely)(GxElement* self, int vel);
+	int (*getVely)(sElement* self);
+	void (*setVely)(sElement* self, int vel);
 
-	int (*getVelx)(GxElement* self);
-	void (*setVelx)(GxElement* self, int vel);
+	int (*getVelx)(sElement* self);
+	void (*setVelx)(sElement* self, int vel);
 
-	void (*accelerate)(GxElement* self, double x, double y);
+	void (*accelerate)(sElement* self, double x, double y);
 
-	bool (*isMoving)(GxElement* self);
+	bool (*isMoving)(sElement* self);
 
-	double (*getElasticity)(GxElement* self);
-	void (*setElasticity)(GxElement* self, double elasticity);
+	double (*getElasticity)(sElement* self);
+	void (*setElasticity)(sElement* self, double elasticity);
 
-	double (*getRestitution)(GxElement* self);
-	void (*setRestitution)(GxElement* self, double restitution);
+	double (*getRestitution)(sElement* self);
+	void (*setRestitution)(sElement* self, double restitution);
 
-	int (*getMaxgvel)(GxElement* self);
-	void (*setMaxgvel)(GxElement* self, int value);
+	int (*getMaxgvel)(sElement* self);
+	void (*setMaxgvel)(sElement* self, int value);
 
-	sArray* (*getContacts)(GxElement* self, int types);	
+	sArray* (*getContacts)(sElement* self, int types);	
 
-	GxVector (*move)(GxElement* self, GxVector vector, bool force);
-	void (*moveTo)(GxElement* self, GxPoint pos, bool force);
+	sVector (*move)(sElement* self, sVector vector, bool force);
+	void (*moveTo)(sElement* self, sPoint pos, bool force);
 
 	//..Renderable	
-	int (*getZIndex)(GxElement* self);
-	void (*setZIndex)(GxElement* self, int index);
+	int (*getZIndex)(sElement* self);
+	void (*setZIndex)(sElement* self, int index);
 
-	Uint8 (*getOpacity)(GxElement* self);
-	void (*setOpacity)(GxElement* self, Uint8 value);
+	Uint8 (*getOpacity)(sElement* self);
+	void (*setOpacity)(sElement* self, Uint8 value);
 
-	int (*getOrientation)(GxElement* self);
-	void (*setOrientation)(GxElement* self, int value);
+	int (*getOrientation)(sElement* self);
+	void (*setOrientation)(sElement* self, int value);
 
-	const char* (*getImage)(GxElement* self);
-	void (*setImage)(GxElement* self, const char* path);
+	const char* (*getImage)(sElement* self);
+	void (*setImage)(sElement* self, const char* path);
 
-	const char* (*getAnimation)(GxElement* self);
-	void (*setAnimation)(GxElement* self, const char* path);
+	const char* (*getAnimation)(sElement* self);
+	void (*setAnimation)(sElement* self, const char* path);
 
-	const char* (*getAlignment)(GxElement* self);
-	void (*setAlignment)(GxElement* self, const char* value);
+	const char* (*getAlignment)(sElement* self);
+	void (*setAlignment)(sElement* self, const char* value);
 
-	bool (*isHidden)(GxElement* self);
-	void (*hide)(GxElement* self);
-	void (*show)(GxElement* self);
+	bool (*isHidden)(sElement* self);
+	void (*hide)(sElement* self);
+	void (*show)(sElement* self);
 
-	double (*getAngle)(GxElement* self);
-	void (*setAngle)(GxElement* self, double angle);
+	double (*getAngle)(sElement* self);
+	void (*setAngle)(sElement* self, double angle);
 
-	double (*getProportion)(GxElement* self);
-	void (*setProportion)(GxElement* self, double proportion);
-	void (*setToFit)(GxElement* self, const char* axis);
+	double (*getProportion)(sElement* self);
+	void (*setProportion)(sElement* self, double proportion);
+	void (*setToFit)(sElement* self, const char* axis);
 		
-	const SDL_Color* (*getBackgroundColor)(GxElement* self);
-	void (*setBackgroundColor)(GxElement* self, const char* color);
+	const SDL_Color* (*getBackgroundColor)(sElement* self);
+	void (*setBackgroundColor)(sElement* self, const char* color);
 
-	int (*getBorderSize)(GxElement* self);	
-	const SDL_Color* (*getBorderColor)(GxElement* self);
-	void (*setBorder)(GxElement* self, const char* border);
+	int (*getBorderSize)(sElement* self);	
+	const SDL_Color* (*getBorderColor)(sElement* self);
+	void (*setBorder)(sElement* self, const char* border);
 
-	void (*setText)(GxElement* self, const char* text, ...);	
-	const char* (*getText)(GxElement* self);
+	void (*setText)(sElement* self, const char* text, ...);	
+	const char* (*getText)(sElement* self);
 	
-	void (*setFontSize)(GxElement* self, int size);
-	int (*getFontSize)(GxElement* self);
+	void (*setFontSize)(sElement* self, int size);
+	int (*getFontSize)(sElement* self);
 
-	void (*setFont)(GxElement* self, const char* font);
-	const char* (*getFont)(GxElement* self);
+	void (*setFont)(sElement* self, const char* font);
+	const char* (*getFont)(sElement* self);
 
-	const SDL_Color* (*getColor)(GxElement* self);
-	void (*setColor)(GxElement* self, const char* color);	
+	const SDL_Color* (*getColor)(sElement* self);
+	void (*setColor)(sElement* self, const char* color);	
 
-	SDL_Rect (*getPositionOnWindow)(GxElement* self);
+	SDL_Rect (*getPositionOnWindow)(sElement* self);
 		
 	const int NONE;
 	const int ABSOLUTE;
@@ -227,18 +227,18 @@ typedef struct GxMapNamespace {
 
 
 typedef struct GxContactNamespace {	
-	GxElement* (*getColliding)(GxContact* contact);
-	GxElement* (*getCollided)(GxContact* contact);
-	bool (*isBetween)(GxContact* contact, GxElement* self, GxElement* other);
-	bool (*hasElement)(GxContact* contact, GxElement* element);
+	sElement* (*getColliding)(GxContact* contact);
+	sElement* (*getCollided)(GxContact* contact);
+	bool (*isBetween)(GxContact* contact, sElement* self, sElement* other);
+	bool (*hasElement)(GxContact* contact, sElement* element);
 	bool (*hasDirection)(GxContact* contact, Uint32 direction);
 	Uint32 (*getDirection)(GxContact* contact);
-	GxElement* (*getOppositeElement)(GxContact* contact, GxElement* self);	
+	sElement* (*getOppositeElement)(GxContact* contact, sElement* self);	
 	void (*allowCollision)(GxContact* contact);
-	bool (*isElemRightContact)(GxContact* contact, GxElement* self);
-	bool (*isElemLeftContact)(GxContact* contact, GxElement* self);
-	bool (*isElemDownContact)(GxContact* contact, GxElement* self);
-	bool (*isElemUpContact)(GxContact* contact, GxElement* self);
+	bool (*isElemRightContact)(GxContact* contact, sElement* self);
+	bool (*isElemLeftContact)(GxContact* contact, sElement* self);
+	bool (*isElemDownContact)(GxContact* contact, sElement* self);
+	bool (*isElemUpContact)(GxContact* contact, sElement* self);
 	void (*oneWayPlatform)(GxEvent* e);
 	const GxContactConstant RIGHT;
 	const GxContactConstant LEFT;
@@ -265,17 +265,17 @@ struct GxStatusNamespace {
 
 typedef struct GxSceneNamespace {
 		
-	GxScene* (*create)(const GxIni* ini);		
+	GxScene* (*create)(const sIni* ini);		
 	void (*addRequestHandler)(GxScene* receiver, const char* request, GxRequestHandler handler);	
 	Uint32 (*getPercLoaded)(GxScene* self);
 	const char* (*getName)(GxScene* self);
 	GxSize (*getSize)(GxScene* self);
 	bool (*hasStatus)(GxScene* self, int status);
 	int (*getStatus)(GxScene* self);
-	GxElement* (*getElem)(GxScene* self, Uint32 id);
+	sElement* (*getElem)(GxScene* self, Uint32 id);
 	int (*getGravity)(GxScene* self);
 	bool (*hasGravity)(GxScene* self);
-	GxElement* (*getCamera)(GxScene* self);	
+	sElement* (*getCamera)(GxScene* self);	
 	void (*setGravity)(GxScene* self, int gravity);
 	void (*setTimeout)(GxScene* self, int interval, GxHandler callback, void* target);	
 	void (*addEventListener)(GxScene* self, int type, GxHandler handler, void* target);

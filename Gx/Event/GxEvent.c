@@ -1,7 +1,7 @@
 #include "../Event/GxEvent.h"
-#include "../Ini/GxIni.h"
+#include "../Ini/Ini.h"
 
-void GxEventSetHandlers_(GxHandler* handlers, const GxIni* ini) {
+void GxEventSetHandlers_(GxHandler* handlers, const sIni* ini) {
       
     //lifecycle
 	handlers[GxEventOnLoad] = ini->onLoad;
@@ -25,7 +25,7 @@ void GxEventSetHandlers_(GxHandler* handlers, const GxIni* ini) {
     handlers[GxEventOnDestroy] = ini->onDestroy;    
 }
 
-bool GxEventIniHasHandler_(const GxIni* ini) {
+bool GxEventIniHasHandler_(const sIni* ini) {
     return ( ini->onLoad || ini->onLoopBegin || ini->onUpdate ||
         ini->onPreGraphical || ini->onPreRender || ini->onLoopEnd ||
         ini->onUnload || ini->onKeyboard || ini->onMouse ||
@@ -40,9 +40,9 @@ GxRequestData* GxCreateRequestData_(void* target,
     const char* request, GxRequestHandler handler
 ){
     GxRequestData* self = malloc(sizeof(GxRequestData));
-   nsUtil->assertNullPointer(self);
+   nUtil->assertNullPointer(self);
     self->target = target;
-    self->request = nsUtil->createString(request);
+    self->request = nUtil->createString(request);
     self->handler = handler;
     return self;
 }

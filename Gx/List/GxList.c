@@ -34,7 +34,7 @@ typedef struct GxList {
 
 GxList* GxCreateList() {
 	GxList* self = malloc(sizeof(GxList));	
-	nsUtil->assertAlloc(self);
+	nUtil->assertAlloc(self);
 	self->size = 0;
 	self->first = NULL;
 	self->last = NULL;
@@ -62,7 +62,7 @@ void* GxListLast(GxList* self) {
 }
 
 static inline ListNode* listGetNodeByIndex(GxList* self, int index) {
-	nsUtil->assertOutOfRange(index >= 0 && index < self->size);	
+	nUtil->assertOutOfRange(index >= 0 && index < self->size);	
 	 ListNode* node = NULL;
 	 if (index < (self->size / 2)) {
 		 node = self->first;
@@ -207,7 +207,7 @@ bool GxListRemove(GxList* self, void* value) {
 }
 
 bool GxListRemoveByIndex(GxList* self, int index) {
-	nsUtil->assertOutOfRange(index >= 0 && index < self->size);	
+	nUtil->assertOutOfRange(index >= 0 && index < self->size);	
 	 return listRemoveNode(self, listGetNodeByIndex(self, index));
 }
 

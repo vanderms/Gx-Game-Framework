@@ -5,7 +5,7 @@
 
 
 typedef struct sAppNamespace {
-	GxScene* (*create)(const GxIni* ini);	
+	GxScene* (*create)(const sIni* ini);	
 	void (*run)(void);
 	bool (*isCreated)(void);
 	bool (*isRunning)(void);	
@@ -41,7 +41,7 @@ typedef struct sAppNamespace {
 	}* prv;
 } sAppNamespace;
 
-extern const sAppNamespace* nsApp;
+extern const sAppNamespace* nApp;
 
 #endif // !GX_APP_H
 

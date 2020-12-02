@@ -1,6 +1,6 @@
 #include "../Utilities/Util.h"
-#include "../Private/GxElement.h"
-#include "../RigidBody/GxRigidBody.h"
+#include "../Private/sElement.h"
+#include "../RigidBody/sElemBody.h"
 #include "../Physics/GxPhysics.h"
 #include "../Array/Array.h"
 #include "../List/GxList.h"
@@ -24,7 +24,7 @@ typedef struct GxVelocity {
 	double y;
 } GxVelocity;
 
-typedef struct GxRigidBody {
+typedef struct sElemBody {
 	int type;
 	Uint32 cmask;
 	int preference;
@@ -48,17 +48,17 @@ typedef struct GxRigidBody {
 	//contacts
 	GxList* contacts;
 	sArray* temp;
-} GxRigidBody;
+} sElemBody;
 
-GxRigidBody* GxCreateRigidBody_(GxElement* elem, const GxIni* ini) {
+sElemBody* GxCreateRigidBody_(sElement* elem, const sIni* ini) {
 
 	if(ini->body != GxElemFixed && ini->body != GxElemDynamic){
-		nsUtil->assertArgument(ini->body == GxElemNone);
+		nUtil->assertArgument(ini->body == GxElemNone);
 		return NULL;
 	}
 
-	GxRigidBody* self = calloc(1, sizeof(GxRigidBody));
-	nsUtil->assertAlloc(self);
+	sElemBody* self = calloc(1, sizeof(sElemBody));
+	nUtil->assertAlloc(self);
 	self->type = ini->body == GxElemFixed ? GxElemFixed : GxElemDynamic;
 	elem->body = self;
 	self->cmask = self->cmask == GxElemDynamic ? GxCmaskDynamic : GxCmaskFixed;	
@@ -74,68 +74,68 @@ GxRigidBody* GxCreateRigidBody_(GxElement* elem, const GxIni* ini) {
 	self->dflag = 0;
 	self->fflag = 0;
 	self->contacts = GxCreateList();
-	self->temp = nsArr->create();
+	self->temp = nArr->create();
 	self->groundFlag = 0;
 	return self;
 }
 
-void GxDestroyRigidBody_(GxRigidBody* self) {
+void GxDestroyRigidBody_(sElemBody* self) {
 	if (self) {
-		nsArr->destroy(self->temp);
+		nArr->destroy(self->temp);
 		GxDestroyList(self->contacts);
 		free(self);
 	}
 }
 
-bool GxElemHasDynamicBody(GxElement* self) {
+bool GxElemHasDynamicBody(sElement* self) {
 	validateElem(self, false, false);
 	return self->body && self->body->type == GxElemDynamic;
 }
 
-bool GxElemHasFixedBody(GxElement* self) {
+bool GxElemHasFixedBody(sElement* self) {
 	validateElem(self, false, false);
 	return self->body && self->body->type == GxElemFixed;
 }
 
-bool GxElemIsOnGround(GxElement* self) {
+bool GxElemIsOnGround(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->groundFlag;
 }
 
-Uint32 GxElemGetCmask(GxElement* self) {
+Uint32 GxElemGetCmask(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->cmask;
 }
 
-void GxElemSetCmask(GxElement* self, Uint32 mask) {
+void GxElemSetCmask(sElement* self, Uint32 mask) {
 	validateElem(self, true, false);
 	self->body->cmask = mask;
 }
 
-int GxElemGetPreference(GxElement* self) {
+int GxElemGetPreference(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->preference;
 }
 
-void GxElemSetPreference(GxElement* self, int value) {
+void GxElemSetPreference(sElement* self, int value) {
 	validateElem(self, true, false);
 	self->body->preference = value;
 }
 
-bool GxElemHasFriction(GxElement* self) {
+bool GxElemHasFriction(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->friction;
 }
 
-void GxElemSetFriction(GxElement* self, bool value) {
+void GxElemSetFriction(sElement* self, bool value) {
 	validateElem(self, true, false);
 	self->body->friction = value;
 }
 
-GxVector GxElemGetVelocity(GxElement* self) {
+sVector GxElemGetVelocity(sElement* self) {
 	validateElem(self, true, false);
 	const GxVelocity* svel = &self->body->velocity;
-	GxVector vel = {
+	sVector vel = {
 		.x = svel->x > 0 ? (int) (svel->x + 0.5) : (int)(svel->x - 0.5),
 		.y = svel->y > 0 ? (int) (svel->y + 0.5) : (int)(svel->y - 0.5)
 	};
@@ -143,97 +143,97 @@ GxVector GxElemGetVelocity(GxElement* self) {
 }
 
 
-void GxElemSetVelocity(GxElement* self, GxVector velocity){
+void GxElemSetVelocity(sElement* self, sVector velocity){
 	validateElem(self, true, false);	
 	self->body->velocity.x = velocity.x;
 	self->body->velocity.y = velocity.y;
 }
 
-int GxElemGetVely(GxElement* self) {
+int GxElemGetVely(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->velocity.y > 0 ?
 		(int) (self->body->velocity.y + 0.5) : (int) (self->body->velocity.y - 0.5);
 }
 
-void GxElemSetVely(GxElement* self, int y) {
+void GxElemSetVely(sElement* self, int y) {
 	validateElem(self, true, false);
 	self->body->velocity.y = y;
 }
 
-int GxElemGetVelx(GxElement* self) {
+int GxElemGetVelx(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->velocity.x > 0 ?
 		(int) (self->body->velocity.x + 0.5) : (int) (self->body->velocity.x - 0.5);
 }
 
-void GxElemSetVelx(GxElement* self, int x) {
+void GxElemSetVelx(sElement* self, int x) {
 	validateElem(self, true, false);
 	self->body->velocity.x = x;}
 
-void GxElemAccelerate(GxElement* self, double x, double y) {
+void GxElemAccelerate(sElement* self, double x, double y) {
 	validateElem(self, true, false);
 	self->body->velocity.x += x;
 	self->body->velocity.y += y;
 }
 
-bool GxElemIsMoving(GxElement* self) {
+bool GxElemIsMoving(sElement* self) {
 	validateElem(self, true, false);
-	GxVector velocity = GxElemGetVelocity(self);
+	sVector velocity = GxElemGetVelocity(self);
 	return (velocity.x || velocity.y);
 }
 
-double GxElemGetElasticity(GxElement* self) {
+double GxElemGetElasticity(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->elasticity;
 }
 
-void GxElemSetElasticity(GxElement* self, double elasticity) {
+void GxElemSetElasticity(sElement* self, double elasticity) {
 	validateElem(self, true, false);
 	self->body->elasticity = elasticity;
 }
 
-double GxElemGetRestitution(GxElement* self) {
+double GxElemGetRestitution(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->restitution;
 }
 
-void GxElemSetRestitution(GxElement* self, double restitution) {
+void GxElemSetRestitution(sElement* self, double restitution) {
 	validateElem(self, true, false);
 	self->body->restitution = restitution;
 }
 
-int GxElemGetMaxgvel(GxElement* self) {
+int GxElemGetMaxgvel(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->maxgvel;
 }
 
-void GxElemSetMaxgvel(GxElement* self, int value) {
+void GxElemSetMaxgvel(sElement* self, int value) {
 	validateElem(self, true, false);
 	self->body->maxgvel = value;
 	if (self->body->maxgvel > 0) self->body->maxgvel *= -1;
 }
 
-sArray* GxElemGetContacts(GxElement* self, int direction) {
+sArray* GxElemGetContacts(sElement* self, int direction) {
 	validateElem(self, true, false);
 
-	nsArr->clean(self->body->temp);
+	nArr->clean(self->body->temp);
 
 	for(GxContact* contact = GxListBegin(self->body->contacts); contact != NULL;
 		contact = GxListNext(self->body->contacts))
 	{
 		if (GxContactHasDirection(contact, direction)) {
-			nsArr->push(self->body->temp, contact, NULL);
+			nArr->push(self->body->temp, contact, NULL);
 		}
 	}
 	return self->body->temp;
 }
 
-GxList* GxElemGetContactList_(GxElement* self) {
+GxList* GxElemGetContactList_(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->contacts;
 }
 
-void elemRemoveContact_(GxElement* self, GxContact* contact) {
+void elemRemoveContact_(sElement* self, GxContact* contact) {
 	validateElem(self, true, false);
 
 	//first remove contact
@@ -246,7 +246,7 @@ void elemRemoveContact_(GxElement* self, GxContact* contact) {
 }
 
 
-void elemAddContact_(GxElement* self, GxContact* contact) {
+void elemAddContact_(sElement* self, GxContact* contact) {
 	validateElem(self, true, false);
 
 	//fist add contact
@@ -258,46 +258,46 @@ void elemAddContact_(GxElement* self, GxContact* contact) {
 	}	
 }
 
-uint32_t GxElemGetDFlag_(GxElement* self) {
+uint32_t GxElemGetDFlag_(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->dflag;
 }
 
-void GxElemSetDFlag_(GxElement* self, uint32_t value) {
+void GxElemSetDFlag_(sElement* self, uint32_t value) {
 	validateElem(self, true, false);
 	self->body->dflag = value;
 }
-uint32_t GxElemGetFFlag_(GxElement* self) {
+uint32_t GxElemGetFFlag_(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->fflag;
 }
 
-void GxElemSetFFlag_(GxElement* self, uint32_t value) {
+void GxElemSetFFlag_(sElement* self, uint32_t value) {
 	validateElem(self, true, false);
 	self->body->fflag = value;
 }
 
-bool GxElemGetMcFlag_(GxElement* self) {
+bool GxElemGetMcFlag_(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->mcflag;
 }
 
-void GxElemSetMcFlag_(GxElement* self, bool value) {
+void GxElemSetMcFlag_(sElement* self, bool value) {
 	validateElem(self, true, false);
 	self->body->mcflag = value;
 }
 
-bool GxElemGetMovFlag_(GxElement* self) {
+bool GxElemGetMovFlag_(sElement* self) {
 	validateElem(self, true, false);
 	return self->body->movflag;
 }
 
-void GxElemSetMovFlag_(GxElement* self, bool value) {
+void GxElemSetMovFlag_(sElement* self, bool value) {
 	validateElem(self, true, false);
 	self->body->movflag = value;
 }
 
-GxVector GxElemMove(GxElement* self, GxVector vector, bool force) {
+sVector GxElemMove(sElement* self, sVector vector, bool force) {
 	validateElem(self, false, false);
 	if (vector.x == 0 && vector.y == 0) {
 		return vector;
@@ -310,7 +310,7 @@ GxVector GxElemMove(GxElement* self, GxVector vector, bool force) {
 		self->body->velocity.x = vector.x;
 		self->body->velocity.y = vector.y;
 		self->body->maxgvel = 0;
-		GxVector GxPhysicsMoveCalledByElem_(GxPhysics * self, GxElement * element);
+		sVector GxPhysicsMoveCalledByElem_(GxPhysics * self, sElement * element);
 		vector = GxPhysicsMoveCalledByElem_(GxSceneGetPhysics(self->scene), self);
 		self->body->cmask = mask;
 		self->body->velocity = velocity;
@@ -322,12 +322,12 @@ GxVector GxElemMove(GxElement* self, GxVector vector, bool force) {
 	return vector;
 }
 
-void GxElemMoveTo(GxElement* self, GxPoint pos, bool force) {
+void GxElemMoveTo(sElement* self, sPoint pos, bool force) {
 	validateElem(self, false, false);
-	GxElemMove(self, (GxVector){ pos.x - self->pos->x, pos.y - self->pos->y }, force);
+	GxElemMove(self, (sVector){ pos.x - self->pos->x, pos.y - self->pos->y }, force);
 }
 
-void GxElemExecuteMove_(GxElement* self, GxVector vector) {
+void GxElemExecuteMove_(sElement* self, sVector vector) {
 	validateElem(self, false, false);
 	SDL_Rect previousPos = *self->pos;
 	self->pos->x += vector.x;
@@ -336,11 +336,11 @@ void GxElemExecuteMove_(GxElement* self, GxVector vector) {
 	GxPhysicsUpdateElementPosition_(GxSceneGetPhysics(self->scene), self, previousPos);
 }
 
-void GxElemApplyHozElasticity_(GxElement* self, double res) {
+void GxElemApplyHozElasticity_(sElement* self, double res) {
 	self->body->velocity.x *= -(self->body->elasticity * res);
 }
 
-void GxElemApplyVetElasticity_(GxElement* self, double res) {
+void GxElemApplyVetElasticity_(sElement* self, double res) {
 	self->body->velocity.y *= -(self->body->elasticity * res);
 }
 

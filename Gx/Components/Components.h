@@ -3,7 +3,7 @@
 #include "../Gx.h"
 
 typedef struct ButtonNamespace {
-	GxElement* (*create)(const GxIni* ini, Uint32 inputs, int keyCode);	
+	GxElement* (*create)(const sIni* ini, Uint32 inputs, int keyCode);	
 	Uint32 (*getStatus)(GxElement* elem);
 	bool (*hasStatus)(GxElement* elem, Uint32 status);
 	const Uint32 KEYBOARD;

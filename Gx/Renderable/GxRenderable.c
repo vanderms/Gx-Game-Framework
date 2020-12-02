@@ -1,6 +1,6 @@
 #include "../Utilities/Util.h"
-#include "../Private/GxElement.h"
-#include "../Renderable/GxRenderable.h"
+#include "../Private/sElement.h"
+#include "../Renderable/sElemRenderable.h"
 #include "../Folder/GxFolder.h"
 #include "../Scene/GxScene.h"
 #include "../Array/Array.h"
@@ -10,12 +10,12 @@
 //...COLOR 
 static Color* createColor(const char* value) {
 	Color* self = calloc(1, sizeof(Color));
-	nsUtil->assertAlloc(self);
+	nUtil->assertAlloc(self);
 	if (value) {
 		self->value = malloc(sizeof(SDL_Color));
-		nsUtil->assertAlloc(self->value);
-		nsApp->convertColor(self->value, value);
-		self->last = nsUtil->createString(value);
+		nUtil->assertAlloc(self->value);
+		nApp->convertColor(self->value, value);
+		self->last = nUtil->createString(value);
 	}
 	return self;
 }
@@ -35,10 +35,10 @@ static bool updateColor(Color* self, const char* value) {
 		free(self->last);
 		if (!self->value) {
 			self->value = malloc(sizeof(SDL_Color));
-			nsUtil->assertAlloc(self->value);
+			nUtil->assertAlloc(self->value);
 		}
-		nsApp->convertColor(self->value, value);
-		self->last = nsUtil->createString(value);
+		nApp->convertColor(self->value, value);
+		self->last = nUtil->createString(value);
 		return true;
 	}
 	return false;
@@ -53,26 +53,26 @@ static void destroyColor(Color* color) {
 }
 
 //constructors and destructors
-GxRenderable* GxCreateRenderable_(GxElement* elem, const GxIni* ini) {
+sElemRenderable* GxCreateRenderable_(sElement* elem, const sIni* ini) {
 	
 	if(ini->display != GxElemAbsolute && ini->display != GxElemRelative){
-		nsUtil->assertArgument(ini->display == GxElemNone);
+		nUtil->assertArgument(ini->display == GxElemNone);
 		return NULL;
 	}
 
-	GxRenderable* self = calloc(1, sizeof(GxRenderable));
-	nsUtil->assertAlloc(self);
+	sElemRenderable* self = calloc(1, sizeof(sElemRenderable));
+	nUtil->assertAlloc(self);
 	self->type = ini->display == GxElemAbsolute ? GxElemAbsolute : GxElemRelative;
 	self->zIndex = ini->zIndex;
 	elem->renderable = self;
 	self->opacity = 255;
 	//... folders
 	if (ini->folders) {
-		self->folders = nsUtil->split(ini->folders, "|");
-		for (Uint32 i = 0; i < nsArr->size(self->folders); i++) {
-			GxFolder* folder = nsApp->prv->getFolder(nsArr->at(self->folders, i));
-			nsUtil->assertArgument(folder);
-			nsArr->insert(self->folders, i, folder, NULL);
+		self->folders = nUtil->split(ini->folders, "|");
+		for (Uint32 i = 0; i < nArr->size(self->folders); i++) {
+			GxFolder* folder = nApp->prv->getFolder(nArr->at(self->folders, i));
+			nUtil->assertArgument(folder);
+			nArr->insert(self->folders, i, folder, NULL);
 			GxFolderIncRefCounter_(folder);
 		}
 	}
@@ -105,7 +105,7 @@ GxRenderable* GxCreateRenderable_(GxElement* elem, const GxIni* ini) {
 	//label
 	self->color = ini->color ? createColor(ini->color) : createColor("Black");
 	GxElemSetFontSize(elem, ini->fontSize);
-	self->text = ini->text ? nsUtil->createString(ini->text) : NULL;
+	self->text = ini->text ? nUtil->createString(ini->text) : NULL;
 	GxElemSetFont(elem, ini->font ? ini->font : "Default");
 	self->shouldUpdateLabel = ini->text ? true : false;
 
@@ -115,11 +115,11 @@ GxRenderable* GxCreateRenderable_(GxElement* elem, const GxIni* ini) {
 	return self;
 }
 
-void GxDestroyRenderable_(GxRenderable* self) {
+void GxDestroyRenderable_(sElemRenderable* self) {
 	if (self) {
-		if(nsApp->isRunning() && self->folders){
-			for (Uint32 i = 0; i < nsArr->size(self->folders); i++){
-				GxFolder* folder = nsArr->at(self->folders, i);
+		if(nApp->isRunning() && self->folders){
+			for (Uint32 i = 0; i < nArr->size(self->folders); i++){
+				GxFolder* folder = nArr->at(self->folders, i);
 				GxFolderDecRefCounter_(folder);
 			}
 		}
@@ -131,64 +131,64 @@ void GxDestroyRenderable_(GxRenderable* self) {
 		if(self->backgroundColor) destroyColor(self->backgroundColor);
 		if(self->border.color) destroyColor(self->border.color);
 		if(self->label) GxDestroyImage_(self->label);
-		if(self->folders) nsArr->destroy(self->folders);
+		if(self->folders) nArr->destroy(self->folders);
 		free(self);
 	}
 }
 
-bool GxElemHasRelativePosition(GxElement* self) {
+bool GxElemHasRelativePosition(sElement* self) {
 	validateElem(self, false, false);
 	return self->renderable && self->renderable->type == GxElemRelative;
 }
 
-bool GxElemHasAbsolutePosition(GxElement* self) {
+bool GxElemHasAbsolutePosition(sElement* self) {
 	validateElem(self, false, false);
 	return self->renderable && self->renderable->type == GxElemAbsolute;
 }
 
 
-int GxElemGetZIndex(GxElement* self) {
+int GxElemGetZIndex(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->zIndex;
 }
 
-void GxElemSetZIndex(GxElement* self, int value) {
+void GxElemSetZIndex(sElement* self, int value) {
 	validateElem(self, false, true);
 	self->renderable->zIndex = value;
 }
 
-Uint8 GxElemGetOpacity(GxElement* self) {
+Uint8 GxElemGetOpacity(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->opacity;
 }
 
-void GxElemSetOpacity(GxElement* self, Uint8 value) {
+void GxElemSetOpacity(sElement* self, Uint8 value) {
 	validateElem(self, false, true);
 	self->renderable->opacity = value;
 }
 
-int GxElemGetOrientation(GxElement* self) {
+int GxElemGetOrientation(sElement* self) {
 	validateElem(self, false, true);
 	return (int) self->renderable->orientation;
 }
 
-void GxElemSetOrientation(GxElement* self, int value) {
+void GxElemSetOrientation(sElement* self, int value) {
 	validateElem(self, false, true);
-	nsUtil->assertArgument(value == GxElemForward || value == GxElemBackward);
+	nUtil->assertArgument(value == GxElemForward || value == GxElemBackward);
 	self->renderable->orientation = (SDL_RendererFlip) value;
 }
 
-const char* GxElemGetImage(GxElement* self) {
+const char* GxElemGetImage(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->image ? self->renderable->asset : NULL;
 }
 
-const char* GxElemGetAnimation(GxElement* self) {
+const char* GxElemGetAnimation(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->animation ? self->renderable->asset : NULL;
 }
 
-const char* GxElemGetAlignment(GxElement* self) {
+const char* GxElemGetAlignment(sElement* self) {
 	validateElem(self, false, true);
 	if (!self->renderable->alignment) {
 		return sCenterCenter;
@@ -215,11 +215,11 @@ const char* GxElemGetAlignment(GxElement* self) {
 	return self->renderable->alignment->last;
 }
 
-void GxElemSetAlignment(GxElement* self, const char* value) {
+void GxElemSetAlignment(sElement* self, const char* value) {
 	validateElem(self, false, true);
 	if (!self->renderable->alignment) {
 		self->renderable->alignment = calloc(1, sizeof(Alignment));
-		nsUtil->assertAlloc(self->renderable->alignment);
+		nUtil->assertAlloc(self->renderable->alignment);
 	}
 	if (value == sCenterCenter) {
 		self->renderable->alignment->horizontal = sCenter;
@@ -229,9 +229,9 @@ void GxElemSetAlignment(GxElement* self, const char* value) {
 		return;
 	}
 	else {
-		char* align = nsUtil->createString(value);
+		char* align = nUtil->createString(value);
 		char* div = strstr(align, "|");
-		nsUtil->assertArgument(div);
+		nUtil->assertArgument(div);
 		div[0] = '\0';
 		char* horizontal = div != align ? align : NULL;
 		char* vertical = *(div + 1) != '\0'? div + 1 : NULL;
@@ -278,83 +278,83 @@ void GxElemSetAlignment(GxElement* self, const char* value) {
 	}
 }
 
-bool GxElemIsHidden(GxElement* self) {
+bool GxElemIsHidden(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->hidden;
 }
 
-void GxElemHide(GxElement* self) {
+void GxElemHide(sElement* self) {
 	validateElem(self, false, true);
 	self->renderable->hidden = true;
 }
 
-void GxElemShow(GxElement* self) {
+void GxElemShow(sElement* self) {
 	validateElem(self, false, true);
 	self->renderable->hidden = false;
 }
 
-double GxElemGetAngle(GxElement* self) {
+double GxElemGetAngle(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->angle;
 }
 
-void GxElemSetAngle(GxElement* self, double angle) {
+void GxElemSetAngle(sElement* self, double angle) {
 	validateElem(self, false, true);
 	self->renderable->angle = angle;
 }
 
-double GxElemGetProportion(GxElement* self) {
+double GxElemGetProportion(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->proportion;
 }
 
-void GxElemSetProportion(GxElement* self, double proportion) {
+void GxElemSetProportion(sElement* self, double proportion) {
 	validateElem(self, false, true);
 	self->renderable->proportion = proportion;
 }
 
-void GxElemSetToFit(GxElement* self, const char* axis) {
+void GxElemSetToFit(sElement* self, const char* axis) {
 	validateElem(self, false, true);
-	nsUtil->assertArgument(strcmp(axis, "horizontal") == 0 || strcmp(axis, "vertical") == 0);
+	nUtil->assertArgument(strcmp(axis, "horizontal") == 0 || strcmp(axis, "vertical") == 0);
 	GxSize size = GxImageGetSize_(self->renderable->image);
 	if (strcmp(axis, "horizontal") == 0)
 		self->renderable->proportion = ((double) self->pos->w) / size.w;
 	else self->renderable->proportion = ((double) self->pos->h) / size.h;
 }
 
-const SDL_Color* GxElemGetColor(GxElement* self) {
+const SDL_Color* GxElemGetColor(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->color->value;
 }
 
-void GxElemSetColor(GxElement* self, const char* color) {
+void GxElemSetColor(sElement* self, const char* color) {
 	validateElem(self, false, true);
 	if(updateColor(self->renderable->color, color)){
 		self->renderable->shouldUpdateLabel = true;
 	}
 }
 
-const SDL_Color* GxElemGetBackgroundColor(GxElement* self) {
+const SDL_Color* GxElemGetBackgroundColor(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->backgroundColor->value;
 }
 
-void GxElemSetBackgroundColor(GxElement* self, const char* color) {
+void GxElemSetBackgroundColor(sElement* self, const char* color) {
 	validateElem(self, false, true);
 	updateColor(self->renderable->backgroundColor, color);
 }
 
-int GxElemGetBorderSize(GxElement* self) {
+int GxElemGetBorderSize(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->border.size;
 }
 
-const SDL_Color* GxElemGetBorderColor(GxElement* self) {
+const SDL_Color* GxElemGetBorderColor(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->border.color->value;
 }
 
-void GxElemSetBorder(GxElement* self, const char* border) {
+void GxElemSetBorder(sElement* self, const char* border) {
 	validateElem(self, false, true);
 
 	//if null, reset border
@@ -366,9 +366,9 @@ void GxElemSetBorder(GxElement* self, const char* border) {
 	}
 
 	//get size and color strings
-	char* size = nsUtil->cloneString(border, (char[64]){0}, 64);
+	char* size = nUtil->cloneString(border, (char[64]){0}, 64);
 	char* color = strstr(size, "|");
-	nsUtil->assertArgument(color);
+	nUtil->assertArgument(color);
 	color[0] = '\0';
 	color++;
 
@@ -381,12 +381,12 @@ void GxElemSetBorder(GxElement* self, const char* border) {
 	}
 }
 
-uint32_t GxElemGetWFlag_(GxElement* self) {
+uint32_t GxElemGetWFlag_(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->wflag;
 }
 
-void GxElemSetWFlag_(GxElement* self, uint32_t value) {
+void GxElemSetWFlag_(sElement* self, uint32_t value) {
 	validateElem(self, false, true);
 	self->renderable->wflag = value;
 }
@@ -395,7 +395,7 @@ void GxElemSetWFlag_(GxElement* self, uint32_t value) {
 
 enum AssetType{IMAGE, ANIMATION};
 
-static inline void* elemGetAsset(GxElement* self, const char* apath, enum AssetType type) {
+static inline void* elemGetAsset(sElement* self, const char* apath, enum AssetType type) {
 
 	if (apath != NULL) {
 		if (self->renderable->asset && (strcmp(self->renderable->asset, apath) == 0)){
@@ -404,30 +404,30 @@ static inline void* elemGetAsset(GxElement* self, const char* apath, enum AssetT
 			);
 		}
 		free(self->renderable->asset);
-		self->renderable->asset = nsUtil->createString(apath);
+		self->renderable->asset = nUtil->createString(apath);
 		char* slash = strstr(self->renderable->asset, "/");
-		nsUtil->assertArgument(slash);
+		nUtil->assertArgument(slash);
 
 		*slash = '\0';
-		GxFolder* folder = nsApp->prv->getFolder(self->renderable->asset);
-		nsUtil->assertArgument(folder);
+		GxFolder* folder = nApp->prv->getFolder(self->renderable->asset);
+		nUtil->assertArgument(folder);
 
 		bool folderIsLoaded = GxFolderHasStatus_(folder, GxStatusLoading) ||
 			GxFolderHasStatus_(folder, GxStatusReady);
-		nsUtil->assertState(folderIsLoaded);
+		nUtil->assertState(folderIsLoaded);
 
 		*slash = '/';
 		void* asset = (type == IMAGE ?
 			(void*) GxFolderGetImage_(folder, slash + 1) :
 			(void*) GxFolderGetAnimation_(folder, slash + 1)
 		);
-		nsUtil->assertArgument(asset);
+		nUtil->assertArgument(asset);
 		return asset;
 	}
 	return NULL;
 }
 
-void GxElemSetImage(GxElement* self, const char* apath) {
+void GxElemSetImage(sElement* self, const char* apath) {
 
 	validateElem(self, false, true);	
 	GxImage* image = elemGetAsset(self, apath, IMAGE);
@@ -439,12 +439,12 @@ void GxElemSetImage(GxElement* self, const char* apath) {
 	}
 }
 
-void GxTilemapSetImage_(GxElement* self, GxImage* pallete) {
+void GxTilemapSetImage_(sElement* self, GxImage* pallete) {
 	validateElem(self, false, true);
 	self->renderable->image = pallete;
 }
 
-void GxElemSetAnimation(GxElement* self, const char* apath) {
+void GxElemSetAnimation(sElement* self, const char* apath) {
 	
 	validateElem(self, false, true);	
 	GxAnimation* anim = elemGetAsset(self, apath, ANIMATION);
@@ -458,7 +458,7 @@ void GxElemSetAnimation(GxElement* self, const char* apath) {
 
 
 
-void GxElemSetText(GxElement* self, const char* format, ...) {
+void GxElemSetText(sElement* self, const char* format, ...) {
 
 	validateElem(self, false, true);
 
@@ -470,13 +470,13 @@ void GxElemSetText(GxElement* self, const char* format, ...) {
 		va_end(args);
 
 		if(!self->renderable->text) {
-			self->renderable->text = nsUtil->createString(text);
+			self->renderable->text = nUtil->createString(text);
 			self->renderable->shouldUpdateLabel = true;
 		}
 		else { // self->renderable text != NULL
 			if (strcmp(text, self->renderable->text) != 0) {
 				free(self->renderable->text);
-				self->renderable->text = nsUtil->createString(text);
+				self->renderable->text = nUtil->createString(text);
 				self->renderable->shouldUpdateLabel = true;
 			}
 		}
@@ -492,12 +492,12 @@ void GxElemSetText(GxElement* self, const char* format, ...) {
 }
 
 
-const char* GxElemGetText(GxElement* self) {
+const char* GxElemGetText(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->text;
 }
 
-void GxElemSetFontSize(GxElement* self, int size) {
+void GxElemSetFontSize(sElement* self, int size) {
 	validateElem(self, false, true);
 	if(size <= 0) size = 16;
 	if(size <= 8) size = 8;
@@ -507,32 +507,32 @@ void GxElemSetFontSize(GxElement* self, int size) {
 	}
 }
 
-int GxElemGetFontSize(GxElement* self) {
+int GxElemGetFontSize(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->fontSize;
 }
 
-void GxElemSetFont(GxElement* self, const char* font) {
+void GxElemSetFont(sElement* self, const char* font) {
 	validateElem(self, false, true);
-	nsUtil->assertArgument(font);
+	nUtil->assertArgument(font);
 	if (self->renderable->font && strcmp(self->renderable->font, font) == 0) {
 		return;
 	}
-	const void* fontExists = nsApp->prv->getFontPath(font);
-	nsUtil->assertArgument(fontExists);
+	const void* fontExists = nApp->prv->getFontPath(font);
+	nUtil->assertArgument(fontExists);
 	if (fontExists) {
 		free(self->renderable->font);
-		self->renderable->font = nsUtil->createString(font);
+		self->renderable->font = nUtil->createString(font);
 		self->renderable->shouldUpdateLabel = true;
 	}
 }
 
-const char* GxElemGetFont(GxElement* self) {
+const char* GxElemGetFont(sElement* self) {
 	validateElem(self, false, true);
 	return self->renderable->font;
 }
 
-void GxElementUpdateLabel_(GxRenderable* renderable) {
+void GxElementUpdateLabel_(sElemRenderable* renderable) {
 
 	if(renderable->label){
 		GxDestroyImage_(renderable->label);

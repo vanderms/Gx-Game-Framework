@@ -2,8 +2,8 @@
 #include "../Physics/GxPhysics.h"
 #include "../Quadtree/GxQuadtree.h"
 #include "../Scene/GxScene.h"
-#include "../Element/GxElement.h"
-#include "../RigidBody/GxRigidBody.h"
+#include "../sElement/sElement.h"
+#include "../RigidBody/sElemBody.h"
 #include "../Map/GxMap.h"
 #include "../Array/Array.h"
 #include "../List/GxList.h"
@@ -29,8 +29,8 @@ typedef struct GxPhysics {
 
 typedef struct GxContact {
 	Uint32 hash;
-	GxElement* colliding;
-	GxElement* collided;
+	sElement* colliding;
+	sElement* collided;
 	Uint32 direction;	
 	int amove;
 	bool effective;
@@ -39,14 +39,14 @@ typedef struct GxContact {
 
 //... Prototypes
 static inline void destroyContact(GxContact* self);
-static void physicsCheckGround(GxElement * other);
+static void physicsCheckGround(sElement * other);
 
 //... Constructor and destructor
 GxPhysics* GxCreatePhysics_(GxScene* scene) {
 	GxPhysics* self = malloc(sizeof(GxPhysics));
-	nsUtil->assertAlloc(self);
+	nUtil->assertAlloc(self);
 	self->scene = scene;	
-	self->contacts = nsArr->create();
+	self->contacts = nArr->create();
 	GxSize size = GxSceneGetSize(scene);
 	int length = size.w > size.h ? size.w + 2 : size.h + 2;		
 	self->dynamic = GxCreateQtree_(NULL, (SDL_Rect) { -1, -1, length, length }, "dynamic");
@@ -54,23 +54,23 @@ GxPhysics* GxCreatePhysics_(GxScene* scene) {
 
 	//buffers
 	self->walls = NULL;
-	self->emdstack = nsArr->create();
-	self->mvstack = nsArr->create();
-	self->cntend = nsArr->create();
+	self->emdstack = nArr->create();
+	self->mvstack = nArr->create();
+	self->cntend = nArr->create();
 	self->depth = 0;
 	return self;
 }
 
 void GxDestroyPhysics_(GxPhysics* self) {		
 	if (self) {		
-		for (Uint32 i = 0; i < nsArr->size(self->contacts); i++){
-			GxContact* contact = nsArr->at(self->contacts, i);			
+		for (Uint32 i = 0; i < nArr->size(self->contacts); i++){
+			GxContact* contact = nArr->at(self->contacts, i);			
 			destroyContact(contact);
 		}
-		nsArr->destroy(self->contacts);
-		nsArr->destroy(self->emdstack);
-		nsArr->destroy(self->mvstack);
-		nsArr->destroy(self->cntend);
+		nArr->destroy(self->contacts);
+		nArr->destroy(self->emdstack);
+		nArr->destroy(self->mvstack);
+		nArr->destroy(self->cntend);
 		GxDestroyQtree_(self->dynamic);
 		GxDestroyQtree_(self->fixed);
 		free(self);
@@ -78,16 +78,16 @@ void GxDestroyPhysics_(GxPhysics* self) {
 }
 
 typedef struct EmData {
-	GxElement* self;
+	sElement* self;
 	SDL_Rect trajetory;
 	SDL_Rect requestedPos;
 	SDL_Rect previousPos;
 	sArray* contacts;
 }EmData;
 
-static inline EmData* createEmData(GxElement* elem) {
+static inline EmData* createEmData(sElement* elem) {
 	EmData* self = malloc(sizeof(EmData));
-	nsUtil->assertAlloc(self);
+	nUtil->assertAlloc(self);
 	self->self = elem;
 	self->requestedPos = self->previousPos = *GxElemGetPosition(elem);	
 	self->requestedPos.x = self->previousPos.x + GxElemGetVelx(elem);
@@ -99,15 +99,15 @@ static inline EmData* createEmData(GxElement* elem) {
 
 static inline void destroyEmData(EmData* self) {
 	if (self) {
-		nsArr->destroy(self->contacts);
+		nArr->destroy(self->contacts);
 		free(self);
 	}
 }
 
-static inline GxContact* createContact(GxElement* self, GxElement* other, int amove, Uint32 direction) {
+static inline GxContact* createContact(sElement* self, sElement* other, int amove, Uint32 direction) {
 	GxContact* contact = malloc(sizeof(GxContact));	
-	nsUtil->assertAlloc(contact);
-	contact->hash = nsUtil->hash->CONTACT;
+	nUtil->assertAlloc(contact);
+	contact->hash = nUtil->hash->CONTACT;
 	contact->colliding = self;
 	contact->collided = other;
 	contact->amove = amove;	
@@ -123,19 +123,19 @@ static inline void destroyContact(GxContact* self) {
 		if (self->effective && !GxSceneHasStatus(scene, GxStatusUnloading)) {			
 			elemRemoveContact_(self->colliding, self);
 			elemRemoveContact_(self->collided, self);
-			nsArr->removeByValue(GxSceneGetPhysics(scene)->contacts, self);
+			nArr->removeByValue(GxSceneGetPhysics(scene)->contacts, self);
 		}
 		free(self);
 	}
 }
 
 //... PHYSIC STATIC METHODS PROTOTYPES
-static inline GxVector physicsProcessMovementData(GxPhysics * self);
-static inline void physicsApplyGravity(GxPhysics * self, GxElement * elem);
-static inline void physicsCheckContactEnd(GxPhysics* self, GxElement* element);
-static inline void physicsMoveElement_(GxElement* element);
+static inline sVector physicsProcessMovementData(GxPhysics * self);
+static inline void physicsApplyGravity(GxPhysics * self, sElement * elem);
+static inline void physicsCheckContactEnd(GxPhysics* self, sElement* element);
+static inline void physicsMoveElement_(sElement* element);
 static inline bool physicsAddContact(GxPhysics* self, GxContact* contact);
-static inline void physicsCheckCollision(GxElement* other);
+static inline void physicsCheckCollision(sElement* other);
 static inline bool contactIsEqual(GxContact* lhs, GxContact* rhs);
 
 //... METHODS
@@ -148,10 +148,10 @@ void GxPhysicsUpdate_(GxPhysics* self) {
 	area.h += 128;
 	
 	GxQtreeIterate_(self->dynamic, area, physicsMoveElement_, true);
-	nsArr->clean(self->mvstack);
+	nArr->clean(self->mvstack);
 }
 
-void GxPhysicsInsertElement_(GxPhysics* self, GxElement* element) {
+void GxPhysicsInsertElement_(GxPhysics* self, sElement* element) {
 	if (!GxElemIsPhysical(element)) { return; }
 	GxQtreeInsert_(self->fixed, element);
 	if (GxElemHasDynamicBody(element)) {
@@ -159,7 +159,7 @@ void GxPhysicsInsertElement_(GxPhysics* self, GxElement* element) {
 	}
 }
 
-void GxPhysicsRemoveElement_(GxPhysics* self, GxElement* element) {
+void GxPhysicsRemoveElement_(GxPhysics* self, sElement* element) {
 	if (!GxElemIsPhysical(element)) return;
 	GxQtreeRemove_(self->fixed, element);
 	
@@ -167,19 +167,19 @@ void GxPhysicsRemoveElement_(GxPhysics* self, GxElement* element) {
 		GxQtreeRemove_(self->dynamic, element);
 	}
 
-	sArray* contacts = nsArr->create();
+	sArray* contacts = nArr->create();
 	
-	for (Uint32 i = 0; i < nsArr->size(self->contacts); i++){
-		GxContact* contact = nsArr->at(self->contacts, i);
+	for (Uint32 i = 0; i < nArr->size(self->contacts); i++){
+		GxContact* contact = nArr->at(self->contacts, i);
 		if (contact->colliding == element || contact->collided == element) {			
-			nsArr->push(contacts, contact, destroyContact);
+			nArr->push(contacts, contact, destroyContact);
 		}
 	}
 	//the contacts are destroyed with the array
-	nsArr->destroy(contacts);
+	nArr->destroy(contacts);
 }
 
-void GxPhysicsUpdateElementPosition_(GxPhysics* self, GxElement* element, SDL_Rect previousPos) {	
+void GxPhysicsUpdateElementPosition_(GxPhysics* self, sElement* element, SDL_Rect previousPos) {	
 	if(GxElemIsPhysical(element)){
 		if (GxElemHasDynamicBody(element)) {
 			GxQtreeUpdate_(self->dynamic, element, previousPos);
@@ -188,54 +188,54 @@ void GxPhysicsUpdateElementPosition_(GxPhysics* self, GxElement* element, SDL_Re
 	}	
 }
 
-GxVector GxPhysicsMoveCalledByElem_(GxPhysics* self, GxElement* element) {
+sVector GxPhysicsMoveCalledByElem_(GxPhysics* self, sElement* element) {
 	physicsMoveElement_(element);
-	return *(GxVector*) nsArr->last(self->mvstack); 
+	return *(sVector*) nArr->last(self->mvstack); 
 }
 
-static inline void physicsMoveElement_(GxElement* element) {
+static inline void physicsMoveElement_(sElement* element) {
 
-	nsUtil->assertState(!GxElemGetMcFlag_(element));
+	nUtil->assertState(!GxElemGetMcFlag_(element));
 	GxPhysics* physics = GxSceneGetPhysics(GxElemGetScene(element));			
 	physicsApplyGravity(physics, element);
 	bool cantmove = GxElemGetMovFlag_(element) || !GxElemIsMoving(element);		
 	if (cantmove) {
-		GxVector* vector = malloc(sizeof(GxVector));
-		nsUtil->assertAlloc(vector);
-		*vector = (GxVector){ 0, 0 };
-		nsArr->push(physics->mvstack, vector, free);		
+		sVector* vector = malloc(sizeof(sVector));
+		nUtil->assertAlloc(vector);
+		*vector = (sVector){ 0, 0 };
+		nArr->push(physics->mvstack, vector, free);		
 		return;
 	}	
 	GxElemSetMovFlag_(element, true);	
 	physics->depth++;
-	nsArr->push(physics->cntend, element, NULL);
+	nArr->push(physics->cntend, element, NULL);
 				
 	EmData* emdata = createEmData(element);
-	nsArr->push(physics->emdstack, emdata, (GxDestructor) destroyEmData);
+	nArr->push(physics->emdstack, emdata, (GxDestructor) destroyEmData);
 	GxQtreeIterate_(physics->fixed, emdata->trajetory, physicsCheckCollision, true);
-	GxVector* vec = malloc(sizeof(GxVector));
-	nsUtil->assertAlloc(vec);
+	sVector* vec = malloc(sizeof(sVector));
+	nUtil->assertAlloc(vec);
 	
 	*vec = physicsProcessMovementData(physics);
-	nsArr->push(physics->mvstack, vec, free);
+	nArr->push(physics->mvstack, vec, free);
 
 	if (GxSceneHasGravity(physics->scene) && GxElemGetMaxgvel(element)) {		
 		GxQtreeIterate_(physics->fixed, emdata->trajetory, physicsCheckGround, true);
 	}
 	
-	nsArr->remove(physics->emdstack, nsArr->size(physics->emdstack) - 1);
+	nArr->remove(physics->emdstack, nArr->size(physics->emdstack) - 1);
 	GxElemSetMovFlag_(element, false);	
 	physics->depth--;
 	if (physics->depth == 0) {
-		for (Uint32 i = 0; i < nsArr->size(physics->cntend); i++){
-			GxElement* elem = nsArr->at(physics->cntend, i);
+		for (Uint32 i = 0; i < nArr->size(physics->cntend); i++){
+			sElement* elem = nArr->at(physics->cntend, i);
 			physicsCheckContactEnd(physics, elem);			
 		}
-		nsArr->clean(physics->cntend);
+		nArr->clean(physics->cntend);
 	}
 }
 
-static inline void physicsApplyGravity(GxPhysics* self, GxElement* elem) {	
+static inline void physicsApplyGravity(GxPhysics* self, sElement* elem) {	
 
 	int maxgvel = GxElemGetMaxgvel(elem);
 	int gravity = GxSceneGetGravity(self->scene);
@@ -246,48 +246,48 @@ static inline void physicsApplyGravity(GxPhysics* self, GxElement* elem) {
 	}	
 }
 
-static inline void physicsApplyFriction(GxPhysics* self, GxElement* element, GxVector move) {	
+static inline void physicsApplyFriction(GxPhysics* self, sElement* element, sVector move) {	
 	if (GxSceneHasGravity(self->scene) && GxElemHasFriction(element)) {
-		move = (GxVector) { move.x, move.y < 0 ? move.y : 0 };
+		move = (sVector) { move.x, move.y < 0 ? move.y : 0 };
 		sArray* up = GxElemGetContacts(element, GxContactUp);
-		for (Uint32 i = 0; i < nsArr->size(up); i++){
-		GxContact* contact = nsArr->at(up, i); 
-			GxElement* other = contact->colliding == element ? contact->collided : contact->colliding;
+		for (Uint32 i = 0; i < nArr->size(up); i++){
+		GxContact* contact = nArr->at(up, i); 
+			sElement* other = contact->colliding == element ? contact->collided : contact->colliding;
 			GxElemMove(other, move, false);
 		}
 	}
 }
 
-static inline void physicsCheckCollision(GxElement* other) {	
+static inline void physicsCheckCollision(sElement* other) {	
 	
 	//create alias	
 	GxPhysics* physics = GxSceneGetPhysics(GxElemGetScene(other));
-	EmData* emdata = nsArr->last(physics->emdstack);
-	GxElement* self = emdata->self;	
+	EmData* emdata = nArr->last(physics->emdstack);
+	sElement* self = emdata->self;	
 
 	if (self == other) return;
 	if (!(GxElemGetCmask(self) & GxElemGetCmask(other))) return;
 
 	//create alias
-	GxVector v = GxElemGetVelocity(self);
+	sVector v = GxElemGetVelocity(self);
 	const SDL_Rect* s = GxElemGetPosition(self);
 	const SDL_Rect* o = GxElemGetPosition(other);	
 	
 	if (SDL_HasIntersection(&emdata->trajetory, o)) {
 
-		if (!emdata->contacts) emdata->contacts = nsArr->create();
+		if (!emdata->contacts) emdata->contacts = nArr->create();
 
 		//check horizontal direction
 		if (v.x > 0) {
 			int amove = o->x - (s->x + s->w);
 			if (amove >= 0 && amove < v.x) {
-				nsArr->push(emdata->contacts, createContact(self, other, amove, GxContactRight), NULL);
+				nArr->push(emdata->contacts, createContact(self, other, amove, GxContactRight), NULL);
 			}
 		}
 		else if (v.x < 0) {
 			int amove = (o->x + o->w) - s->x;
 			if (amove <= 0 && amove > v.x) {
-				nsArr->push(emdata->contacts, createContact(self, other, amove, GxContactLeft), NULL);
+				nArr->push(emdata->contacts, createContact(self, other, amove, GxContactLeft), NULL);
 			}		
 		}
 
@@ -295,25 +295,25 @@ static inline void physicsCheckCollision(GxElement* other) {
 		if (v.y > 0) {
 			int amove = o->y - (s->y + s->h);
 			if (amove >= 0 && amove < v.y) {
-				nsArr->push(emdata->contacts, createContact(self, other, amove, GxContactUp), NULL);
+				nArr->push(emdata->contacts, createContact(self, other, amove, GxContactUp), NULL);
 			}
 		}
 		else if (v.y < 0) {
 			int amove = (o->y + o->h) - s->y;
 			if (amove <= 0 && amove > v.y) {
-				nsArr->push(emdata->contacts, createContact(self, other, amove, GxContactDown), NULL);
+				nArr->push(emdata->contacts, createContact(self, other, amove, GxContactDown), NULL);
 			}		
 		}		
 	}
 }
 
-static inline GxVector physicsProcessMovementData(GxPhysics* self) {	
+static inline sVector physicsProcessMovementData(GxPhysics* self) {	
 
 	//get emdata
-	EmData* emdata = nsArr->last(self->emdstack);
+	EmData* emdata = nArr->last(self->emdstack);
 
 	//gets self velocity
-	GxVector move = GxElemGetVelocity(emdata->self);
+	sVector move = GxElemGetVelocity(emdata->self);
 
 	//if there is no contact, just move the element
 	if (!emdata->contacts) {			
@@ -324,8 +324,8 @@ static inline GxVector physicsProcessMovementData(GxPhysics* self) {
 	
 	bool horizontalCollision = false, verticalCollision = false;
 
-	for (Uint32 i = 0; i < nsArr->size(emdata->contacts); i++){
-		GxContact* contact = nsArr->at(emdata->contacts, i);
+	for (Uint32 i = 0; i < nArr->size(emdata->contacts); i++){
+		GxContact* contact = nArr->at(emdata->contacts, i);
 		GxSceneOnPreContact_(self->scene, contact);
 		if (contact->prevented) { continue; }
 
@@ -337,7 +337,7 @@ static inline GxVector physicsProcessMovementData(GxPhysics* self) {
 		if (contact->direction == GxContactRight && move.x >= contact->amove) {			
 			if (spref > opref) {
 				GxElemSetPreference(contact->collided, spref);
-				GxElemMove(contact->collided, (GxVector) { (spos.x + move.x + spos.w) - opos.x, 0 }, false);				
+				GxElemMove(contact->collided, (sVector) { (spos.x + move.x + spos.w) - opos.x, 0 }, false);				
 				GxElemSetPreference(contact->collided, opref);
 				contact->amove = (opos.x - (spos.x + spos.w));
 			}			
@@ -349,7 +349,7 @@ static inline GxVector physicsProcessMovementData(GxPhysics* self) {
 		else if (contact->direction == GxContactLeft && move.x <= contact->amove) {
 			if (spref > opref) {
 				GxElemSetPreference(contact->collided, spref);
-				GxElemMove(contact->collided, (GxVector) {(spos.x + move.x) - (opos.x + opos.w), 0 }, false);				
+				GxElemMove(contact->collided, (sVector) {(spos.x + move.x) - (opos.x + opos.w), 0 }, false);				
 				GxElemSetPreference(contact->collided, opref);
 				contact->amove = ((opos.x + opos.w) - spos.x);
 			}			
@@ -361,7 +361,7 @@ static inline GxVector physicsProcessMovementData(GxPhysics* self) {
 		else if (contact->direction == GxContactUp && move.y >= contact->amove) {
 			if (spref > opref) {				
 				GxElemSetPreference(contact->collided, spref);
-				GxElemMove(contact->collided, (GxVector) { 0, (spos.y + move.y + spos.h) - opos.y}, false);				
+				GxElemMove(contact->collided, (sVector) { 0, (spos.y + move.y + spos.h) - opos.y}, false);				
 				GxElemSetPreference(contact->collided, opref);
 				contact->amove = opos.y - (spos.y + spos.h);			
 			}			
@@ -373,7 +373,7 @@ static inline GxVector physicsProcessMovementData(GxPhysics* self) {
 		else if (contact->direction == GxContactDown && move.y <= contact->amove) {
 			if (spref > opref) {	
 				GxElemSetPreference(contact->collided, spref);
-				GxElemMove(contact->collided, (GxVector) {0, (spos.y + move.y) - (opos.y + opos.h)}, false);				
+				GxElemMove(contact->collided, (sVector) {0, (spos.y + move.y) - (opos.y + opos.h)}, false);				
 				GxElemSetPreference(contact->collided, opref);
 				contact->amove = (opos.y + opos.h) - spos.y;
 			}			
@@ -389,13 +389,13 @@ static inline GxVector physicsProcessMovementData(GxPhysics* self) {
 	physicsApplyFriction(self, emdata->self, move);
 
 	//now check effective collisions and add to self collision array
-	Uint32 previousSize = nsArr->size(self->contacts);
+	Uint32 previousSize = nArr->size(self->contacts);
 
 	double xres = 0.0, yres = 0.0; //restitution in direction x and y
 	bool changeVelocity = false;
 
-	for (Uint32 i = 0; i < nsArr->size(emdata->contacts); i++){
-		GxContact* contact = nsArr->at(emdata->contacts, i); 		
+	for (Uint32 i = 0; i < nArr->size(emdata->contacts); i++){
+		GxContact* contact = nArr->at(emdata->contacts, i); 		
 		int spref = GxElemGetPreference(contact->colliding);
 		int opref = GxElemGetPreference(contact->collided);
 		SDL_Rect spos = *GxElemGetPosition(contact->colliding);
@@ -432,8 +432,8 @@ static inline GxVector physicsProcessMovementData(GxPhysics* self) {
 	}
 
 		//notify collision callback handler
-	while (previousSize < nsArr->size(self->contacts)) {
-		GxContact* contact = nsArr->at(self->contacts, previousSize);
+	while (previousSize < nArr->size(self->contacts)) {
+		GxContact* contact = nArr->at(self->contacts, previousSize);
 		GxSceneOnContactBegin_(self->scene, contact);
 		previousSize++;
 	}
@@ -444,8 +444,8 @@ bool physicsAddContact(GxPhysics* self, GxContact* contact) {
 	
 	bool contains = false;
 
-	for (Uint32 i = 0; i < nsArr->size(self->contacts); i++){
-		GxContact* buffer = nsArr->at(self->contacts, i);		
+	for (Uint32 i = 0; i < nArr->size(self->contacts); i++){
+		GxContact* buffer = nArr->at(self->contacts, i);		
 		if (contactIsEqual(contact, buffer)) {
 			contains = true;
 			break;
@@ -456,7 +456,7 @@ bool physicsAddContact(GxPhysics* self, GxContact* contact) {
 		elemAddContact_(contact->colliding, contact);
 		elemAddContact_(contact->collided, contact);		
 		contact->effective = true;
-		nsArr->push(self->contacts, contact, NULL);			
+		nArr->push(self->contacts, contact, NULL);			
 		return true;
 	}
 
@@ -464,9 +464,9 @@ bool physicsAddContact(GxPhysics* self, GxContact* contact) {
 	return false;	
 }
 
-void physicsCheckContactEnd(GxPhysics* self, GxElement* element) {
+void physicsCheckContactEnd(GxPhysics* self, sElement* element) {
 		
-	sArray* contactsToRemove = nsArr->create();
+	sArray* contactsToRemove = nArr->create();
 	GxList* allContacts = GxElemGetContactList_(element);
 	
 	for (GxContact* contact = GxListBegin(allContacts); contact != NULL;
@@ -477,7 +477,7 @@ void physicsCheckContactEnd(GxPhysics* self, GxElement* element) {
 				
 		if (contact->prevented){			
 			if (!SDL_HasIntersection(&spos, &opos)) {
-				nsArr->push(contactsToRemove, contact, (GxDestructor) destroyContact);
+				nArr->push(contactsToRemove, contact, (GxDestructor) destroyContact);
 			}
 		}
 		else if((bool) (contact->direction == GxContactRight || contact->direction == GxContactLeft)){
@@ -485,7 +485,7 @@ void physicsCheckContactEnd(GxPhysics* self, GxElement* element) {
 			bool touchingOnXAxis = (contact->direction ==  GxContactRight) ?
 				spos.x + spos.w == opos.x : spos.x == opos.x + opos.w;
 			if (notInTheSameRow || !touchingOnXAxis) {
-				nsArr->push(contactsToRemove, contact, (GxDestructor) destroyContact);
+				nArr->push(contactsToRemove, contact, (GxDestructor) destroyContact);
 			}			
 		}
 		else if((bool) (contact->direction == GxContactUp || contact->direction == GxContactDown)){
@@ -503,24 +503,24 @@ void physicsCheckContactEnd(GxPhysics* self, GxElement* element) {
 			bool touchingOnYAxis = (contact->direction == GxContactUp) ?
 				spos.y + spos.h == opos.y : spos.y == opos.y + opos.h;
 			if (notInTheSameColumn || !touchingOnYAxis) {
-				nsArr->push(contactsToRemove, contact, (GxDestructor) destroyContact);
+				nArr->push(contactsToRemove, contact, (GxDestructor) destroyContact);
 			}
 		}
 	}
 	
-	for (Uint32 i = 0; i < nsArr->size(contactsToRemove); i++){
-		GxContact* contact = nsArr->at(contactsToRemove, i);		
+	for (Uint32 i = 0; i < nArr->size(contactsToRemove); i++){
+		GxContact* contact = nArr->at(contactsToRemove, i);		
 		GxSceneOnContactEnd_(self->scene, contact);		
 	}
 	
 	//... sArray destructor delete contacts //-> and GxContact GxDestructor remove it from arrays.
-	nsArr->destroy(contactsToRemove);
+	nArr->destroy(contactsToRemove);
 }
 
-static void physicsCheckGround(GxElement* other) {
+static void physicsCheckGround(sElement* other) {
 	GxPhysics* physics = GxSceneGetPhysics(GxElemGetScene(other));
-	EmData* emdata = nsArr->last(physics->emdstack);
-	GxElement* self = emdata->self;
+	EmData* emdata = nArr->last(physics->emdstack);
+	sElement* self = emdata->self;
 	
 	const SDL_Rect* s = GxElemGetPosition(self);
 	const SDL_Rect* o = GxElemGetPosition(other);
@@ -539,7 +539,7 @@ static void physicsCheckGround(GxElement* other) {
 void GxPhysicsCreateWalls_(GxPhysics* self) {
 	
 	GxSize size = GxSceneGetSize(self->scene);
-	GxIni ini = {
+	sIni ini = {
 		.className = "__WALL__",				
 		.display = GxElemNone,
 		.body = GxElemFixed,			
@@ -561,35 +561,35 @@ void GxPhysicsCreateWalls_(GxPhysics* self) {
 #define CHECK_CONTACT_HASH(contact)\
 {\
 	uint32_t hash = *(uint32_t *) contact;\
-	nsUtil->assertHash(hash == nsUtil->hash->CONTACT);\
+	nUtil->assertHash(hash == nUtil->hash->CONTACT);\
 }
 
-GxElement* GxContactGetColliding(GxContact* contact) {
+sElement* GxContactGetColliding(GxContact* contact) {
 	CHECK_CONTACT_HASH(contact)
 	return contact->colliding;
 }
 
-GxElement* GxContactGetCollided(GxContact* contact) {
+sElement* GxContactGetCollided(GxContact* contact) {
 	CHECK_CONTACT_HASH(contact)
 	return contact->collided;
 }
 
-bool GxContactIsBetween(GxContact* contact, GxElement* self, GxElement* other) {
+bool GxContactIsBetween(GxContact* contact, sElement* self, sElement* other) {
 	CHECK_CONTACT_HASH(contact)
 	bool s = self ? contact->colliding == self : true;
 	bool o = other ? contact->collided == other : true;
 	return s && o;
 }
 
-bool GxContactHasElement(GxContact* contact, GxElement* element) {
+bool GxContactHasElement(GxContact* contact, sElement* element) {
 	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == element || contact->collided == element);
 }
 
 
-GxElement* GxContactGetOppositeElement(GxContact* contact, GxElement* self) {
+sElement* GxContactGetOppositeElement(GxContact* contact, sElement* self) {
 	CHECK_CONTACT_HASH(contact)
-	nsUtil->assertArgument(contact->colliding == self || contact->collided == self);
+	nUtil->assertArgument(contact->colliding == self || contact->collided == self);
 	return (contact->colliding == self ? contact->collided : contact->colliding);
 }
 
@@ -613,25 +613,25 @@ void GxContactAllowCollision(GxContact* contact) {
 	contact->prevented = true;
 }
 
-bool GxContactIsElemRightContact(GxContact* contact, GxElement* self) {
+bool GxContactIsElemRightContact(GxContact* contact, sElement* self) {
 	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactRight) ||
 		(contact->collided == self && contact->direction == GxContactLeft);
 }
 
-bool GxContactIsElemLeftContact(GxContact* contact, GxElement* self) {
+bool GxContactIsElemLeftContact(GxContact* contact, sElement* self) {
 	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactLeft) ||
 		(contact->collided == self && contact->direction == GxContactRight);
 }
 
-bool GxContactIsElemDownContact(GxContact* contact, GxElement* self) {
+bool GxContactIsElemDownContact(GxContact* contact, sElement* self) {
 	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactDown) ||
 		(contact->collided == self && contact->direction == GxContactUp);
 }
 
-bool GxContactIsElemUpContact(GxContact* contact, GxElement* self) {
+bool GxContactIsElemUpContact(GxContact* contact, sElement* self) {
 	CHECK_CONTACT_HASH(contact)
 	return (contact->colliding == self && contact->direction == GxContactUp) ||
 		(contact->collided == self && contact->direction == GxContactDown);

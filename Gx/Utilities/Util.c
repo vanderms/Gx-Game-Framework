@@ -1,5 +1,5 @@
 #include "../Utilities/Util.h"
-#include "../Ini/GxIni.h"
+#include "../Ini/Ini.h"
 #include "../Array/Array.h"
 #include "../App/App.h"
 #include <string.h>
@@ -21,7 +21,7 @@ static char* createStringF(const char* format, ...) {
 	va_start(args, format);
 	vsnprintf(buffer, 1024, format, args);
 	va_end(args);     
-    char* value = nsUtil->createString(buffer);    
+    char* value = nUtil->createString(buffer);    
 	return value;
 }
 
@@ -33,7 +33,7 @@ static int* createInt(int value) {
 
 static Uint32* createUint(Uint32 value) {
 	Uint32* self = malloc(sizeof(Uint32));
-    nsUtil->assertAlloc(self);
+    nUtil->assertAlloc(self);
     *self = value;
     return self;
 }
@@ -46,16 +46,16 @@ static bool* createBool(bool value) {
 
 static double* createDouble(double value) {
 	double* self = malloc(sizeof(double));
-    nsUtil->assertAlloc(self);
+    nUtil->assertAlloc(self);
     *self = value;
     return self;
 }
 
 static char* createString(const char* value) {
-   nsUtil->assertNullPointer(value);
+   nUtil->assertNullPointer(value);
 	size_t size = strlen(value) + 1;
 	char* self = malloc(sizeof(char) * size);
-	nsUtil->assertAlloc(self);
+	nUtil->assertAlloc(self);
 	//strncpy is deprecated and strncpy_s does not have portability
 	for (size_t i = 0; i < size - 1; i++) self[i] = value[i];
 	self[size - 1] = '\0';
@@ -74,20 +74,20 @@ static char* cloneString(const char* str, char* buffer, Uint32 size) {
 
 static sArray* split(const char* str, const char* sep) {
     
-    sArray* tokens = nsArr->create();
+    sArray* tokens = nArr->create();
 
     const size_t len = strlen(sep);
     char* next = NULL;
-    char* token = nsUtil->createString(str);
+    char* token = nUtil->createString(str);
     char* memory = token;
 
     while ((next = strstr(token, sep))){
         next[0] = '\0';
-        nsArr->push(tokens, nsUtil->createString(token), free);
+        nArr->push(tokens, nUtil->createString(token), free);
         token = next + len;       
     }
     
-    nsArr->push(tokens, nsUtil->createString(token), free);
+    nArr->push(tokens, nUtil->createString(token), free);
     free(memory);
     
     return tokens;
@@ -97,17 +97,17 @@ static void splitAssetPath(const char* path, char* folder, char* asset) {
     char clone[64];
     cloneString(path, clone, 64);
     char* div = strstr(clone, "/");
-    nsUtil->assertArgument(div);
+    nUtil->assertArgument(div);
     div[0] = '\0';
-    nsUtil->cloneString(clone, folder, 32);
-    nsUtil->cloneString(div + 1, asset, 32);
+    nUtil->cloneString(clone, folder, 32);
+    nUtil->cloneString(div + 1, asset, 32);
 }
 
 
 static char* trim(const char* str, char* buffer, size_t bSize) {    
 
     size_t len = strlen(str);
-    nsUtil->assertState(bSize > len);
+    nUtil->assertState(bSize > len);
     
     size_t start = 0, index = 0, end = len - 1;
     
@@ -139,56 +139,56 @@ static int random(uint32_t* seed, int start, int end) {
 
 static bool assertNullPointer(const void* ptr) {
     if (!ptr) {
-        nsApp->runtimeError("Null pointer error.");
+        nApp->runtimeError("Null pointer error.");
     }
     return ptr;
 }
 
 static bool assertArgument(bool condition){
     if (!condition) {
-        nsApp->runtimeError("Invalid argument error.");
+        nApp->runtimeError("Invalid argument error.");
     }    
     return condition;
 }
 
 static void* assertAlloc(void* ptr){
     if (!ptr) {
-        nsApp->runtimeError("Failed to allocate memory.");
+        nApp->runtimeError("Failed to allocate memory.");
     }
     return ptr;
 }
 
 static bool assertImplementation(bool condition) {
     if (!condition) {
-        nsApp->runtimeError("Component not implemented error.");
+        nApp->runtimeError("Component not implemented error.");
     }    
     return condition;
 }
 
 static bool assertHash(bool condition) {
     if (!condition) {
-        nsApp->runtimeError("Invalid hash error.");
+        nApp->runtimeError("Invalid hash error.");
     }    
     return condition;
 }
 
 static bool assertOutOfRange(bool condition){
     if (!condition) {
-        nsApp->runtimeError("Out of range error.");
+        nApp->runtimeError("Out of range error.");
     }    
     return condition;
 }
 
 static bool assertResourceNotFound(bool condition) {
     if (!condition) {
-        nsApp->runtimeError("Resource not found error.");
+        nApp->runtimeError("Resource not found error.");
     }    
     return condition;
 }
 
 static bool assertState(bool condition){    
     if (!condition) {
-        nsApp->runtimeError("Invalid state error.");
+        nApp->runtimeError("Invalid state error.");
     }    
     return condition;
 }
@@ -202,7 +202,7 @@ static void onDestroyDoNothing(GxEvent* e) {
     (void) e;
 }
 
-const sUtilNamespace*  nsUtil = &(sUtilNamespace){
+const sUtilNamespace*  nUtil = &(sUtilNamespace){
 	.createInt = createInt,
 	.createUint = createUint,
 	.createBool = createBool,

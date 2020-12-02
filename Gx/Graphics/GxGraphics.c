@@ -2,10 +2,10 @@
 #include "../Scene/GxScene.h"
 #include "../Array/Array.h"
 #include "../Quadtree/GxQuadtree.h"
-#include "../Element/GxElement.h"
-#include "../Private/GxElement.h"
+#include "../sElement/sElement.h"
+#include "../Private/sElement.h"
 #include "../Private/GxGraphicAssets.h"
-#include "../Renderable/GxRenderable.h"
+#include "../Renderable/sElemRenderable.h"
 #include "../Folder/GxFolder.h"
 #include "../Folder/GxFolder.h"
 #include "../List/GxList.h"
@@ -20,13 +20,13 @@ typedef struct GxGraphics {
 
 GxGraphics* GxCreateGraphics_(GxScene* scene){
 	GxGraphics* self = malloc(sizeof(GxGraphics));
-	nsUtil->assertAlloc(self);
+	nUtil->assertAlloc(self);
 	self->scene = scene;
 	GxSize size = GxSceneGetSize(scene);
 	int length = size.w > size.h ? size.w : size.h ;	
 	self->rtree = GxCreateQtree_(NULL, (SDL_Rect) { 0, 0, length, length }, "graphical");	
-	self->absolute = nsArr->create();
-	self->renderables = nsArr->create();
+	self->absolute = nArr->create();
+	self->renderables = nArr->create();
 	return self;
 }
 
@@ -34,40 +34,40 @@ void GxDestroyGraphics_(GxGraphics* self) {
 	if (self) {
 		void GxDestroyQtree_(GxQtree* self);
 		GxDestroyQtree_(self->rtree);
-		nsArr->destroy(self->absolute);
-		nsArr->destroy(self->renderables);	
+		nArr->destroy(self->absolute);
+		nArr->destroy(self->renderables);	
 		free(self);
 	}
 }
 
-void GxGraphicsInsertElement_(GxGraphics* self, GxElement* element) {	
+void GxGraphicsInsertElement_(GxGraphics* self, sElement* element) {	
 	if (GxElemIsRenderable(element)) {
 		if(GxElemHasRelativePosition(element)) GxQtreeInsert_(self->rtree, element);
-		else if(GxElemHasAbsolutePosition(element)) nsArr->push(self->absolute, element, NULL);
+		else if(GxElemHasAbsolutePosition(element)) nArr->push(self->absolute, element, NULL);
 	}
 }
 
-void GxGraphicsUpdatePosition_(GxGraphics* self, GxElement* element, SDL_Rect previousPos) {	
+void GxGraphicsUpdatePosition_(GxGraphics* self, sElement* element, SDL_Rect previousPos) {	
 	if (GxElemHasRelativePosition(element)) {
 		GxQtreeUpdate_(self->rtree, element, previousPos);
 	}
 }
 
-void GxGraphicsRemoveElement_(GxGraphics* self, GxElement* element) {	
+void GxGraphicsRemoveElement_(GxGraphics* self, sElement* element) {	
 	if (GxElemIsRenderable(element)) {
 		if(GxElemHasRelativePosition(element)) GxQtreeRemove_(self->rtree, element);
-		else if(GxElemHasAbsolutePosition(element)) nsArr->removeByValue(self->absolute, element);
+		else if(GxElemHasAbsolutePosition(element)) nArr->removeByValue(self->absolute, element);
 	}
 }
 
-static inline void fillRenderables_(GxElement* element) {
+static inline void fillRenderables_(sElement* element) {
 	GxGraphics* graphics = GxSceneGetGraphics(GxElemGetScene(element));
 	if (!GxElemIsHidden(element)) {
-		nsArr->push(graphics->renderables, element, NULL);
+		nArr->push(graphics->renderables, element, NULL);
 	}
 }
 
-static inline int compareIndexes_(GxElement* lhs, GxElement* rhs) {
+static inline int compareIndexes_(sElement* lhs, sElement* rhs) {
 	int i01 = GxElemGetZIndex(lhs);
 	int i02 = GxElemGetZIndex(rhs);
 	return i01 == i02 ? 0 : (i01 > i02 ? 1 : -1);
@@ -75,17 +75,17 @@ static inline int compareIndexes_(GxElement* lhs, GxElement* rhs) {
 
 void GxGraphicsUpdate_(GxGraphics* self) {	
 		
-	nsArr->reserve(self->renderables, 200);
+	nArr->reserve(self->renderables, 200);
 
 	//fill renderables with absolute elements
-	for (Uint32 i = 0; i < nsArr->size(self->absolute); i++){	
-		GxElement* e = nsArr->at(self->absolute, i);
+	for (Uint32 i = 0; i < nArr->size(self->absolute); i++){	
+		sElement* e = nArr->at(self->absolute, i);
 		if(GxElemIsHidden(e)) continue;
 		GxSize size = GxSceneGetSize(self->scene);
 		SDL_Rect pos = (SDL_Rect){ 0, 0, size.w, size.h };
 		const SDL_Rect* elemPos = GxElemGetPosition(e);
 		if (SDL_HasIntersection(&pos, elemPos)) {
-			nsArr->push(self->renderables, e, NULL);
+			nArr->push(self->renderables, e, NULL);
 		}
 	}
 
@@ -94,31 +94,31 @@ void GxGraphicsUpdate_(GxGraphics* self) {
 	GxQtreeIterate_(self->rtree, *area, fillRenderables_, true);
 
 	//sort
-	nsArr->sort(self->renderables, (GxComp) compareIndexes_);
+	nArr->sort(self->renderables, (GxComp) compareIndexes_);
 
 	//then iterate
-	for (Uint32 i = 0; i < nsArr->size(self->renderables); i++){
-		GxElement* elem = nsArr->at(self->renderables, i);		
+	for (Uint32 i = 0; i < nArr->size(self->renderables); i++){
+		sElement* elem = nArr->at(self->renderables, i);		
 		GxElemRender_(elem);
 	}
-	nsArr->clean(self->renderables);
+	nArr->clean(self->renderables);
 }
 
 
 //...ELEMENT RENDER METHODS
-static SDL_Rect calcAbsolutePos(GxElement* self) {
-	int y = nsApp->logicalSize().h - (self->pos->y + self->pos->h);
+static SDL_Rect calcAbsolutePos(sElement* self) {
+	int y = nApp->logicalSize().h - (self->pos->y + self->pos->h);
 	return (SDL_Rect) { self->pos->x, y, self->pos->w, self->pos->h };
 }
 
-static SDL_Rect calcRelativePos(GxElement* self) {
+static SDL_Rect calcRelativePos(sElement* self) {
 	const SDL_Rect* cpos = GxSceneGetCamera(self->scene)->pos;
 	int x = self->pos->x - cpos->x;
 	int y = (cpos->y + cpos->h) - (self->pos->y + self->pos->h);
 	return (SDL_Rect) { x, y, self->pos->w, self->pos->h };
 }
 
-static void applyWidgetData(GxElement* self, SDL_Rect* pos, GxImage* image) {
+static void applyWidgetData(sElement* self, SDL_Rect* pos, GxImage* image) {
 
 	GxSize imgsize = GxImageGetSize_(image);
 	pos->w = (int) (imgsize.w * self->renderable->proportion + 0.5);
@@ -151,17 +151,17 @@ static void applyWidgetData(GxElement* self, SDL_Rect* pos, GxImage* image) {
 	}
 }
 
-static inline SDL_Rect* calcAbsoluteImagePos(GxElement* self, SDL_Rect* pos, GxImage* image) {
+static inline SDL_Rect* calcAbsoluteImagePos(sElement* self, SDL_Rect* pos, GxImage* image) {
 	applyWidgetData(self, pos, image);
 	return pos;
 }
 
-static inline SDL_Rect* calcRelativeImagePos(GxElement* self, SDL_Rect* pos, GxImage* image) {
+static inline SDL_Rect* calcRelativeImagePos(sElement* self, SDL_Rect* pos, GxImage* image) {
 	applyWidgetData(self, pos, image);
 	return pos;
 }
 
- SDL_Rect* GxElemCalcImagePos(GxElement* self, SDL_Rect* pos, GxImage* image) {
+ SDL_Rect* GxElemCalcImagePos(sElement* self, SDL_Rect* pos, GxImage* image) {
 	return (
 		self->renderable->type == GxElemAbsolute ?
 		calcAbsoluteImagePos(self, pos, image) :
@@ -169,7 +169,7 @@ static inline SDL_Rect* calcRelativeImagePos(GxElement* self, SDL_Rect* pos, GxI
 	);
 }
 
-SDL_Rect GxGetElemPositionOnWindow(GxElement* self) {
+SDL_Rect GxGetElemPositionOnWindow(sElement* self) {
 	validateElem(self, false, true);
 	return (
 		self->renderable->type == GxElemAbsolute ?
@@ -189,9 +189,9 @@ static void renderBorder(SDL_Renderer* renderer, SDL_Rect* pos, int quantity) {
 	renderBorder(renderer, pos, quantity - 1);
 }
 
-void GxElemRender_(GxElement* self) {
+void GxElemRender_(sElement* self) {
 
-	SDL_Renderer* renderer = nsApp->SDLRenderer();
+	SDL_Renderer* renderer = nApp->SDLRenderer();
 	SDL_Rect pos = GxGetElemPositionOnWindow(self);
 	SDL_Rect labelPos = pos;
 	SDL_Color* color = self->renderable->backgroundColor->value;
@@ -201,7 +201,7 @@ void GxElemRender_(GxElement* self) {
 		int bs = self->renderable->border.size;
 		SDL_Rect square = {pos.x + bs, pos.y + bs, pos.w - 2*bs, pos.h - 2*bs};
 		SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, color->a);
-		SDL_Rect* dst = nsApp->calcDest(&square, &(SDL_Rect){0});
+		SDL_Rect* dst = nApp->calcDest(&square, &(SDL_Rect){0});
 		SDL_RenderFillRect(renderer, dst);
 		//SDL_RenderDrawRect(renderer, &pos);
 	}
@@ -214,7 +214,7 @@ void GxElemRender_(GxElement* self) {
 		SDL_SetRenderDrawColor(renderer,
 			borderColor->r, borderColor->g, borderColor->b, borderColor->a
 		);
-		SDL_Rect* dst = nsApp->calcDest(&pos, &(SDL_Rect){0});
+		SDL_Rect* dst = nApp->calcDest(&pos, &(SDL_Rect){0});
 		renderBorder(renderer, dst, bsize);
 	}
 
@@ -279,10 +279,10 @@ void GxImageRender_(GxImage* self, SDL_Rect* target, double angle, SDL_RendererF
             if (opacity != 255) {
                  SDL_SetTextureAlphaMod(resource, opacity);
             }           
-            SDL_Renderer* renderer = nsApp->SDLRenderer();
+            SDL_Renderer* renderer = nApp->SDLRenderer();
             SDL_Rect* dst = ( self->type == Text ? 
-                nsApp->calcLabelDest(target, &(SDL_Rect){0}) 
-                : nsApp->calcDest(target, &(SDL_Rect){0, 0, 0, 0})
+                nApp->calcLabelDest(target, &(SDL_Rect){0}) 
+                : nApp->calcDest(target, &(SDL_Rect){0, 0, 0, 0})
             );
              
             if ((angle <= -1.0 || angle >= 1.0) || orientation != SDL_FLIP_NONE) {
@@ -313,7 +313,7 @@ void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target, Uint8 opacity) {
     int columnStart = 0;
     int columnEnd =  self->matrix.nc;
 
-    GxSize windowSize = nsApp->logicalSize();
+    GxSize windowSize = nApp->logicalSize();
 
     //... calc renderable area of the matrix
     if (target->x < 0) {
@@ -337,7 +337,7 @@ void GxImageRenderTilePalette_(GxImage* self, SDL_Rect* target, Uint8 opacity) {
         for (int columns = columnStart; columns < columnEnd; columns++) {
 
             int index = rows * self->matrix.nc + columns;
-            GxImage* child = nsArr->at(self->children, index);
+            GxImage* child = nArr->at(self->children, index);
             if(child->type == Blank){ continue; }
             int x = (target->x + columns * w);
 

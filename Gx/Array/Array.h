@@ -20,7 +20,7 @@ typedef struct sArrayNamespace {
 	void (*sort)(sArray* self, GxComp compare);
 } sArrayNamespace;
 
-extern const sArrayNamespace* nsArr;
+extern const sArrayNamespace* nArr;
 
 
 #endif // !GX_ARRAY_H

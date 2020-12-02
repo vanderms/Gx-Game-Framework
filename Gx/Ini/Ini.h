@@ -4,7 +4,7 @@
 
 
 //... MAIN STRUCT
-typedef struct GxIni {
+typedef struct sIni {
 	
 	//app
 	const char* title;
@@ -40,7 +40,7 @@ typedef struct GxIni {
 	const char* font;
 	
 	//body	
-	GxVector velocity;	
+	sVector velocity;	
 	bool friction;
 
 	//callbacks
@@ -61,6 +61,6 @@ typedef struct GxIni {
 	GxHandler onContactBegin;
 	GxHandler onContactEnd;
 	GxHandler onElemRemove;
-} GxIni;
+} sIni;
 
 #endif // !GX_INI_H

@@ -6,15 +6,15 @@ typedef struct GxGraphics GxGraphics;
 
 GxGraphics* GxCreateGraphics_(GxScene* scene);
 void GxDestroyGraphics_(GxGraphics* self);
-void GxGraphicsInsertElement_(GxGraphics* self, GxElement* element);
-void GxGraphicsUpdatePosition_(GxGraphics* self, GxElement* element, SDL_Rect previousPos);
-void GxGraphicsRemoveElement_(GxGraphics* self, GxElement* element);
+void GxGraphicsInsertElement_(GxGraphics* self, sElement* element);
+void GxGraphicsUpdatePosition_(GxGraphics* self, sElement* element, SDL_Rect previousPos);
+void GxGraphicsRemoveElement_(GxGraphics* self, sElement* element);
 void GxGraphicsUpdate_(GxGraphics* self);
 
-//...Element
-void GxElemRender_(GxElement* self);
-SDL_Rect GxGetElemPositionOnWindow(GxElement* self);
- SDL_Rect* GxElemCalcImagePos(GxElement* self, SDL_Rect* pos, GxImage* image);
+//...sElement
+void GxElemRender_(sElement* self);
+SDL_Rect GxGetElemPositionOnWindow(sElement* self);
+ SDL_Rect* GxElemCalcImagePos(sElement* self, SDL_Rect* pos, GxImage* image);
 
  //...Assets
  void GxImageRender_(GxImage* self, SDL_Rect* target, 

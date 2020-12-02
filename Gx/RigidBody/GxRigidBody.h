@@ -1,65 +1,65 @@
 #ifndef GX_RIGID_BODY_H
 #define GX_RIGID_BODY_H
 #include "../Utilities/Util.h"
-#include "../Element/GxElement.h"
+#include "../sElement/sElement.h"
 
-bool GxElemIsOnGround(GxElement* self);
+bool GxElemIsOnGround(sElement* self);
 
-Uint32 GxElemGetCmask(GxElement* self);
-void GxElemSetCmask(GxElement* self, Uint32 mask);
+Uint32 GxElemGetCmask(sElement* self);
+void GxElemSetCmask(sElement* self, Uint32 mask);
 
-int GxElemGetPreference(GxElement* self);
-void GxElemSetPreference(GxElement* self, int value);
+int GxElemGetPreference(sElement* self);
+void GxElemSetPreference(sElement* self, int value);
 
-bool GxElemHasFriction(GxElement* self);
-void GxElemSetFriction(GxElement* self, bool value);
+bool GxElemHasFriction(sElement* self);
+void GxElemSetFriction(sElement* self, bool value);
 
-GxVector GxElemGetVelocity(GxElement* self);
-void GxElemSetVelocity(GxElement* self, GxVector velocity);
+sVector GxElemGetVelocity(sElement* self);
+void GxElemSetVelocity(sElement* self, sVector velocity);
 
-int GxElemGetVely(GxElement* self);
-void GxElemSetVely(GxElement* self, int vel);
+int GxElemGetVely(sElement* self);
+void GxElemSetVely(sElement* self, int vel);
 
-int GxElemGetVelx(GxElement* self);
-void GxElemSetVelx(GxElement* self, int vel);
+int GxElemGetVelx(sElement* self);
+void GxElemSetVelx(sElement* self, int vel);
 
-void GxElemAccelerate(GxElement* self, double x, double y);
+void GxElemAccelerate(sElement* self, double x, double y);
 
-bool GxElemIsMoving(GxElement* self);
+bool GxElemIsMoving(sElement* self);
 
-double GxElemGetElasticity(GxElement* self);
-void GxElemSetElasticity(GxElement* self, double elasticity);
+double GxElemGetElasticity(sElement* self);
+void GxElemSetElasticity(sElement* self, double elasticity);
 
-double GxElemGetRestitution(GxElement* self);
-void GxElemSetRestitution(GxElement* self, double restitution);
+double GxElemGetRestitution(sElement* self);
+void GxElemSetRestitution(sElement* self, double restitution);
 
-int GxElemGetMaxgvel(GxElement* self);
-void GxElemSetMaxgvel(GxElement* self, int value);
+int GxElemGetMaxgvel(sElement* self);
+void GxElemSetMaxgvel(sElement* self, int value);
 
-sArray* GxElemGetContacts(GxElement* self, int types);
-GxList* GxElemGetContactList_(GxElement* self);
+sArray* GxElemGetContacts(sElement* self, int types);
+GxList* GxElemGetContactList_(sElement* self);
 
-void elemAddContact_(GxElement * self, GxContact * contact);
-void elemRemoveContact_(GxElement * self, GxContact * contact);
+void elemAddContact_(sElement * self, GxContact * contact);
+void elemRemoveContact_(sElement * self, GxContact * contact);
 
-uint32_t GxElemGetDFlag_(GxElement* self);
-void GxElemSetDFlag_(GxElement* self, uint32_t value);
+uint32_t GxElemGetDFlag_(sElement* self);
+void GxElemSetDFlag_(sElement* self, uint32_t value);
 
-uint32_t GxElemGetFFlag_(GxElement* self);
-void GxElemSetFFlag_(GxElement* self, uint32_t value);
+uint32_t GxElemGetFFlag_(sElement* self);
+void GxElemSetFFlag_(sElement* self, uint32_t value);
 
-bool GxElemGetMcFlag_(GxElement* self);
-void GxElemSetMcFlag_(GxElement* self, bool value);
+bool GxElemGetMcFlag_(sElement* self);
+void GxElemSetMcFlag_(sElement* self, bool value);
 
-bool GxElemGetMovFlag_(GxElement* self);
-void GxElemSetMovFlag_(GxElement* self, bool value);
+bool GxElemGetMovFlag_(sElement* self);
+void GxElemSetMovFlag_(sElement* self, bool value);
 
-GxVector GxElemMove(GxElement* self, GxVector vector, bool force);
-void GxElemMoveTo(GxElement* self, GxPoint pos, bool force);
-void GxElemExecuteMove_(GxElement* self, GxVector vector);
+sVector GxElemMove(sElement* self, sVector vector, bool force);
+void GxElemMoveTo(sElement* self, sPoint pos, bool force);
+void GxElemExecuteMove_(sElement* self, sVector vector);
 
-void GxElemApplyHozElasticity_(GxElement* self, double res);
-void GxElemApplyVetElasticity_(GxElement* self, double res);
+void GxElemApplyHozElasticity_(sElement* self, double res);
+void GxElemApplyVetElasticity_(sElement* self, double res);
 
 
 #endif // !RIGID_BODY_H

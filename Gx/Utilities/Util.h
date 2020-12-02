@@ -34,6 +34,6 @@ typedef struct sUtilNamespace {
 	}* hash;
 } sUtilNamespace;
 
-extern const sUtilNamespace* nsUtil;
+extern const sUtilNamespace* nUtil;
 
 #endif // !UTILITIES_H

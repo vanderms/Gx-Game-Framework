@@ -1,62 +1,62 @@
 #ifndef GX_WIDGET_H
 #define GX_WIDGET_H
 #include "../Utilities/Util.h"
-#include "../Element/GxElement.h"
+#include "../Elem/Element.h"
 
 
-int GxElemGetZIndex(GxElement* self);
-void GxElemSetZIndex(GxElement* self, int index);
+int GxElemGetZIndex(sElement* self);
+void GxElemSetZIndex(sElement* self, int index);
 
-Uint8 GxElemGetOpacity(GxElement* self);
-void GxElemSetOpacity(GxElement* self, Uint8 value);
+Uint8 GxElemGetOpacity(sElement* self);
+void GxElemSetOpacity(sElement* self, Uint8 value);
 
-int GxElemGetOrientation(GxElement* self);
-void GxElemSetOrientation(GxElement* self, int value);
+int GxElemGetOrientation(sElement* self);
+void GxElemSetOrientation(sElement* self, int value);
 
-const char* GxElemGetImage(GxElement* self);
-void GxElemSetImage(GxElement* self, const char* apath);
-void GxTilemapSetImage_(GxElement* self, GxImage* pallete);
+const char* GxElemGetImage(sElement* self);
+void GxElemSetImage(sElement* self, const char* apath);
+void GxTilemapSetImage_(sElement* self, GxImage* pallete);
 
-const char* GxElemGetAnimation(GxElement* self);
-void GxElemSetAnimation(GxElement* self, const char* apath);
+const char* GxElemGetAnimation(sElement* self);
+void GxElemSetAnimation(sElement* self, const char* apath);
 
-const char* GxElemGetAlignment(GxElement* self);
-void GxElemSetAlignment(GxElement* self, const char* value);
+const char* GxElemGetAlignment(sElement* self);
+void GxElemSetAlignment(sElement* self, const char* value);
 
-bool GxElemIsHidden(GxElement* self);
-void GxElemHide(GxElement* self);
-void GxElemShow(GxElement* self);
+bool GxElemIsHidden(sElement* self);
+void GxElemHide(sElement* self);
+void GxElemShow(sElement* self);
 
-double GxElemGetAngle(GxElement* self);
-void GxElemSetAngle(GxElement* self, double angle);
+double GxElemGetAngle(sElement* self);
+void GxElemSetAngle(sElement* self, double angle);
 
-double GxElemGetProportion(GxElement* self);
-void GxElemSetProportion(GxElement* self, double proportion);
-void GxElemSetToFit(GxElement* self, const char* axis);
+double GxElemGetProportion(sElement* self);
+void GxElemSetProportion(sElement* self, double proportion);
+void GxElemSetToFit(sElement* self, const char* axis);
 
-const SDL_Color* GxElemGetBackgroundColor(GxElement* self);
-void GxElemSetBackgroundColor(GxElement* self, const char* color);
+const SDL_Color* GxElemGetBackgroundColor(sElement* self);
+void GxElemSetBackgroundColor(sElement* self, const char* color);
 
-int GxElemGetBorderSize(GxElement* self);
-void GxElemSetBorder(GxElement* self, const char* border);
-const SDL_Color* GxElemGetBorderColor(GxElement* self);
+int GxElemGetBorderSize(sElement* self);
+void GxElemSetBorder(sElement* self, const char* border);
+const SDL_Color* GxElemGetBorderColor(sElement* self);
 
-uint32_t GxElemGetWFlag_(GxElement* self);
-void GxElemSetWFlag_(GxElement* self, uint32_t value);
+uint32_t GxElemGetWFlag_(sElement* self);
+void GxElemSetWFlag_(sElement* self, uint32_t value);
 
-void GxElemSetText(GxElement* self, const char* text, ...);
-const char* GxElemGetText(GxElement* self);
+void GxElemSetText(sElement* self, const char* text, ...);
+const char* GxElemGetText(sElement* self);
 
-void GxElemSetFontSize(GxElement* self, int size);
-int GxElemGetFontSize(GxElement* self);
+void GxElemSetFontSize(sElement* self, int size);
+int GxElemGetFontSize(sElement* self);
 
-void GxElemSetFont(GxElement* self, const char* font);
-const char* GxElemGetFont(GxElement* self);
+void GxElemSetFont(sElement* self, const char* font);
+const char* GxElemGetFont(sElement* self);
 
-const SDL_Color* GxElemGetColor(GxElement* self);
-void GxElemSetColor(GxElement* self, const char* color);
+const SDL_Color* GxElemGetColor(sElement* self);
+void GxElemSetColor(sElement* self, const char* color);
 
-void GxElementUpdateLabel_(GxRenderable* renderable);
+void GxElementUpdateLabel_(sElemRenderable* renderable);
 
 #endif // !GX_WIDGET_H
 
