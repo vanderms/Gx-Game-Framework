@@ -3,7 +3,7 @@
 #include "../Utilities/Util.h"
 
 //constructor and destructors
-GxPhysics* GxCreatePhysics_(GxScene* scene);
+GxPhysics* GxCreatePhysics_(sScene* scene);
 void GxDestroyPhysics_(GxPhysics* self);
 
 //physics methods

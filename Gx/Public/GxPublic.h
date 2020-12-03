@@ -23,41 +23,40 @@ typedef SDL_Point sVector;
 typedef Uint32 GxElemID;
 
 //... TYPES :: FORWARD DECLARATION
-typedef struct GxList GxList;
+typedef struct sList sList;
 typedef struct sArray sArray;
 typedef struct GxMap GxMap;
 typedef struct sIni sIni;
 typedef struct GxIEventHandler GxIEventHandler;
 typedef struct GxEvent GxEvent;
-typedef struct GxRequest GxRequest;
-typedef struct GxResponse GxResponse;
-typedef struct GxScene GxScene;
+typedef struct sScene sScene;
 typedef struct sElement sElement;
-typedef struct GxGraphics GxGraphics;
+struct sElemRenderable;
+struct sElemBody;
+typedef struct sGraphics sGraphics;
 typedef struct GxPhysics GxPhysics;
 typedef struct GxContact GxContact;
-typedef struct GxImage GxImage;
-typedef struct GxAnimation GxAnimation;
-typedef struct GxFolder GxFolder;
-typedef struct GxSound GxSound;
-typedef struct GxMusic GxMusic;
+typedef struct sImage sImage;
+typedef struct sAnimation sAnimation;
+typedef struct sFolder sFolder;
+typedef struct sChunk sChunk;
+typedef struct sMusic sMusic;
 
 //... FUNCTIONS :: ALIAS
-typedef void (*GxDestructor)();
+typedef void (*sDtor)();
 typedef int (*GxComp)(const void*, const void*);
-typedef void (*GxHandler)(GxEvent*);
-typedef void (*GxRequestHandler)(GxRequest*, GxResponse*);
+typedef void (*sHandler)(GxEvent*);
 
 //... TYPES :: DEFINITIONS
-typedef struct GxSize {
+typedef struct sSize {
 	int w;
 	int h;
-} GxSize;
+} sSize;
 
-typedef struct GxMatrix {
+typedef struct sMatrix {
 	int nr;
 	int nc;
-} GxMatrix;
+} sMatrix;
 
 typedef struct GxEvent {
 	void* target;
@@ -65,13 +64,6 @@ typedef struct GxEvent {
 	union { GxContact* contact; SDL_Event* sdle; };
 } GxEvent;
 
-static inline void GxAssertion_(bool condition, const char* error) {
-	if (!condition) {		
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Runtime Error", error, NULL);
-		SDL_TriggerBreakpoint();
-        exit(EXIT_FAILURE);
-    }
-}
 
 //.. CONSTANTS
 #define	GxCmaskNone 0
@@ -101,47 +93,5 @@ typedef enum GxStatus {
 	GxStatusUnloading,
 } GxStatus;
 
-
-//... AUXILIARY TYPES
-typedef enum GxEventType {
-	//lifecycle
-	GxEventOnLoad,
-	GxEventOnLoopBegin,
-	GxEventOnUpdate,
-	GxEventOnPreGraphical,
-	GxEventOnPreRender,
-	GxEventOnLoopEnd,
-	GxEventOnUnload,
-
-	//sdl events
-	GxEventOnKeyboard,
-	GxEventMouse,
-	GxEventFinger,
-	GxEventSDLDefault,
-
-	//contact events
-	GxEventPreContact,
-	GxEventContactBegin,
-	GxEventContactEnd,
-
-	//events not inside ihandlers
-	GxEventTimeout,
-	GxEventOnDestroy,
-	GxEventOnElemRemoval,
-
-	//number of events
-	GxEventTotalHandlers,
-} GxEventType;
-
-
-enum GxElemConstants {
-	GxElemNone = 1,
-	GxElemAbsolute = 2,
-	GxElemRelative = 3,	
-	GxElemFixed = 4,
-	GxElemDynamic = 5,	
-	GxElemForward = SDL_FLIP_NONE,
-	GxElemBackward = SDL_FLIP_HORIZONTAL,
-};
 
 #endif // !GX_PUBLIC_H

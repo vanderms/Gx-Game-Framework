@@ -1,9 +1,9 @@
-#include "Element.h"
-#include "../Physics/GxPhysics.h"
-#include "../Array/Array.h"
-#include "../List/GxList.h"
-#include "../Graphics/GxGraphics.h"
-#include "../Scene/GxScene.h"
+#include "../Element.h"
+#include "../../Physics/GxPhysics.h"
+#include "../../Array/Array.h"
+#include "../../List/List.h"
+#include "../../Graphics/Graphics.h"
+#include "../../Scene/Scene.h"
 #include <string.h>
 #include <limits.h>
 
@@ -43,55 +43,57 @@ typedef struct sElemBody {
 	int groundFlag;
 
 	//contacts
-	GxList* contacts;
+	sList* contacts;
 	sArray* temp;
 } sElemBody;
 
 static sElemBody* pCreate(sElement* elem, const sIni* ini) {
 
-	if(ini->body != GxElemFixed && ini->body != GxElemDynamic){
-		nUtil->assertArgument(ini->body == GxElemNone);
+	if(ini->body != nElem->body->FIXED && ini->body != nElem->body->DYNAMIC){
+		nUtil->assertArgument(ini->body == nElem->body->NONE);
 		return NULL;
 	}
 
 	sElemBody* self = calloc(1, sizeof(sElemBody));
 	nUtil->assertAlloc(self);
-	self->type = ini->body == GxElemFixed ? GxElemFixed : GxElemDynamic;
-	nElem->p->setBody(elem, self);	
-	self->cmask = self->cmask == GxElemDynamic ? GxCmaskDynamic : GxCmaskFixed;	
+	nElem->p->setBody(elem, self);
+	self->type = (ini->body == nElem->body->FIXED ? 
+		nElem->body->FIXED : nElem->body->DYNAMIC
+	);		
+	self->cmask = self->type == nElem->body->DYNAMIC ? GxCmaskDynamic : GxCmaskFixed;	
 	self->velocity.x = ini->velocity.x;
 	self->velocity.y = ini->velocity.y;
 	self->elasticity = 0.0;
 	self->restitution = 1.0;
 	self->friction = ini->friction ? ini->friction : false;
-	self->preference = self->type == GxElemDynamic ? 1 : INT_MAX;
-	self->maxgvel = self->type == GxElemDynamic? -20 : 0;		
+	self->preference = self->type == nElem->body->DYNAMIC ? 1 : INT_MAX;
+	self->maxgvel = self->type == nElem->body->DYNAMIC? -20 : 0;		
 	self->mcflag = false;
 	self->movflag = false;
 	self->dflag = 0;
 	self->fflag = 0;
-	self->contacts = GxCreateList();
-	self->temp = nArr->create();
+	self->contacts = nList->create();
+	self->temp = nArray->create();
 	self->groundFlag = 0;
 	return self;
 }
 
 static void pDestroy(sElemBody* self) {
 	if (self) {
-		nArr->destroy(self->temp);
-		GxDestroyList(self->contacts);
+		nArray->destroy(self->temp);
+		nList->destroy(self->contacts);
 		free(self);
 	}
 }
 
 static bool isDynamic(sElement* self) {
 	sElemBody* body = nElem->p->body(self);	
-	return body->type == GxElemDynamic;
+	return body->type == nElem->body->DYNAMIC;
 }
 
 static bool isFixed(sElement* self) {
 	sElemBody* body = nElem->p->body(self);	
-	return body->type == GxElemFixed;
+	return body->type == nElem->body->FIXED;
 }
 
 static bool isOnGround(sElement* self) {
@@ -174,8 +176,7 @@ static void accelerate(sElement* self, double x, double y) {
 	body->velocity.y += y;
 }
 
-static bool isMoving(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+static bool isMoving(sElement* self) {	
 	sVector velocity = nElem->body->velocity(self);
 	return (velocity.x || velocity.y);
 }
@@ -214,19 +215,19 @@ static void setMaxgvel(sElement* self, int value) {
 static sArray* getContacts(sElement* self, int direction) {
 	sElemBody* body = nElem->p->body(self);
 
-	nArr->clean(body->temp);
+	nArray->clean(body->temp);
 
-	for(GxContact* contact = GxListBegin(body->contacts); contact != NULL;
-		contact = GxListNext(body->contacts))
+	for(GxContact* contact = nList->begin(body->contacts); contact != NULL;
+		contact = nList->next(body->contacts))
 	{
 		if (GxContactHasDirection(contact, direction)) {
-			nArr->push(body->temp, contact, NULL);
+			nArray->push(body->temp, contact, NULL);
 		}
 	}
 	return body->temp;
 }
 
-static GxList* pGetContactList(sElement* self) {
+static sList* pGetContactList(sElement* self) {
 	sElemBody* body = nElem->p->body(self);
 	return body->contacts;
 }
@@ -235,7 +236,7 @@ static void pRemoveContact(sElement* self, GxContact* contact) {
 	sElemBody* body = nElem->p->body(self);
 
 	//first remove contact
-	GxListRemove(body->contacts, contact);
+	nList->remove(body->contacts, contact);
 
 	//then change ground flag if contact is down and not prevented
 	if (GxContactIsElemDownContact(contact, self) && !GxContactIsPrevented(contact)){
@@ -248,7 +249,7 @@ static void pAddContact(sElement* self, GxContact* contact) {
 	sElemBody* body = nElem->p->body(self);
 
 	//fist add contact
-	GxListPush(body->contacts, contact, NULL);
+	nList->push(body->contacts, contact, NULL);
 
 	//then change ground flag if contact is down and not prevented
 	if (GxContactIsElemDownContact(contact, self) && !GxContactIsPrevented(contact)){
@@ -301,7 +302,7 @@ static sVector move(sElement* self, sVector vector, bool force) {
 	if (vector.x == 0 && vector.y == 0) {
 		return vector;
 	}	
-	GxScene* scene = nElem->scene(self);
+	sScene* scene = nElem->scene(self);
 	Uint32 mask = body->cmask;
 	GxVelocity velocity = body->velocity;
 	int gvel = body->maxgvel;
@@ -332,7 +333,7 @@ static void pApplyVetElasticity(sElement* self, double res) {
 	body->velocity.y *= -(body->elasticity * res);
 }
 
-const struct sElemBodyNamespace nBodyNamespaceInstance = {
+const struct sElemBodyNamespace nElemBody = {
 
 	.isDynamic = isDynamic,
 	.isFixed = isFixed,
@@ -374,6 +375,10 @@ const struct sElemBodyNamespace nBodyNamespaceInstance = {
 	.move = move,
 	.moveTo = moveTo,
 
+	.NONE = 1,
+	.FIXED = 2,
+	.DYNAMIC = 3,	
+
 	.p = &(struct sElemBodyPrivateNamespace) {
 		.create = pCreate,
 		.destroy = pDestroy,	
@@ -386,7 +391,7 @@ const struct sElemBodyNamespace nBodyNamespaceInstance = {
 		.addContact = pAddContact,
 		.removeContact = pRemoveContact,
 
-		.dFFlag = pDFlag,
+		.dFlag = pDFlag,
 		.setDFlag = pSetDFlag,
 
 		.fFlag = pFFlag,

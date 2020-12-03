@@ -16,7 +16,7 @@ Uint32 GxMapCapacity(GxMap* self);
 
 void* GxMapGet(GxMap* self, const char* key);
 void* GxMapAt(GxMap* self, Uint32 index);
-void GxMapSet(GxMap* self, const char* key, void* value, GxDestructor dtor);
+void GxMapSet(GxMap* self, const char* key, void* value, sDtor dtor);
 void GxMapRehash(GxMap* self, Uint32 capacity);
 void GxMapRemove(GxMap* self, const char* key);
 void GxMapRemoveByIndex(GxMap* self, Uint32 index);

@@ -10,8 +10,8 @@ typedef struct sArrayNamespace {
 	Uint32 (*capacity)(sArray* self);
 	void* (*at)(sArray* self, Uint32 index);
 	void* (*last)(sArray* self);
-	void (*push)(sArray* self, void* value, GxDestructor dtor);
-	void (*insert)(sArray* self, Uint32 index, void* value, GxDestructor dtor);
+	void (*push)(sArray* self, void* value, sDtor dtor);
+	void (*insert)(sArray* self, Uint32 index, void* value, sDtor dtor);
 	void (*remove)(sArray* self, Uint32 index);
 	int (*removeByValue)(sArray* self, void* value);
 	int64_t (*indexOf)(sArray* self, void* value);
@@ -20,7 +20,7 @@ typedef struct sArrayNamespace {
 	void (*sort)(sArray* self, GxComp compare);
 } sArrayNamespace;
 
-extern const sArrayNamespace* nArr;
+extern const sArrayNamespace* nArray;
 
 
 #endif // !GX_ARRAY_H

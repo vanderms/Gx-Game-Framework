@@ -8,16 +8,14 @@
 typedef SDL_Rect Rect;
 typedef SDL_Point Point;
 typedef SDL_Point Vector;
-typedef GxSize Size;
-typedef GxMatrix Matrix;
+typedef sSize Size;
+typedef sMatrix Matrix;
 typedef sIni sIni;
-typedef GxList List;
+typedef sList List;
 typedef sArray Array;
 typedef GxMap Map;
 typedef GxEvent Event;
-typedef GxRequest Request;
-typedef GxResponse Response;
-typedef GxScene Scene;
+typedef sScene Scene;
 typedef sElement sElement;
 typedef GxContact Contact;
 typedef GxElemID ElemID;
@@ -28,9 +26,6 @@ typedef GxElemID ElemID;
 #endif
 
 //... NAMESPACES ALIASES
-static const GxElemNamespace* elem = &GxElemNamespaceInstance;
-static const GxFolderNamespace* folder = &GxFolderNamespaceInstance;
-static const GxListNamespace* list =  &GxListNamespaceInstance;
 static const GxMapNamespace* map = &GxMapNamespaceInstance;
 static const GxContactNamespace* contact = &GxContactNamespaceInstance;
 static const GxSceneNamespace* scene = &GxSceneNamespaceInstance;

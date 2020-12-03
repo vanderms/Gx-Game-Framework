@@ -1,7 +1,5 @@
 #include "../Utilities/Util.h"
-#include "../List/GxList.h"
-#include <stdlib.h>
-#include <stdbool.h>
+#include "../List/List.h"
 
 typedef struct ListNode {
 	void* value;
@@ -10,7 +8,7 @@ typedef struct ListNode {
 	struct ListNode* prev;
 } ListNode;
 
-static inline ListNode* createNode(void* value, GxDestructor dtor) {
+static inline ListNode* createNode(void* value, sDtor dtor) {
 	ListNode* node = malloc(sizeof(ListNode));
 	node->value = value;
 	node->dtor = dtor;
@@ -24,16 +22,16 @@ static inline void destroyNode(ListNode* node) {
 	free(node);
 }
 
-typedef struct GxList {	
+typedef struct sList {	
 	int size;
 	ListNode* first;
 	ListNode* last;
 	ListNode* previousNode;	
-} GxList;
+} sList;
 
 
-GxList* GxCreateList() {
-	GxList* self = malloc(sizeof(GxList));	
+static sList* create() {
+	sList* self = malloc(sizeof(sList));	
 	nUtil->assertAlloc(self);
 	self->size = 0;
 	self->first = NULL;
@@ -42,26 +40,26 @@ GxList* GxCreateList() {
 	return self;
 }
 
-void GxDestroyList(GxList* self) {
+static void destroy(sList* self) {
 	if (self) {
-		GxListClean(self);
+		nList->clean(self);
 		free(self);
 	}
 }
 
-int GxListSize(GxList* self) {
+static int size(sList* self) {
 	return self->size;
 }
 
-void* GxListFirst(GxList* self) {
+static void* first(sList* self) {
 	return self->first->value;
 }
 
-void* GxListLast(GxList* self) {
+static void* last(sList* self) {
 	return self->last->value;
 }
 
-static inline ListNode* listGetNodeByIndex(GxList* self, int index) {
+static ListNode* listGetNodeByIndex(sList* self, int index) {
 	nUtil->assertOutOfRange(index >= 0 && index < self->size);	
 	 ListNode* node = NULL;
 	 if (index < (self->size / 2)) {
@@ -79,12 +77,12 @@ static inline ListNode* listGetNodeByIndex(GxList* self, int index) {
 	 return node;
 }
 
-void* GxListAt(GxList* self, int index) {
+static void* at(sList* self, int index) {
 	ListNode* node = listGetNodeByIndex(self, index);
 	return node->value;
 }
 
-bool GxListContains(GxList* self, void* value) {	
+static bool contains(sList* self, void* value) {	
 	ListNode* node = self->first;
 	while (node && node->value != value) {
 		node = node->next;
@@ -92,7 +90,7 @@ bool GxListContains(GxList* self, void* value) {
 	return (bool) node;
 }
 
-void* GxListBegin(GxList* self) {
+static void* begin(sList* self) {
 	if (self) {
 		self->previousNode = self->first;
 		return self->first ? self->first->value : NULL;
@@ -100,7 +98,7 @@ void* GxListBegin(GxList* self) {
 	return NULL;	
 }
 
-void* GxListNext(GxList* self) {	
+static void* next(sList* self) {	
 	if (self->previousNode) {
 		self->previousNode = self->previousNode->next;
 		if (self->previousNode) {
@@ -110,7 +108,7 @@ void* GxListNext(GxList* self) {
 	return NULL;
 }
 
-void GxListPush(GxList* self, void* value, GxDestructor dtor) {
+static void push(sList* self, void* value, sDtor dtor) {
 	ListNode* node = createNode(value, dtor);	
 	if (self->last) {
 		node->prev = self->last;
@@ -123,11 +121,11 @@ void GxListPush(GxList* self, void* value, GxDestructor dtor) {
 	self->size++;
 }
 
-void GxListInsert(GxList* self, int index, void* value, GxDestructor dtor) {
+static void insert(sList* self, int index, void* value, sDtor dtor) {
 	ListNode* node = createNode(value, dtor);
 
 	if (index >= self->size) {
-		GxListPush(self, value, dtor);
+		nList->push(self, value, dtor);
 	}
 	else if (index == 0) {
 		node->next = self->first;
@@ -144,7 +142,7 @@ void GxListInsert(GxList* self, int index, void* value, GxDestructor dtor) {
 	self->size++;
 }
 
-bool GxListReplace(GxList* self, void* oldValue, void* newValue, GxDestructor dtor) {
+static bool replace(sList* self, void* oldValue, void* newValue, sDtor dtor) {
 	
 	ListNode* node = (self->previousNode && 
 		oldValue == self->previousNode->value) ? self->previousNode : self->first;
@@ -161,7 +159,7 @@ bool GxListReplace(GxList* self, void* oldValue, void* newValue, GxDestructor dt
 	return true;
 }
 
-static inline bool listRemoveNode(GxList* self, ListNode* node) {
+static bool listRemoveNode(sList* self, ListNode* node) {
 	
 	if (node) {
 		if (node == self->first || node == self->last) {
@@ -189,7 +187,7 @@ static inline bool listRemoveNode(GxList* self, ListNode* node) {
 	else return false;
 }
 
-bool GxListRemove(GxList* self, void* value) {
+static bool removeByValue(sList* self, void* value) {
 
 	//tests if the value is equal to self->nextNode->prev or self->last
 	//not being equal to anyone sets node equals to self->first
@@ -206,14 +204,34 @@ bool GxListRemove(GxList* self, void* value) {
 	return (bool) (node && listRemoveNode(self, node));	
 }
 
-bool GxListRemoveByIndex(GxList* self, int index) {
+static bool removeByIndex(sList* self, int index) {
 	nUtil->assertOutOfRange(index >= 0 && index < self->size);	
 	 return listRemoveNode(self, listGetNodeByIndex(self, index));
 }
 
-void GxListClean(GxList* self) {
-	while (GxListSize(self)) {
+static void clean(sList* self) {
+	while (nList->size(self)) {
 		listRemoveNode(self, self->last);
 	}
 	self->size = 0;
 }
+
+
+const struct sListNamespace* nList = &(struct sListNamespace){
+	//constructor and destructor
+	.create = create,
+	.destroy = destroy,
+	.size = size,
+	.first = first,
+	.last = last,
+	.at = at,
+	.contains = contains,
+	.begin = begin,
+	.next = next,
+	.push = push,
+	.insert = insert,
+	.replace = replace,
+	.remove = removeByValue,
+	.removeByIndex = removeByIndex,
+	.clean = clean,
+};

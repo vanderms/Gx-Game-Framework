@@ -1,8 +1,8 @@
-#include "../Utilities/Util.h"
-#include "Element.h"
-#include "../Folder/GxFolder.h"
-#include "../Scene/GxScene.h"
-#include "../Array/Array.h"
+#include "../../Utilities/Util.h"
+#include "../Element.h"
+#include "../../Folder/Folder.h"
+#include "../../Scene/Scene.h"
+#include "../../Array/Array.h"
 #include <string.h>
 
 //...RENDERABLE STRUCTS 
@@ -29,12 +29,14 @@ typedef struct Border {
 typedef struct sElemRenderable {
 	int type;
 	int zIndex;
+	const SDL_Rect* pos;
+	sElement* elem;
 	SDL_RendererFlip orientation;
 	char* asset;
 	sArray* folders;
 	Uint8 opacity;
-	GxImage* image;
-	GxAnimation* animation;
+	sImage* image;
+	sAnimation* animation;
 	uint32_t animCounter;
 	Uint32 animCurrent;
 	Alignment* alignment;
@@ -49,7 +51,7 @@ typedef struct sElemRenderable {
 	int fontSize;
 	Color* color;
 	bool shouldUpdateLabel;
-	GxImage* label;
+	sImage* label;
 
 	//...
 	Uint32 wflag;
@@ -112,46 +114,48 @@ static void destroyColor(Color* color) {
 //constructors and destructors
 static sElemRenderable* pCreate(sElement* elem, const sIni* ini) {
 	
-	if(ini->display != GxElemAbsolute && ini->display != GxElemRelative){
-		nUtil->assertArgument(ini->display == GxElemNone);
+	if(ini->display !=  nElem->display->ABSOLUTE && ini->display !=  nElem->display->RELATIVE){
+		nUtil->assertArgument(ini->display == nElem->display->NONE);
 		return NULL;
 	}
 
-	sElemRenderable* self = calloc(1, sizeof(sElemRenderable));
-	nUtil->assertAlloc(self);
-	self->type = ini->display == GxElemAbsolute ? GxElemAbsolute : GxElemRelative;
+	sElemRenderable* self = nUtil->assertAlloc(calloc(1, sizeof(sElemRenderable)));	
+	self->type = (ini->display ==  nElem->display->ABSOLUTE ? 
+		 nElem->display->ABSOLUTE :  nElem->display->RELATIVE
+	);
+	self->pos = nElem->position(elem);
 	self->zIndex = ini->zIndex;
 	nElem->p->setRenderable(elem, self);
 	self->opacity = 255;
 	//... folders
 	if (ini->folders) {
 		self->folders = nUtil->split(ini->folders, "|");
-		for (Uint32 i = 0; i < nArr->size(self->folders); i++) {
-			GxFolder* folder = nApp->prv->getFolder(nArr->at(self->folders, i));
+		for (Uint32 i = 0; i < nArray->size(self->folders); i++) {
+			sFolder* folder = nApp->prv->getFolder(nArray->at(self->folders, i));
 			nUtil->assertArgument(folder);
-			nArr->insert(self->folders, i, folder, NULL);
-			GxFolderIncRefCounter_(folder);
+			nArray->insert(self->folders, i, folder, NULL);
+			nFolder->p->incRefCounter(folder);
 		}
 	}
 
 	//...
 	if (ini->orientation){
-		GxElemSetOrientation(elem, ini->orientation);
+		nElem->style->setOrientation(elem, ini->orientation);
 	}
 	else {
 		self->orientation = SDL_FLIP_NONE;
 	}
 	//...
 	if (ini->image){
-		GxElemSetImage(elem, ini->image);
+		nElem->style->setImage(elem, ini->image);
 	}
 	//...
 	if (ini->animation){
-		GxElemSetAnimation (elem, ini->animation);
+		nElem->style->setAnimation (elem, ini->animation);
 	}
 	//...
 	if (ini->alignment) {
-		GxElemSetAlignment(elem, ini->alignment);
+		nElem->style->setAlignment(elem, ini->alignment);
 	}
 	//...
 	self->hidden = ini->hidden;
@@ -161,13 +165,13 @@ static sElemRenderable* pCreate(sElement* elem, const sIni* ini) {
 
 	//label
 	self->color = ini->color ? createColor(ini->color) : createColor("Black");
-	GxElemSetFontSize(elem, ini->fontSize);
+	nElem->style->setFontSize(elem, ini->fontSize);
 	self->text = ini->text ? nUtil->createString(ini->text) : NULL;
-	GxElemSetFont(elem, ini->font ? ini->font : "Default");
+	nElem->style->setFont(elem, ini->font ? ini->font : "Default");
 	self->shouldUpdateLabel = ini->text ? true : false;
 
 	self->border.color = createColor(NULL);
-	GxElemSetBorder(elem, ini->border);
+	nElem->style->setBorder(elem, ini->border);
 	self->wflag = 0;
 	return self;
 }
@@ -175,9 +179,9 @@ static sElemRenderable* pCreate(sElement* elem, const sIni* ini) {
 static void pDestroy(sElemRenderable* self) {
 	if (self) {
 		if(nApp->isRunning() && self->folders){
-			for (Uint32 i = 0; i < nArr->size(self->folders); i++){
-				GxFolder* folder = nArr->at(self->folders, i);
-				GxFolderDecRefCounter_(folder);
+			for (Uint32 i = 0; i < nArray->size(self->folders); i++){
+				sFolder* folder = nArray->at(self->folders, i);
+				nFolder->p->decRefCounter(folder);
 			}
 		}
 		free(self->asset);
@@ -187,20 +191,20 @@ static void pDestroy(sElemRenderable* self) {
 		if(self->color) destroyColor(self->color);
 		if(self->backgroundColor) destroyColor(self->backgroundColor);
 		if(self->border.color) destroyColor(self->border.color);
-		if(self->label) GxDestroyImage_(self->label);
-		if(self->folders) nArr->destroy(self->folders);
+		if(self->label) nFolder->p->destroyImage(self->label);
+		if(self->folders) nArray->destroy(self->folders);
 		free(self);
 	}
 }
 
 static bool hasRelativePosition(sElement* self) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
-	return renderable && renderable->type == GxElemRelative;
+	return renderable && renderable->type ==  nElem->display->RELATIVE;
 }
 
 static bool hasAbsolutePosition(sElement* self) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
-	return renderable && renderable->type == GxElemAbsolute;
+	return renderable && renderable->type ==  nElem->display->ABSOLUTE;
 }
 
 
@@ -231,7 +235,9 @@ static int orientation(sElement* self) {
 
 static void setOrientation(sElement* self, int value) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
-	nUtil->assertArgument(value == GxElemForward || value == GxElemBackward);
+	nUtil->assertArgument(value ==  nElem->orientation->FORWARD || 
+		value ==  nElem->orientation->BACKWARD
+	);
 	renderable->orientation = (SDL_RendererFlip) value;
 }
 
@@ -373,7 +379,7 @@ static void setProportion(sElement* self, double proportion) {
 static void setToFit(sElement* self, const char* axis) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
 	nUtil->assertArgument(strcmp(axis, "horizontal") == 0 || strcmp(axis, "vertical") == 0);
-	GxSize size = GxImageGetSize_(renderable->image);
+	sSize size = nFolder->p->getImageSize(renderable->image);
 	const SDL_Rect* pos = nElem->position(self);
 	if (strcmp(axis, "horizontal") == 0){
 		renderable->proportion = ((double) pos->w) / size.w;
@@ -447,7 +453,7 @@ static uint32_t pWFlag(sElement* self) {
 	return renderable->wflag;
 }
 
-static void pSetWFlag_(sElement* self, uint32_t value) {
+static void pSetWFlag(sElement* self, uint32_t value) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
 	renderable->wflag = value;
 }
@@ -468,17 +474,17 @@ static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type
 		nUtil->assertArgument(slash);
 
 		*slash = '\0';
-		GxFolder* folder = nApp->prv->getFolder(renderable->asset);
+		sFolder* folder = nApp->prv->getFolder(renderable->asset);
 		nUtil->assertArgument(folder);
 
-		bool folderIsLoaded = GxFolderHasStatus_(folder, GxStatusLoading) ||
-			GxFolderHasStatus_(folder, GxStatusReady);
+		bool folderIsLoaded = nFolder->p->hasStatus(folder, GxStatusLoading) ||
+			nFolder->p->hasStatus(folder, GxStatusReady);
 		nUtil->assertState(folderIsLoaded);
 
 		*slash = '/';
 		void* asset = (type == IMAGE ?
-			(void*) GxFolderGetImage_(folder, slash + 1) :
-			(void*) GxFolderGetAnimation_(folder, slash + 1)
+			(void*) nFolder->p->getImage(folder, slash + 1) :
+			(void*) nFolder->p->getAnimation(folder, slash + 1)
 		);
 		nUtil->assertArgument(asset);
 		return asset;
@@ -489,7 +495,7 @@ static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type
 static void setImage(sElement* self, const char* apath) {
 
 	sElemRenderable* renderable = nElem->p->renderable(self);
-	GxImage* image = elemGetAsset(self, apath, IMAGE);
+	sImage* image = elemGetAsset(self, apath, IMAGE);
 	if(renderable->image != image){
 		renderable->animation = NULL;
 		renderable->animCounter = 0;
@@ -501,7 +507,7 @@ static void setImage(sElement* self, const char* apath) {
 static void setAnimation(sElement* self, const char* apath) {
 	
 	sElemRenderable* renderable = nElem->p->renderable(self);
-	GxAnimation* anim = elemGetAsset(self, apath, ANIMATION);
+	sAnimation* anim = elemGetAsset(self, apath, ANIMATION);
 	
 	renderable->image = NULL;
 	renderable->animation = anim;
@@ -543,7 +549,7 @@ static void setText(sElement* self, const char* format, ...) {
 }
 
 
-static const char* getText(sElement* self) {
+static const char* text(sElement* self) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
 	return renderable->text;
 }
@@ -578,7 +584,7 @@ static void setFont(sElement* self, const char* font) {
 	}
 }
 
-static const char* getFont(sElement* self) {
+static const char* font(sElement* self) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
 	return renderable->font;
 }
@@ -586,14 +592,14 @@ static const char* getFont(sElement* self) {
 static void pUpdateLabel(sElemRenderable* renderable) {
 
 	if(renderable->label){
-		GxDestroyImage_(renderable->label);
+		nFolder->p->destroyImage(renderable->label);
 	}
 	renderable->shouldUpdateLabel = false;
 
 	if(renderable->text && renderable->fontSize > 0 &&
 		renderable->font && renderable->color->value
 	){
-		renderable->label = GxImageCreateText_(renderable->text,
+		renderable->label = nFolder->p->createText(renderable->text,
 			renderable->font, renderable->fontSize, renderable->color->value
 		);
 	}
@@ -601,3 +607,173 @@ static void pUpdateLabel(sElemRenderable* renderable) {
 		renderable->label = NULL;
 	}
 }
+
+//...ELEMENT RENDER METHODS
+static SDL_Rect calcAbsolutePos(sElemRenderable* ren) {
+	int y = nApp->logicalSize().h - (ren->pos->y + ren->pos->h);
+	return (SDL_Rect) { ren->pos->x, y, ren->pos->w, ren->pos->h };
+}
+
+static SDL_Rect calcRelativePos(sElemRenderable* ren) {
+	const SDL_Rect* cpos = nElem->position(GxSceneGetCamera(nElem->scene(ren->elem)));
+	int x = ren->pos->x - cpos->x;
+	int y = (cpos->y + cpos->h) - (ren->pos->y + ren->pos->h);
+	return (SDL_Rect) { x, y, ren->pos->w, ren->pos->h };
+}
+
+static void pApplyProportion(sElemRenderable* ren, SDL_Rect* pos, sSize size) {
+	pos->w = (int) (size.w * ren->proportion + 0.5);
+	pos->h = (int) (size.h * ren->proportion + 0.5);
+}
+
+static void pApplyAlignment(sElemRenderable* ren, SDL_Rect* pos) {
+
+	//horizontal alignment -> (left is default)
+	if(!ren->alignment ||
+		ren->alignment->horizontal == sCenter) {
+		pos->x += (ren->pos->w - pos->w) / 2;
+	}
+	else if (ren->alignment->horizontal ==  sRight){
+		pos->x += ren->pos->w - pos->w;
+	}
+	else if(ren->alignment->horizontal == sNum) {
+		pos->x += (ren->pos->w - pos->w) / 2; //first set default
+		pos->x += ren->alignment->x;
+	}
+
+	//vertical alignment (top is default)
+	if (!ren->alignment ||
+		ren->alignment->vertical == sCenter){
+		pos->y += (ren->pos->h - pos->h) / 2;
+	}
+	else if (ren->alignment->vertical == sBottom) {
+		pos->y += (ren->pos->h - pos->h);
+	}
+	else if(ren->alignment->vertical == sNum) {
+		pos->y += (ren->pos->h - pos->h) / 2; //first set default
+		pos->y -= ren->alignment->y;
+	}
+}
+
+static SDL_Rect* pCalcImagePosOnCamera(sElement* self, SDL_Rect* pos, sImage* image) {
+	sElemRenderable* renderable = nElem->p->renderable(self);
+	sSize size = nFolder->p->getImageSize(image);
+	pApplyProportion(renderable, pos, size);
+	pApplyAlignment(renderable, pos);
+	return pos;
+}
+
+static SDL_Rect calcPosOnCamera(sElement* self) {
+	sElemRenderable* renderable = nElem->p->renderable(self);
+	if(renderable->type ==  nElem->display->ABSOLUTE){
+		return calcAbsolutePos(renderable);
+	}
+	return calcRelativePos(renderable);	
+}
+
+static sImage* pGetImageRef(sElement* self) {
+	sElemRenderable* renderable = nElem->p->renderable(self);
+	sImage* image = NULL;
+	if (renderable->image) {
+		image = renderable->image;
+	}
+	else if (renderable->animation) {
+		sAnimation* anim = renderable->animation; //create alias
+		renderable->animCounter++; //to avoid counter starting with 0.
+		if (renderable->animCurrent >= nFolder->p->getAnimQuantity(anim)) {
+			renderable->animCurrent = 0;
+		}
+		image = nFolder->p->getAnimImage(anim, renderable->animCurrent);
+
+		if (renderable->animCounter % nFolder->p->getAnimInterval(anim) == 0)
+			renderable->animCurrent++;
+
+			//if it's the last frame in animation and there's no repeat set renderable->animation to NULL
+		if (renderable->animCurrent >= nFolder->p->getAnimQuantity(anim) && !nFolder->p->isAnimContinuous(anim)) {
+			renderable->animation = NULL;
+			renderable->animCounter = 0;
+			renderable->animCurrent = 0;
+		}
+	}
+	return image;
+}
+
+static void onRender(sElement* self) {
+	sElemRenderable* renderable = nElem->p->renderable(self);
+	if (renderable->shouldUpdateLabel) {
+		pUpdateLabel(renderable);
+	}
+}
+
+static sImage* pLabel(sElement* self) {
+	sElemRenderable* renderable = nElem->p->renderable(self);
+	return renderable->label;
+}
+
+
+const struct sElemRenderableNamespace nElemRenderable = {
+
+	.hasRelativePosition = hasRelativePosition,
+	.hasAbsolutePosition = hasAbsolutePosition,
+
+	.zIndex = zIndex,
+	.setZIndex = setZIndex,
+
+	.opacity = opacity,
+	.setOpacity = setOpacity,
+
+	.orientation = orientation,
+	.setOrientation = setOrientation,
+
+	.image = image,
+	.setImage = setImage,	
+
+	.animation = animation,
+	.setAnimation = setAnimation,
+
+	.alignment = alignment,
+	.setAlignment = setAlignment,
+
+	.isHidden = isHidden,
+	.hide = hide,
+	.show = show,
+
+	.angle = angle,
+	.setAngle = setAngle,
+
+	.proportion = proportion,
+	.setProportion = setProportion,
+	.setToFit = setToFit,
+
+	.backgroundColor = backgroundColor,
+	.setBackgroundColor = setBackgroundColor,
+
+	.borderSize = borderSize,
+	.borderColor = borderColor,
+	.setBorder = setBorder,
+
+	.text = text,
+	.setText = setText,
+	
+	.fontSize = fontSize,
+	.setFontSize = setFontSize,	
+
+	.setFont = setFont,
+	.font = font,
+
+	.color = color,
+	.setColor = setColor,
+	
+	.calcPosOnCamera = calcPosOnCamera,
+
+	.p = &(struct sElemRenderablePrivateNamespace) {
+		.create = pCreate,
+		.destroy = pDestroy,
+		.onRender = onRender,
+		.wFlag = pWFlag,
+		.setWFlag = pSetWFlag,
+		.calcImagePosOnCamera = pCalcImagePosOnCamera,
+		.getImageRef = pGetImageRef,
+		.label = pLabel
+	},
+};

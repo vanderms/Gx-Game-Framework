@@ -2,10 +2,10 @@
 #include "Element.h"
 #include "../Event/GxEvent.h"
 #include "../Array/Array.h"
-#include "../Folder/GxFolder.h"
-#include "../Graphics/GxGraphics.h"
+#include "../Folder/Folder.h"
+#include "../Graphics/Graphics.h"
 #include "../Physics/GxPhysics.h"
-#include "../Scene/GxScene.h"
+#include "../Scene/Scene.h"
 #include <string.h>
 #include "../Map/GxMap.h"
 
@@ -16,7 +16,7 @@ typedef struct sElement {
 	Uint32 id;	
 	char* className;
 	sArray* classList;
-	GxScene* scene;
+	sScene* scene;
 	SDL_Rect* pos;
 	
 	//modules
@@ -25,7 +25,7 @@ typedef struct sElement {
 
 	//event handler module
 	void* target;
-	GxHandler* handlers;	
+	sHandler* handlers;	
 	GxMap* rHandlers;
 
 	//special elements
@@ -51,20 +51,17 @@ static sElement* create(const sIni* ini){
 	}
 		
 	//event handler module
-	if (GxEventIniHasHandler_(ini)) {
-		self->handlers = calloc(GxEventTotalHandlers, sizeof(GxHandler));
+	if (nUtil->evn->hasHandler(ini)) {
+		self->handlers = calloc(nUtil->evn->TOTAL, sizeof(sHandler));
 		nUtil->assertAlloc(self->handlers);
-		GxEventSetHandlers_(self->handlers, ini);
+		nUtil->evn->setHandlers(self->handlers, ini);
 	}
 	else {
 		self->handlers = NULL;
 	}
-			
-	self->body = GxCreateRigidBody_(self, ini);
-	self->renderable = GxCreateRenderable_(self, ini);
 
 	//set position
-	if (self->renderable || self->body) {
+	if (ini->display != nElem->display->NONE || ini->body != nElem->body->NONE) {
 		nUtil->assertArgument(ini->position);
 		self->pos = malloc(sizeof(SDL_Rect));
 		nUtil->assertAlloc(self->pos);
@@ -73,6 +70,9 @@ static sElement* create(const sIni* ini){
 	else {
 		self->pos = NULL;
 	}
+			
+	self->body = nElem->body->p->create(self, ini);
+	self->renderable = nElem->style->p->create(self, ini);
 
 	//getHandler and putHandler		
 	self->rHandlers = NULL;
@@ -87,25 +87,25 @@ static void pDestroy(sElement* self) {
 		if (self->child) {
 			GxSceneExecuteElemChildDtor_(self->scene, self->child);
 		}
-		if(self->handlers && self->handlers[GxEventOnDestroy]){
-			self->handlers[GxEventOnDestroy](&(GxEvent){
+		if(self->handlers && self->handlers[nUtil->evn->ON_DESTROY]){
+			self->handlers[nUtil->evn->ON_DESTROY](&(GxEvent){
 				.target = self->target, 
-				.type = GxEventOnDestroy, 
+				.type = nUtil->evn->ON_DESTROY, 
 			});
 		}
 		GxDestroyMap(self->rHandlers);
-		GxDestroyRigidBody_(self->body);
-		GxDestroyRenderable_(self->renderable);
-		nArr->destroy(self->classList);
+		nElem->body->p->destroy(self->body);
+		nElem->style->p->destroy(self->renderable);
+		nArray->destroy(self->classList);
 		self->hash = 0;
 		free(self->handlers);
 		free(self->pos);
-		free(self->className);		
+		free(self->className);
 		free(self);
 	}
 }
 
-static void remove(sElement* self) {
+static void removeElement(sElement* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);	
 	GxSceneRemoveElement_(self->scene, self);
@@ -139,7 +139,7 @@ static bool hasHandler(sElement* self, int type) {
 	return self->handlers && self->handlers[type] ? true : false;
 }
 
-static GxHandler getHandler(sElement* self, int type) {
+static sHandler getHandler(sElement* self, int type) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
 	return self->handlers ? self->handlers[type] : NULL;
@@ -167,18 +167,18 @@ static bool hasClass(sElement* self, const char* type) {
 	sArray* types = nApp->tokenize(type, "|");
 	Uint32 matches = 0;
 		
-	for(Uint32 i = 0; i < nArr->size(types); i++){
-		for (Uint32 j = 0; j < nArr->size(self->classList); j++) {
-			char* token = nArr->at(self->classList, j);
-			if(strcmp(token, nArr->at(types, i)) == 0){
+	for(Uint32 i = 0; i < nArray->size(types); i++){
+		for (Uint32 j = 0; j < nArray->size(self->classList); j++) {
+			char* token = nArray->at(self->classList, j);
+			if(strcmp(token, nArray->at(types, i)) == 0){
 				matches++;
 			}
 		}		
 	}
-	return matches == nArr->size(types);
+	return matches == nArray->size(types);
 }
 
-static GxScene* scene(sElement* self) {
+static sScene* scene(sElement* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
 	return self->scene;
@@ -193,12 +193,12 @@ static const SDL_Rect* position(sElement* self) {
 static void setPosition(sElement* self, SDL_Rect pos) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	GxGraphics* graphics = GxSceneGetGraphics(self->scene);
+	sGraphics* graphics = GxSceneGetGraphics(self->scene);
 	GxPhysics* physics = GxSceneGetPhysics(self->scene);
-	if (self->renderable) GxGraphicsRemoveElement_(graphics, self);
+	if (self->renderable) nGraphics->remove(graphics, self);
 	if (self->body) GxPhysicsRemoveElement_(physics, self);
 	*self->pos = pos;
-	if (self->renderable)GxGraphicsInsertElement_(graphics, self);
+	if (self->renderable) nGraphics->insert(graphics, self);
 	if (self->body) GxPhysicsInsertElement_(physics, self);	
 }
 
@@ -206,7 +206,7 @@ static void pUpdatePosition(sElement* self, sVector vector) {
 	SDL_Rect previousPos = *self->pos;
 	self->pos->x += vector.x;
 	self->pos->y += vector.y;
-	GxGraphicsUpdatePosition_(GxSceneGetGraphics(self->scene), self, previousPos);
+	nGraphics->updateElement(GxSceneGetGraphics(self->scene), self, previousPos);
 	GxPhysicsUpdateElementPosition_(GxSceneGetPhysics(self->scene), self, previousPos);
 }
 
@@ -251,9 +251,9 @@ static void pSetRenderable(sElement* self, struct sElemRenderable* renderable){
 	self->renderable = renderable;
 }
 
-extern const sElemNamespace* nElem = &(sElemNamespace){
+const struct sElemNamespace* nElem = &(struct sElemNamespace){
 	.create = create,	
-	.remove = remove,
+	.remove = removeElement,
 	.target = target,
 		
 	.id = id,
@@ -271,9 +271,19 @@ extern const sElemNamespace* nElem = &(sElemNamespace){
 	.hasBody = hasBody,
 	.isRenderable = isRenderable,
 
-	.body = &nBodyNamespaceInstance,
-	.style = &nRenderableNamespaceInstance,
+	.body = &nElemBody,
+	.style = &nElemRenderable,
 
+	.display = &(struct sElemDisplay){
+		.NONE = 1,
+		.ABSOLUTE = 2,
+		.RELATIVE = 3,	
+	},
+
+	.orientation = &(struct sElemOrientation){
+		.FORWARD = SDL_FLIP_NONE,
+		.BACKWARD = SDL_FLIP_HORIZONTAL,
+	},
 	.p = &(struct sElemPrivateNamespace){
 		.destroy = pDestroy,
 		.id = pId,

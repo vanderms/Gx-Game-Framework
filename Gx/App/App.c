@@ -1,7 +1,6 @@
 #include "../Utilities/Util.h"
 #include "../App/App.h"
-#include "../Ini/Ini.h"
-#include "../Scene/GxScene.h"
+#include "../Scene/Scene.h"
 #include <stdbool.h>
 #include <string.h>
 #include "SDL.h"
@@ -9,9 +8,9 @@
 #include "SDL_ttf.h"
 #include "SDL_mixer.h"
 #include "../Map/GxMap.h"
-#include "../Folder/GxFolder.h"
+#include "../Folder/Folder.h"
 #include "../Array/Array.h"
-#include "../List/GxList.h"
+#include "../List/List.h"
 
 #ifdef NDEBUG
     #define GX_DEV 0
@@ -31,16 +30,16 @@ typedef struct sApp {
 
     //...
     int status;    
-    GxSize size;
+    sSize size;
 
     //...SDL
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 
     //... Scenes and Folders
-    GxScene* snMain;
-    GxScene* snActive;
-    GxScene* snRunning;
+    sScene* snMain;
+    sScene* snActive;
+    sScene* snRunning;
 
     //... containers
 	GxMap* scenes;
@@ -52,9 +51,9 @@ typedef struct sApp {
     sArray* temporary;
 
     //...assets modules
-    GxList* aToLoad;
-    GxList* aLoading;
-    GxList* aLoaded;
+    sList* aToLoad;
+    sList* aLoading;
+    sList* aLoaded;
     uint32_t counter;
     SDL_atomic_t atom;
 } sApp;
@@ -78,7 +77,7 @@ static inline void destroyAsset(Asset* self) {
 static sApp* self = NULL;
 
 //constructor and destructor
-static GxScene* create(const sIni* ini) {
+static sScene* create(const sIni* ini) {
 
     if(self){ return self->snMain; }
     
@@ -89,8 +88,8 @@ static GxScene* create(const sIni* ini) {
     self->scenes = GmCreateMap();
     self->colors = createColorMap();
     self->fonts = createFontMap();
-    self->temporary = nArr->create();
-    self->aToLoad = GxCreateList();
+    self->temporary = nArray->create();
+    self->aToLoad = nList->create();
     self->aLoading = NULL;
     self->aLoaded = NULL;
 
@@ -121,21 +120,21 @@ static GxScene* create(const sIni* ini) {
 
     nUtil->assertArgument(ini->window);
     sArray* wparams = nUtil->split(ini->window, "|");
-    nUtil->assertArgument(nArr->size(wparams) == 2);
+    nUtil->assertArgument(nArray->size(wparams) == 2);
 
     if(strstr(ini->window, "Landscape")){
 	    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
-        self->size.h = atoi(nArr->at(wparams, 1));
+        self->size.h = atoi(nArray->at(wparams, 1));
         nUtil->assertArgument(self->size.h);
         self->size.w = ((double) bigger * self->size.h) / smaller;       
     }
     else if (strstr(ini->window, "Portrait")) {
         SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
-        self->size.w = atoi(nArr->at(wparams, 1));
+        self->size.w = atoi(nArray->at(wparams, 1));
         nUtil->assertArgument(self->size.w);
         self->size.h = ((double) bigger * self->size.w) / smaller;       
     }
-    nArr->destroy(wparams);
+    nArray->destroy(wparams);
 
     const char* title = ini->title ? ini->title : "Gx";
     Uint32 flags = SDL_WINDOW_RESIZABLE;
@@ -171,7 +170,7 @@ static GxScene* create(const sIni* ini) {
 
 static SDL_Rect* calcDest(SDL_Rect* src, SDL_Rect* dest) {
 #define intround(x) ((x) >= 0.0 ? (int) ((x) + 0.5) : (int) ((x) - 0.5))
-    GxSize wsize = {0, 0};
+    sSize wsize = {0, 0};
     SDL_GetRendererOutputSize(nApp->SDLRenderer(), &wsize.w, &wsize.h);
     if (wsize.w == self->size.w) {
         *dest = *src;            
@@ -206,12 +205,12 @@ static void destroy() {
     if (self) {
         SDL_DestroyRenderer(self->renderer);
         SDL_DestroyWindow(self->window);
-        GxDestroyList(self->aToLoad);
-        GxDestroyList(self->aLoading);
-        GxDestroyList(self->aLoaded);
+        nList->destroy(self->aToLoad);
+        nList->destroy(self->aLoading);
+        nList->destroy(self->aLoaded);
         GxDestroyMap(self->scenes);
         GxDestroyScene_(self->snMain);
-        nArr->destroy(self->temporary);
+        nArray->destroy(self->temporary);
         GxDestroyMap(self->folders);
         GxDestroyMap(self->colors);
         GxDestroyMap(self->fonts);
@@ -233,7 +232,7 @@ static SDL_Renderer* SDLRenderer() {
     return self->renderer;
 }
 
-static GxSize logicalSize() {
+static sSize logicalSize() {
     return self->size;
 }
 
@@ -241,26 +240,25 @@ static bool isRunning() {
     return self->status == GxStatusRunning;
 }
 
-static void addScene(GxScene* scene) {
+static void addScene(sScene* scene) {
     if(self->snMain != NULL){
-        GxMapSet(self->scenes, GxSceneGetName(scene), scene, (GxDestructor) GxDestroyScene_);
+        GxMapSet(self->scenes, GxSceneGetName(scene), scene, GxDestroyScene_);
     }
 }
 
-static GxScene* getScene(const char* id) {
+static sScene* getScene(const char* id) {
     return GxMapGet(self->scenes, id);
 }
 
-static void addFolder(GxFolder* handler) {
-   void GxDestroyFolder_(GxFolder* self);
-   GxMapSet(self->folders, GxFolderGetId_(handler), handler, (GxDestructor) GxDestroyFolder_);
+static void addFolder(sFolder* folder) {   
+   GxMapSet(self->folders, nFolder->p->id(folder), folder, nFolder->p->destroy);
 }
 
-static GxFolder* getFolder(const char* id) {
+static sFolder* getFolder(const char* id) {
     return GxMapGet(self->folders, id);
 }
 
-static void loadSDLSurface(GxImage* image, const char* path) {
+static void loadSDLSurface(sImage* image, const char* path) {
     Asset* asset = malloc(sizeof(Asset));
     nUtil->assertAlloc(asset);
     *asset = (Asset) {
@@ -268,10 +266,10 @@ static void loadSDLSurface(GxImage* image, const char* path) {
         .mod = image,
         .path = nUtil->createString(path)
     };
-    GxListPush(self->aToLoad, asset, (GxDestructor) destroyAsset);
+    nList->push(self->aToLoad, asset, (sDtor) destroyAsset);
 }
 
-static void loadMixChunk(GxSound* sound, const char* path) {
+static void loadMixChunk(sChunk* sound, const char* path) {
     Asset* asset = malloc(sizeof(Asset));
     nUtil->assertAlloc(asset);
     *asset = (Asset) {
@@ -279,10 +277,10 @@ static void loadMixChunk(GxSound* sound, const char* path) {
         .mod = sound,
         .path = nUtil->createString(path)
     };
-    GxListPush(self->aToLoad, asset, (GxDestructor)  destroyAsset);
+    nList->push(self->aToLoad, asset, (sDtor)  destroyAsset);
 }
 
-static void loadMixMusic(GxMusic* music, const char* path) {
+static void loadMixMusic(sMusic* music, const char* path) {
      Asset* asset = malloc(sizeof(Asset));
      nUtil->assertAlloc(asset);
     *asset = (Asset) {
@@ -290,7 +288,7 @@ static void loadMixMusic(GxMusic* music, const char* path) {
         .mod = music,
         .path = nUtil->createString(path)
     };
-    GxListPush(self->aToLoad, asset, (GxDestructor) destroyAsset);
+    nList->push(self->aToLoad, asset, (sDtor) destroyAsset);
 }
 
 
@@ -299,21 +297,21 @@ static void mainLoadAsset(Asset* asset) {
         switch (asset->type) {
             case IMAGE: {
                 SDL_Surface* surface = asset->resource;
-                GxSize size = { surface->w,  surface->h };
+                sSize size = { surface->w,  surface->h };
                 SDL_Texture* texture = SDL_CreateTextureFromSurface(
                     self->renderer, surface
                 );
                 SDL_FreeSurface(surface);
                 if (!texture) nApp->runtimeError(SDL_GetError());
-                GxImageTextureSetResource_(asset->mod, texture, &size);
+                nFolder->p->setSDLTexture(asset->mod, texture, &size);
                 break;
             }
             case SOUND: {
-                GxSoundSetChunk_(asset->mod, asset->resource);
+                nFolder->p->setMixChunk(asset->mod, asset->resource);
                 break;
             }
             case MUSIC: {
-                GxMusicSetMixMusic_(asset->mod, asset->resource);
+                nFolder->p->setMixMusic(asset->mod, asset->resource);
                 break;
             }
         }
@@ -322,8 +320,8 @@ static void mainLoadAsset(Asset* asset) {
 
 static int threadLoadAsset() {
 
-    for(Asset* asset = GxListBegin(self->aLoading); asset != NULL;
-        asset = GxListNext(self->aLoading)){
+    for(Asset* asset = nList->begin(self->aLoading); asset != NULL;
+        asset = nList->next(self->aLoading)){
 
         if (asset) {
             switch (asset->type) {
@@ -395,9 +393,9 @@ static void run() {
             SDL_AtomicSet(&self->atom, GxStatusNone);
         }
 
-        if (GxListSize(self->aToLoad) && SDL_AtomicGet(&self->atom) == GxStatusNone) {
+        if (nList->size(self->aToLoad) && SDL_AtomicGet(&self->atom) == GxStatusNone) {
             self->aLoading = self->aToLoad;
-            self->aToLoad = GxCreateList();
+            self->aToLoad = nList->create();
             SDL_AtomicSet(&self->atom, GxStatusLoading);
             SDL_Thread* thread = SDL_CreateThread((SDL_ThreadFunction) threadLoadAsset, "loaderThread", self);
             SDL_DetachThread(thread);
@@ -405,13 +403,13 @@ static void run() {
 
         if (self->aLoaded) {
             do {
-                Asset* asset = GxListFirst(self->aLoaded);
+                Asset* asset = nList->first(self->aLoaded);
                 mainLoadAsset(asset);
-                GxListRemove(self->aLoaded, asset);
-            } while(GxListSize(self->aLoaded) && (SDL_GetTicks() - self->counter <= 12));
+                nList->remove(self->aLoaded, asset);
+            } while(nList->size(self->aLoaded) && (SDL_GetTicks() - self->counter <= 12));
 
-            if(GxListSize(self->aLoaded) == 0){
-                GxDestroyList(self->aLoaded);
+            if(nList->size(self->aLoaded) == 0){
+                nList->destroy(self->aLoaded);
                 self->aLoaded = NULL;
             }
         }
@@ -439,7 +437,7 @@ static void run() {
 
         self->snRunning = self->snMain;
         GxSceneOnLoopEnd_(self->snMain);
-        nArr->clean(self->temporary);
+        nArray->clean(self->temporary);
 
          //clear window
         SDL_SetRenderDrawColor(self->renderer, 0, 0, 0, 255);
@@ -451,7 +449,7 @@ static void run() {
 #endif
 }
 
-static void loadScene(GxScene* scene) {
+static void loadScene(sScene* scene) {
 
     if (scene == self->snActive) {
         return;
@@ -469,11 +467,11 @@ static void loadScene(GxScene* scene) {
     }
 }
 
-static GxScene* getRunningScene() {
+static sScene* getRunningScene() {
     return self->snRunning;
 }
 
-static GxScene* getMainScene(void) {
+static sScene* getMainScene(void) {
     return self->snMain;
 }
 
@@ -491,12 +489,12 @@ static void alert(const char* message) {
 }
 
  static void playMusic(const char* path, int loops) {
-    Mix_Music* music = GxFolderGetMusic(path);
+    Mix_Music* music = nFolder->getMixMusic(path);
     Mix_PlayMusic(music, loops);
  }
 
 static void playChunk(const char* path, int loops) {
-    Mix_Chunk* chunk = GxFolderGetChunk(path);
+    Mix_Chunk* chunk = nFolder->getMixChunk(path);
     Mix_PlayChannel(-1, chunk, loops);
  }
 
@@ -553,12 +551,12 @@ static void convertColor(SDL_Color* destination, const char* color) {
 
 		//get tokens
         sArray* tokens = nApp->tokenize(clone, ",");
-        nUtil->assertArgument(nArr->size(tokens) == 4);
+        nUtil->assertArgument(nArray->size(tokens) == 4);
 
-        char* r = nArr->at(tokens, 0);
-        char* g = nArr->at(tokens, 1);
-        char* b = nArr->at(tokens, 2);
-        char* a = nArr->at(tokens, 3);
+        char* r = nArray->at(tokens, 0);
+        char* g = nArray->at(tokens, 1);
+        char* b = nArray->at(tokens, 2);
+        char* a = nArray->at(tokens, 3);
 
 		//assign color components
 		destination->r = (Uint8) atoi(r);
@@ -611,13 +609,13 @@ static char* sf(const char* format, ...) {
 	vsnprintf(buffer, 1024, format, args);
 	va_end(args);
     char* value = nUtil->createString(buffer);
-    nArr->push(self->temporary, value, free);
+    nArray->push(self->temporary, value, free);
 	return value;
 }
 
 static sArray* tokenize(const char* str, const char* sep){
     sArray* response = nUtil->split(str, sep);
-    nArr->push(self->temporary, response, nArr->destroy);
+    nArray->push(self->temporary, response, nArray->destroy);
     return response;
 }
 

@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include "../List/GxList.h"
+#include "../List/List.h"
 #include "../Array/Array.h"
 #include "../Map/GxMap.h"
 #define SWAP(a, b) {void* temp = a; a = b; b = temp; }
@@ -22,7 +22,7 @@ static inline GxInt* createInt(int value) {
  typedef struct Entry {
 	//data
 	void* value;
-	GxDestructor dtor;
+	sDtor dtor;
 	//cross reference	
 	GxInt* reference;
 } Entry;
@@ -33,7 +33,7 @@ typedef struct GxMap {
 	Uint32 capacity;	
 	char** keys;
 	Entry* entries;
-	GxList** table;
+	sList** table;
 } GxMap;
 
 static inline int calcHash(const char* str, Uint32 max) {	
@@ -54,7 +54,7 @@ GxMap* GmCreateMap() {
 	self->capacity = 16;
 	
 	//create table
-	self->table = malloc(self->capacity * sizeof(GxList*));	
+	self->table = malloc(self->capacity * sizeof(sList*));	
 	nUtil->assertAlloc(self->table);
 	self->entries = malloc(self->capacity * sizeof(Entry));
 	nUtil->assertAlloc(self->entries);
@@ -62,7 +62,7 @@ GxMap* GmCreateMap() {
 	nUtil->assertAlloc(self->keys);
 	
 	for (Uint32 i = 0; i < self->capacity; i++) {
-		self->table[i] = GxCreateList();
+		self->table[i] = nList->create();
 	}
 	//then return
 	return self;
@@ -72,7 +72,7 @@ GxMap* GmCreateMap() {
 void GxDestroyMap(GxMap* self) {
 	if (self) {
 		for (Uint32 i = 0; i < self->capacity; i++) {
-			GxDestroyList(self->table[i]);
+			nList->destroy(self->table[i]);
 			if(i >= self->size) continue;
 			free(self->keys[i]);
 			if(self->entries[i].dtor){
@@ -102,9 +102,9 @@ Uint32 GxMapCapacity(GxMap* self) {
 
 void* GxMapGet(GxMap* self, const char* key) {	
 	
-	GxList* bucket = self->table[calcHash(key, self->capacity)];
-	for (char* k = GxListBegin(bucket); k != NULL; k = GxListNext(bucket)) {
-		GxInt* reference = GxListNext(bucket);
+	sList* bucket = self->table[calcHash(key, self->capacity)];
+	for (char* k = nList->begin(bucket); k != NULL; k = nList->next(bucket)) {
+		GxInt* reference = nList->next(bucket);
 		if (strcmp(k, key) == 0) {
 			return self->entries[reference->value].value;
 		}
@@ -117,19 +117,19 @@ void* GxMapAt(GxMap* self, Uint32 index) {
 	return self->entries[index].value;
 }
 
-void GxMapSet(GxMap* self, const char* key, void* value, GxDestructor dtor) {
+void GxMapSet(GxMap* self, const char* key, void* value, sDtor dtor) {
 	
 	if (self->size >= self->capacity){
 		GxMapRehash(self, self->capacity * 2);
 	}	
 
 	bool contains = false;
-	GxList* bucket = self->table[calcHash(key, self->capacity)];
+	sList* bucket = self->table[calcHash(key, self->capacity)];
 	
-	for (char* lsKey = GxListBegin(bucket); lsKey != NULL; 
-		lsKey = GxListNext(bucket))
+	for (char* lsKey = nList->begin(bucket); lsKey != NULL; 
+		lsKey = nList->next(bucket))
 	{		
-		GxInt* index = GxListNext(bucket);
+		GxInt* index = nList->next(bucket);
 		if (strcmp(lsKey, key) == 0) {
 			Entry* entry = &self->entries[index->value];
 			if(entry->dtor) entry->dtor(entry->value);
@@ -144,8 +144,8 @@ void GxMapSet(GxMap* self, const char* key, void* value, GxDestructor dtor) {
 		//fill bucket
 		char* k = nUtil->createString(key);
 		GxInt* index = createInt(self->size);
-		GxListPush(bucket, k, NULL);
-		GxListPush(bucket, index, NULL);
+		nList->push(bucket, k, NULL);
+		nList->push(bucket, index, NULL);
 
 		//fill entries and keys
 		self->entries[self->size].value = value;
@@ -164,22 +164,22 @@ void GxMapRehash(GxMap* self, Uint32 capacity) {
 	if (self->capacity >= capacity) return;
 
 	//create replacement table
-	GxList** table = malloc(capacity * sizeof(GxList*));
+	sList** table = malloc(capacity * sizeof(sList*));
 	nUtil->assertAlloc(table);
 	
 	for (Uint32 i = 0; i < capacity; i++) {
-		table[i] = GxCreateList();
+		table[i] = nList->create();
 	}
 
 	for (Uint32 i = 0; i < self->capacity; i++) {
 
-		GxList* source = self->table[i];		
+		sList* source = self->table[i];		
 		
-		for (char* key = GxListBegin(source); key != NULL; key = GxListNext(source)) {
-			int* index = GxListNext(source);
-			GxList* bucket = table[calcHash(key, capacity)];
-			GxListPush(bucket, key, NULL);
-			GxListPush(bucket, index, NULL);
+		for (char* key = nList->begin(source); key != NULL; key = nList->next(source)) {
+			int* index = nList->next(source);
+			sList* bucket = table[calcHash(key, capacity)];
+			nList->push(bucket, key, NULL);
+			nList->push(bucket, index, NULL);
 		}		
 	}
 	
@@ -192,7 +192,7 @@ void GxMapRehash(GxMap* self, Uint32 capacity) {
 	
 	//destroy previous table
 	for (Uint32 i = 0; i < self->capacity; i++) {
-		GxDestroyList(table[i]);
+		nList->destroy(table[i]);
 	}
 	free(table);
 	//set new capacity
@@ -203,14 +203,14 @@ void GxMapRemove(GxMap* self, const char* key) {
 	
 	GxInt* index = NULL;
 	bool contains = false;
-	GxList* bucket = self->table[calcHash(key, self->capacity)];
+	sList* bucket = self->table[calcHash(key, self->capacity)];
 	
-	for (char* k = GxListBegin(bucket); k != NULL; k = GxListNext(bucket)){		
-		index = GxListNext(bucket);
+	for (char* k = nList->begin(bucket); k != NULL; k = nList->next(bucket)){		
+		index = nList->next(bucket);
 		if (strcmp(k, key) == 0) {	
 			contains = true;			
-			GxListRemove(bucket, k);
-			GxListRemove(bucket, index);
+			nList->remove(bucket, k);
+			nList->remove(bucket, index);
 			break;
 		}	
 	}

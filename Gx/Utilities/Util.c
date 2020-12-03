@@ -1,9 +1,38 @@
 #include "../Utilities/Util.h"
-#include "../Ini/Ini.h"
 #include "../Array/Array.h"
 #include "../App/App.h"
 #include <string.h>
 #include <stdio.h>
+
+enum sEventType {
+	//lifecycle
+	EventOnLoad,
+	EventOnLoopBegin,
+	EventOnUpdate,
+	EventOnRender,
+	EventOnLoopEnd,
+	EventOnUnload,
+
+	//sdl events
+	EventOnKeyboard,
+	EventMouse,
+	EventFinger,
+	EventSDLDefault,
+
+	//contact events
+	EventPreContact,
+	EventContactBegin,
+	EventContactEnd,
+
+	//events not inside ihandlers
+	EventTimeout,
+	EventOnDestroy,
+	EventOnElemRemoval,
+
+	//number of events
+	EventTotalHandlers,
+};
+
 
 static void printMask(Uint32 mask) {
     for (Uint32 i = 0; i < 32; i++) {
@@ -74,7 +103,7 @@ static char* cloneString(const char* str, char* buffer, Uint32 size) {
 
 static sArray* split(const char* str, const char* sep) {
     
-    sArray* tokens = nArr->create();
+    sArray* tokens = nArray->create();
 
     const size_t len = strlen(sep);
     char* next = NULL;
@@ -83,11 +112,11 @@ static sArray* split(const char* str, const char* sep) {
 
     while ((next = strstr(token, sep))){
         next[0] = '\0';
-        nArr->push(tokens, nUtil->createString(token), free);
+        nArray->push(tokens, nUtil->createString(token), free);
         token = next + len;       
     }
     
-    nArr->push(tokens, nUtil->createString(token), free);
+    nArray->push(tokens, nUtil->createString(token), free);
     free(memory);
     
     return tokens;
@@ -202,7 +231,38 @@ static void onDestroyDoNothing(GxEvent* e) {
     (void) e;
 }
 
-const sUtilNamespace*  nUtil = &(sUtilNamespace){
+static void evnSetHandlers(sHandler* handlers, const sIni* ini) {
+      
+    //lifecycle
+	handlers[EventOnLoad] = ini->onLoad;
+	handlers[EventOnLoopBegin] = ini->onLoopBegin;
+	handlers[EventOnUpdate] = ini->onUpdate;	
+	handlers[EventOnRender] = ini->onRender;
+	handlers[EventOnLoopEnd] = ini->onLoopEnd;
+	handlers[EventOnUnload] = ini->onUnload;
+
+    //precontact
+    handlers[EventOnKeyboard] = ini->onKeyboard;
+    handlers[EventMouse] = ini->onMouse;
+    handlers[EventFinger] = ini->onFinger;
+    handlers[EventSDLDefault] = ini->onSDLDefault;
+
+    //contact
+    handlers[EventPreContact] = ini->onPreContact;
+    handlers[EventContactBegin] = ini->onContactBegin;
+    handlers[EventContactEnd] = ini->onContactEnd;
+    handlers[EventOnDestroy] = ini->onDestroy;    
+}
+
+static bool evnIniHasHandler(const sIni* ini) {
+    return ( ini->onLoad || ini->onLoopBegin || ini->onUpdate ||
+        ini->onRender || ini->onLoopEnd ||
+        ini->onUnload || ini->onKeyboard || ini->onMouse ||
+        ini->onFinger || ini->onSDLDefault || ini->onPreContact ||
+        ini->onContactBegin || ini->onContactEnd || ini->onDestroy);
+}
+
+const struct sUtilNamespace*  nUtil = &(struct sUtilNamespace){
 	.createInt = createInt,
 	.createUint = createUint,
 	.createBool = createBool,
@@ -226,6 +286,27 @@ const sUtilNamespace*  nUtil = &(sUtilNamespace){
 	.onDestroyFreeTarget = onDestroyFreeTarget,
 	.onDestroyDoNothing = onDestroyDoNothing,
 	.splitAssetPath = splitAssetPath,
+    .evn = &(struct sUtilEventNamespace) {
+        .setHandlers = evnSetHandlers,
+        .hasHandler = evnIniHasHandler,
+        .ON_LOAD = EventOnLoad,
+		.ON_LOOP_BEGIN = EventOnLoopBegin,
+		.ON_UPDATE = EventOnUpdate,
+		.ON_RENDER = EventOnRender,
+		.ON_LOOP_END = EventOnLoopEnd,
+		.ON_UNLOAD = EventOnUnload,	
+		.ON_KEYBOARD = EventOnKeyboard,
+		.ON_MOUSE = EventMouse,
+		.ON_FINGER = EventFinger,
+		.ON_SDL_DEFAULT = EventSDLDefault,
+		.ON_PRE_CONTACT = EventPreContact,
+		.ON_CONTACT_BEGIN = EventContactBegin,
+		.ON_CONTACT_END = EventContactEnd,
+		.ON_TIMEOUT = EventTimeout,
+		.ON_DESTROY = EventOnDestroy,
+		.ON_ELEM_REMOVAL = EventOnElemRemoval,
+		.TOTAL = EventTotalHandlers,
+    },
     .hash = &(struct sUtilHash) {
         .ELEMENT = 1111251919,	
 	    .SCENE = 2066184690,

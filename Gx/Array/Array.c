@@ -9,7 +9,7 @@
 //structs
 typedef struct ArrData {
 	void* value;
-	GxDestructor dtor;
+	sDtor dtor;
 } ArrData;
 
 typedef struct sArray{   
@@ -62,7 +62,7 @@ static void* getLast(sArray* self) {
 	return self->entries[self->size - 1].value;
 }
 
-static void insert(sArray* self, Uint32 index, void* value, GxDestructor dtor) {
+static void insert(sArray* self, Uint32 index, void* value, sDtor dtor) {
     
     if (index >= self->size) {
         index = self->size++;
@@ -78,7 +78,7 @@ static void insert(sArray* self, Uint32 index, void* value, GxDestructor dtor) {
     self->entries[index].dtor = dtor;
 }
 
-static void push(sArray* self, void* value, GxDestructor dtor){
+static void push(sArray* self, void* value, sDtor dtor){
     insert(self, self->size, value, dtor);
 }
 
@@ -105,7 +105,7 @@ static int removeByValue(sArray* self, void* value) {
 static int64_t indexOf(sArray* self, void* value) {   
     int64_t index = -1;
     for (Uint32 i = 0; i < self->size; i++) {
-        if (value == nArr->at(self, i)) {
+        if (value == nArray->at(self, i)) {
             index = i;
             break;
         }
@@ -151,7 +151,7 @@ void sort(sArray* self, GxComp compare) {
 
 
 
-const sArrayNamespace* nArr = &(sArrayNamespace){
+const sArrayNamespace* nArray = &(sArrayNamespace){
 	.create = create,
 	.destroy = destroy,
 	.size = getSize,
