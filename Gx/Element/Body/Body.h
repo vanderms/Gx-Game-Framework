@@ -49,6 +49,11 @@ extern const struct sElemBodyNamespace {
 	const int NONE;
 	const int FIXED;
 	const int DYNAMIC;	
+	const Uint32 CMASK_NONE;
+	const Uint32 CMASK_ALL;
+	const Uint32 CMASK_CAMERA;
+	const Uint32 CMASK_DYNAMIC;
+	const Uint32 CMASK_FIXED;
 
 	struct sElemBodyPrivateNamespace {
 		struct sElemBody* (*create)(sElement* elem, const sIni* ini);

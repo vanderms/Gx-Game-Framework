@@ -1,6 +1,5 @@
 #ifndef GX_H
 #define GX_H
-#include "../Public/GxPublic.h"
 #include "../App/App.h"
 #include "../Element/Element.h"
 #include "../Folder/Folder.h"
@@ -60,7 +59,7 @@ typedef struct GxContactNamespace {
 	bool (*isElemLeftContact)(sContact* contact, sElement* self);
 	bool (*isElemDownContact)(sContact* contact, sElement* self);
 	bool (*isElemUpContact)(sContact* contact, sElement* self);
-	void (*oneWayPlatform)(GxEvent* e);
+	void (*oneWayPlatform)(sEvent* e);
 	const GxContactConstant RIGHT;
 	const GxContactConstant LEFT;
 	const GxContactConstant HORIZONTAL;

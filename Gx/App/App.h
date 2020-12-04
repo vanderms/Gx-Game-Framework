@@ -28,8 +28,8 @@ typedef struct sAppNamespace {
 	void (*convertColor)(SDL_Color* dest, const char* color);	
 	sArray* (*tokenize)(const char* str, const char* sep);	
 	char* (*sf)(const char* format, ...);
-	SDL_Rect* (*calcDest)(SDL_Rect* src, SDL_Rect* dest);
-	SDL_Rect* (*calcLabelDest)(SDL_Rect* src, SDL_Rect* dest);
+	sRect* (*calcDest)(sRect* src, sRect* dest);
+	sRect* (*calcLabelDest)(sRect* src, sRect* dest);
 	struct sAppPrivate {
 		void (*addScene)(sScene* scene);
 		void (*addFolder)(sFolder* handler);

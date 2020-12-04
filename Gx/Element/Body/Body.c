@@ -60,7 +60,9 @@ static sElemBody* pCreate(sElement* elem, const sIni* ini) {
 	self->type = (ini->body == nElem->body->FIXED ? 
 		nElem->body->FIXED : nElem->body->DYNAMIC
 	);		
-	self->cmask = self->type == nElem->body->DYNAMIC ? GxCmaskDynamic : GxCmaskFixed;	
+	self->cmask = (self->type == nElem->body->DYNAMIC ? 
+		nElem->body->CMASK_DYNAMIC : nElem->body->CMASK_FIXED
+	);
 	self->velocity.x = ini->velocity.x;
 	self->velocity.y = ini->velocity.y;
 	self->elasticity = 0.0;
@@ -318,7 +320,7 @@ static sVector move(sElement* self, sVector vector, bool force) {
 }
 
 static void moveTo(sElement* self, sPoint pos, bool force) {	
-	const SDL_Rect* selfPos = nElem->position(self);
+	const sRect* selfPos = nElem->position(self);
 	nElem->body->move(self, (sVector){ pos.x - selfPos->x, pos.y - selfPos->y }, force);
 }
 
@@ -377,6 +379,11 @@ const struct sElemBodyNamespace nElemBody = {
 	.NONE = 1,
 	.FIXED = 2,
 	.DYNAMIC = 3,	
+	.CMASK_NONE = 0,
+	.CMASK_ALL = ~0u,
+	.CMASK_CAMERA = 1u << 30,
+	.CMASK_DYNAMIC = 1 << 0,
+	.CMASK_FIXED  = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7),
 
 	.p = &(struct sElemBodyPrivateNamespace) {
 		.create = pCreate,

@@ -33,6 +33,16 @@ enum sEventType {
 	EventTotalHandlers,
 };
 
+typedef enum sStatus {
+	StatusNone,
+	StatusLoading,
+	StatusLoaded,
+	StatusRunning,
+	StatusPaused,
+	StatusReady,
+	StatusUnloading,
+} sStatus;
+
 
 static void printMask(Uint32 mask) {
     for (Uint32 i = 0; i < 32; i++) {
@@ -223,11 +233,11 @@ static bool assertState(bool condition){
 }
 
 
-static void onDestroyFreeTarget(GxEvent* e) {
+static void onDestroyFreeTarget(sEvent* e) {
     free(e->target);
 }
 
-static void onDestroyDoNothing(GxEvent* e) {
+static void onDestroyDoNothing(sEvent* e) {
     (void) e;
 }
 
@@ -307,6 +317,16 @@ const struct sUtilNamespace*  nUtil = &(struct sUtilNamespace){
 		.ON_ELEM_REMOVAL = EventOnElemRemoval,
 		.TOTAL = EventTotalHandlers,
     },
+    .status = &(struct sUtilStatusNamespace){
+		.NONE =StatusNone,
+		.LOADING = StatusLoading,
+		.LOADED = StatusLoaded,
+		.RUNNING = StatusRunning,
+        .PAUSED = StatusPaused,
+        .READY = StatusReady,
+		.UNLOADING = StatusUnloading,
+	},	
+
     .hash = &(struct sUtilHash) {
         .ELEMENT = 1111251919,	
 	    .SCENE = 2066184690,

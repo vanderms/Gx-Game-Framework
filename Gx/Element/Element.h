@@ -2,7 +2,6 @@
 #define GX_ELEM_H
 #include "../Utilities/Util.h"
 #include "../App/App.h"
-#include "../Event/GxEvent.h"
 #include "Body/Body.h"
 #include "Renderable/Renderable.h"
 #include <stdint.h>
@@ -24,8 +23,8 @@ extern const struct sElemNamespace {
 	bool (*hasClass)(sElement* self, const char* type);	
 
 	sScene* (*scene)(sElement* self);
-	const SDL_Rect* (*position)(sElement* self);
-	void (*setPosition)(sElement* self, SDL_Rect pos);
+	const sRect* (*position)(sElement* self);
+	void (*setPosition)(sElement* self, sRect pos);
 	sPoint (*calcCenter)(sElement* self);
 
 	bool (*hasBody)(sElement* self);

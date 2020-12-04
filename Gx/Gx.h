@@ -5,7 +5,7 @@
 #include "XMacros/GxXMacros.h"
 
 //... TYPES ALIASES
-typedef SDL_Rect Rect;
+typedef sRect Rect;
 typedef SDL_Point Point;
 typedef SDL_Point Vector;
 typedef sSize Size;
@@ -14,11 +14,11 @@ typedef sIni sIni;
 typedef sList List;
 typedef sArray Array;
 typedef sMap Map;
-typedef GxEvent Event;
+typedef sEvent Event;
 typedef sScene Scene;
 typedef sElement sElement;
 typedef sContact Contact;
-typedef GxElemID ElemID;
+typedef sElemId ElemID;
 
 #ifdef __GNUC__
     #pragma GCC diagnostic push

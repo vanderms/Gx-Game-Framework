@@ -2,13 +2,11 @@
 #include "../Scene/Scene.h"
 #include "../App/App.h"
 #include "../Element/Element.h"
-#include "../Event/GxEvent.h"
 #include "../Map/Map.h"
 #include "../List/List.h"
 #include "../Graphics/Graphics.h"
 #include "../Physics/Physics.h"
 #include "../Folder/Folder.h"
-#include "../Event/GxEvent.h"
 #include <string.h>
 
 typedef struct sScene {
@@ -42,7 +40,7 @@ typedef struct Timer {
 } Timer;
 
 typedef struct Listener {
-	GxEvent e;
+	sEvent e;
 	sHandler handler;	
 }Listener;
 
@@ -69,7 +67,7 @@ sScene* GxCreateScene(const sIni* ini) {
 	sSize windowSize = nApp->logicalSize();
 	self->size.w = ini->size.w > windowSize.w ? ini->size.w : windowSize.w;
 	self->size.h = ini->size.h > windowSize.h ? ini->size.h : windowSize.h;
-	self->status = GxStatusNone;
+	self->status = nUtil->status->NONE;
 	self->gravity = ini->gravity > 0 ? -ini->gravity : ini->gravity;	
 
 	//set callback module
@@ -110,12 +108,12 @@ sScene* GxCreateScene(const sIni* ini) {
 void GxDestroyScene_(sScene* self) {
 
 	if (self) {
-		self->status = GxStatusUnloading;
+		self->status = nUtil->status->UNLOADING;
 		
 		for(Listener* listener = nList->begin(self->listeners[nUtil->evn->ON_DESTROY]); 
 			listener != NULL; listener = nList->next(self->listeners[nUtil->evn->ON_DESTROY]))
 		{		
-			listener->handler(&(GxEvent) {
+			listener->handler(&(sEvent) {
 				.target = listener->e.target,
 				.type = nUtil->evn->ON_DESTROY,				
 			});			
@@ -127,7 +125,7 @@ void GxDestroyScene_(sScene* self) {
 		nMap->destroy(self->rHandlers);
 		
 		if (self->handlers && self->handlers[nUtil->evn->ON_DESTROY]){
-			self->handlers[nUtil->evn->ON_DESTROY](&(GxEvent) {
+			self->handlers[nUtil->evn->ON_DESTROY](&(sEvent) {
 				.target = self->target,
 				.type = nUtil->evn->ON_DESTROY,
 			});
@@ -257,13 +255,13 @@ Uint32 GxSceneGetPercLoaded(sScene* self) {
 
 void GxSceneExecuteElemChildDtor_(sScene* self, void* child) {
 	
-	if(self->status == GxStatusUnloading){return ;}
+	if(self->status == nUtil->status->UNLOADING){return ;}
 
 	for(Listener* listener = nList->begin(self->listeners[nUtil->evn->ON_DESTROY]);
 		listener != NULL; listener = nList->next(self->listeners[nUtil->evn->ON_DESTROY])) 
 	{
 		if (listener->e.target == child) {
-			listener->handler(&(GxEvent) {
+			listener->handler(&(sEvent) {
 				.target = listener->e.target,
 				.type = nUtil->evn->ON_DESTROY,				
 			});
@@ -284,7 +282,7 @@ void GxSceneSetTimeout(sScene* self, int interval, sHandler callback, void* targ
 }
 
 Uint32 GxSceneAddElement_(sScene* self, sElement* elem) {	
-	nUtil->assertState(self->status == GxStatusLoaded || self->status == GxStatusRunning);	
+	nUtil->assertState(self->status == nUtil->status->LOADED || self->status == nUtil->status->RUNNING);	
 	nArray->push(self->elements, elem, (sDtor) nElem->p->destroy);	
 	nGraphics->insert(self->graphics, elem);
 	nPhysics->insert(self->physics, elem);
@@ -333,7 +331,7 @@ void GxSceneAddEventListener(sScene* self, int type, sHandler handler, void* tar
 bool GxSceneRemoveEventListener(sScene* self, int type, sHandler handler, void* target) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
-	if (self->status == GxStatusUnloading) { return true; }
+	if (self->status == nUtil->status->UNLOADING) { return true; }
 
 	nUtil->assertArgument(type >= 0 && type < nUtil->evn->TOTAL);
 	nUtil->assertNullPointer(handler);
@@ -351,7 +349,7 @@ bool GxSceneRemoveEventListener(sScene* self, int type, sHandler handler, void* 
 static inline void sceneExecuteListeners(sScene* self, int type, SDL_Event* sdle) {	
 		
 	if (self->handlers && self->handlers[type]){
-		self->handlers[type](&(GxEvent) {
+		self->handlers[type](&(sEvent) {
 			.target = self->target,
 			.type = type,	
 			.sdle = sdle
@@ -373,7 +371,7 @@ static inline void sceneExecuteContactListeners(sScene* self, int type, sContact
 	nElem->body->p->setMcFlag(elemOther, true);
 
 	if (self->handlers && self->handlers[type]){
-		self->handlers[type](&(GxEvent) {
+		self->handlers[type](&(sEvent) {
 			.target = self->target,
 			.type = type,	
 			.contact = contact
@@ -388,9 +386,9 @@ static inline void sceneExecuteContactListeners(sScene* self, int type, sContact
 
 void GxScenePreLoad_(sScene* self) {
 	
-	nUtil->assertState(self->status == GxStatusNone);
+	nUtil->assertState(self->status == nUtil->status->NONE);
 
-	self->status = GxStatusLoading;
+	self->status = nUtil->status->LOADING;
 	self->elemCounter = 0;
 
 	//initialize containers and folders
@@ -419,20 +417,20 @@ static void GxSceneLoad_(sScene* self) {
 		.display = nElem->display->NONE,
 		.body = nElem->body->FIXED,
 		.className = "__CAMERA__",		
-		.position = &(SDL_Rect){ 0, 0, size.w, size.h },				
+		.position = &(sRect){ 0, 0, size.w, size.h },				
 	});
 
-	nElem->body->setCmask(self->camera, GxCmaskCamera);
+	nElem->body->setCmask(self->camera, nElem->body->CMASK_CAMERA);
 	
 	//execute onload callbacks 
 	sceneExecuteListeners(self, nUtil->evn->ON_LOAD, NULL);
 
 	//change status to running
-	self->status = GxStatusRunning;
+	self->status = nUtil->status->RUNNING;
 }
 
 void GxSceneUnload_(sScene* self) {
-	self->status = GxStatusUnloading;
+	self->status = nUtil->status->UNLOADING;
 	nGraphics->destroy(self->graphics);
 	nPhysics->destroy(self->physics);	
 	//delete buttons_;
@@ -442,7 +440,7 @@ void GxSceneUnload_(sScene* self) {
 	for(Listener* listener = nList->begin(self->listeners[nUtil->evn->ON_DESTROY]); 
 		listener != NULL; listener = nList->next(self->listeners[nUtil->evn->ON_DESTROY]))
 	{		
-		listener->handler(&(GxEvent) {
+		listener->handler(&(sEvent) {
 			.target = listener->e.target,
 			.type = nUtil->evn->ON_DESTROY,				
 		});			
@@ -467,7 +465,7 @@ void GxSceneUnload_(sScene* self) {
 	self->camera = NULL;
 	
 	//status		
-	self->status = GxStatusNone;
+	self->status = nUtil->status->NONE;
 }
 
 void GxSceneRemoveElement_(sScene* self, sElement* elem) {	
@@ -478,27 +476,27 @@ void GxSceneRemoveElement_(sScene* self, sElement* elem) {
 }
 
 void GxSceneOnLoopBegin_(sScene* self) {	
-	if(self->status == GxStatusRunning){
+	if(self->status == nUtil->status->RUNNING){
 		sceneExecuteListeners(self, nUtil->evn->ON_LOOP_BEGIN, NULL);		
 	}
 }
 
 void GxSceneOnUpdate_(sScene* self) {
 	
-	if (self->status == GxStatusLoading) {
+	if (self->status == nUtil->status->LOADING) {
 		if (GxSceneGetPercLoaded(self) == 100) {
-			self->status = GxStatusLoaded;
+			self->status = nUtil->status->LOADED;
 			GxSceneLoad_(self);
 		}		
 	}
 
-	if(self->status == GxStatusRunning){
+	if(self->status == nUtil->status->RUNNING){
 
 		for (Timer* timer = nList->begin(self->listeners[nUtil->evn->ON_TIMEOUT]); timer != NULL;
 			timer = nList->next(self->listeners[nUtil->evn->ON_TIMEOUT])
 		){						
 			if (--timer->counter <= 0) {
-				timer->callback(&(GxEvent){
+				timer->callback(&(sEvent){
 					.target = timer->target,
 					.type = nUtil->evn->ON_TIMEOUT
 				});	
@@ -516,13 +514,13 @@ void GxSceneOnUpdate_(sScene* self) {
 }
 
 void GxSceneOnLoopEnd_(sScene* self) {
-	if(self->status == GxStatusRunning){
+	if(self->status == nUtil->status->RUNNING){
 		sceneExecuteListeners(self, nUtil->evn->ON_LOOP_END, NULL);
 	}
 }
 
 void GxSceneOnSDLEvent_(sScene* self, SDL_Event* e) {	
-	if (self->status != GxStatusRunning) {
+	if (self->status != nUtil->status->RUNNING) {
 		return;
 	}
 

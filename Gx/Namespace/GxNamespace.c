@@ -27,13 +27,6 @@ const GxSceneNamespace GxSceneNamespaceInstance = {
 	.setGravity = GxSceneSetGravity,
 	.setTimeout = GxSceneSetTimeout,
 	.addEventListener = GxSceneAddEventListener,
-	.removeEventListener = GxSceneRemoveEventListener,
-	.status = &(const struct GxStatusNamespace){
-		.NONE = GxStatusNone,
-		.LOADING = GxStatusLoading,
-		.LOADED = GxStatusLoaded,
-		.RUNNING = GxStatusRunning,		
-		.UNLOADING = GxStatusLoading,
-	},	
+	.removeEventListener = GxSceneRemoveEventListener,	
 };
 

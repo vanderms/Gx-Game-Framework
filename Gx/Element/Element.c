@@ -1,6 +1,5 @@
 #include "../Utilities/Util.h"
 #include "Element.h"
-#include "../Event/GxEvent.h"
 #include "../Array/Array.h"
 #include "../Folder/Folder.h"
 #include "../Graphics/Graphics.h"
@@ -17,7 +16,7 @@ typedef struct sElement {
 	char* className;
 	sArray* classList;
 	sScene* scene;
-	SDL_Rect* pos;
+	sRect* pos;
 	
 	//modules
 	struct sElemRenderable* renderable;
@@ -63,7 +62,7 @@ static sElement* create(const sIni* ini){
 	//set position
 	if (ini->display != nElem->display->NONE || ini->body != nElem->body->NONE) {
 		nUtil->assertArgument(ini->position);
-		self->pos = malloc(sizeof(SDL_Rect));
+		self->pos = malloc(sizeof(sRect));
 		nUtil->assertAlloc(self->pos);
 		*self->pos = *ini->position; 
 	}
@@ -88,7 +87,7 @@ static void pDestroy(sElement* self) {
 			GxSceneExecuteElemChildDtor_(self->scene, self->child);
 		}
 		if(self->handlers && self->handlers[nUtil->evn->ON_DESTROY]){
-			self->handlers[nUtil->evn->ON_DESTROY](&(GxEvent){
+			self->handlers[nUtil->evn->ON_DESTROY](&(sEvent){
 				.target = self->target, 
 				.type = nUtil->evn->ON_DESTROY, 
 			});
@@ -149,7 +148,7 @@ static void pExecuteContactHandler(sElement* self, int type, sContact* contact){
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
 	if(self->handlers && self->handlers[type]){
-		self->handlers[type](&(GxEvent){
+		self->handlers[type](&(sEvent){
 			.type = type, 
 			.target = self->target,
 			.contact = contact,			
@@ -184,13 +183,13 @@ static sScene* scene(sElement* self) {
 	return self->scene;
 }
 
-static const SDL_Rect* position(sElement* self) {
+static const sRect* position(sElement* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
 	return self->pos;
 }
 
-static void setPosition(sElement* self, SDL_Rect pos) {
+static void setPosition(sElement* self, sRect pos) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
 	sGraphics* graphics = GxSceneGetGraphics(self->scene);
@@ -203,7 +202,7 @@ static void setPosition(sElement* self, SDL_Rect pos) {
 }
 
 static void pUpdatePosition(sElement* self, sVector vector) {	
-	SDL_Rect previousPos = *self->pos;
+	sRect previousPos = *self->pos;
 	self->pos->x += vector.x;
 	self->pos->y += vector.y;
 	nGraphics->updateElement(GxSceneGetGraphics(self->scene), self, previousPos);

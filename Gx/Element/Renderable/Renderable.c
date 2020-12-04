@@ -29,7 +29,7 @@ typedef struct Border {
 typedef struct sElemRenderable {
 	int type;
 	int zIndex;
-	const SDL_Rect* pos;
+	const sRect* pos;
 	sElement* elem;
 	SDL_RendererFlip orientation;
 	char* asset;
@@ -380,7 +380,7 @@ static void setToFit(sElement* self, const char* axis) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
 	nUtil->assertArgument(strcmp(axis, "horizontal") == 0 || strcmp(axis, "vertical") == 0);
 	sSize size = nFolder->p->getImageSize(renderable->image);
-	const SDL_Rect* pos = nElem->position(self);
+	const sRect* pos = nElem->position(self);
 	if (strcmp(axis, "horizontal") == 0){
 		renderable->proportion = ((double) pos->w) / size.w;
 	}
@@ -477,8 +477,8 @@ static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type
 		sFolder* folder = nApp->prv->getFolder(renderable->asset);
 		nUtil->assertArgument(folder);
 
-		bool folderIsLoaded = nFolder->p->hasStatus(folder, GxStatusLoading) ||
-			nFolder->p->hasStatus(folder, GxStatusReady);
+		bool folderIsLoaded = nFolder->p->hasStatus(folder, nUtil->status->LOADING) ||
+			nFolder->p->hasStatus(folder, nUtil->status->READY);
 		nUtil->assertState(folderIsLoaded);
 
 		*slash = '/';
@@ -609,24 +609,24 @@ static void pUpdateLabel(sElemRenderable* renderable) {
 }
 
 //...ELEMENT RENDER METHODS
-static SDL_Rect calcAbsolutePos(sElemRenderable* ren) {
+static sRect calcAbsolutePos(sElemRenderable* ren) {
 	int y = nApp->logicalSize().h - (ren->pos->y + ren->pos->h);
-	return (SDL_Rect) { ren->pos->x, y, ren->pos->w, ren->pos->h };
+	return (sRect) { ren->pos->x, y, ren->pos->w, ren->pos->h };
 }
 
-static SDL_Rect calcRelativePos(sElemRenderable* ren) {
-	const SDL_Rect* cpos = nElem->position(GxSceneGetCamera(nElem->scene(ren->elem)));
+static sRect calcRelativePos(sElemRenderable* ren) {
+	const sRect* cpos = nElem->position(GxSceneGetCamera(nElem->scene(ren->elem)));
 	int x = ren->pos->x - cpos->x;
 	int y = (cpos->y + cpos->h) - (ren->pos->y + ren->pos->h);
-	return (SDL_Rect) { x, y, ren->pos->w, ren->pos->h };
+	return (sRect) { x, y, ren->pos->w, ren->pos->h };
 }
 
-static void pApplyProportion(sElemRenderable* ren, SDL_Rect* pos, sSize size) {
+static void pApplyProportion(sElemRenderable* ren, sRect* pos, sSize size) {
 	pos->w = (int) (size.w * ren->proportion + 0.5);
 	pos->h = (int) (size.h * ren->proportion + 0.5);
 }
 
-static void pApplyAlignment(sElemRenderable* ren, SDL_Rect* pos) {
+static void pApplyAlignment(sElemRenderable* ren, sRect* pos) {
 
 	//horizontal alignment -> (left is default)
 	if(!ren->alignment ||
@@ -655,7 +655,7 @@ static void pApplyAlignment(sElemRenderable* ren, SDL_Rect* pos) {
 	}
 }
 
-static SDL_Rect* pCalcImagePosOnCamera(sElement* self, SDL_Rect* pos, sImage* image) {
+static sRect* pCalcImagePosOnCamera(sElement* self, sRect* pos, sImage* image) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
 	sSize size = nFolder->p->getImageSize(image);
 	pApplyProportion(renderable, pos, size);
@@ -663,7 +663,7 @@ static SDL_Rect* pCalcImagePosOnCamera(sElement* self, SDL_Rect* pos, sImage* im
 	return pos;
 }
 
-static SDL_Rect calcPosOnCamera(sElement* self) {
+static sRect calcPosOnCamera(sElement* self) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
 	if(renderable->type ==  nElem->display->ABSOLUTE){
 		return calcAbsolutePos(renderable);

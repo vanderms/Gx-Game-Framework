@@ -72,7 +72,6 @@ static inline void destroyAsset(Asset* self) {
     }
 }
 
-
 //static instance
 static sApp* self = NULL;
 
@@ -93,7 +92,7 @@ static sScene* create(const sIni* ini) {
     self->aLoading = NULL;
     self->aLoaded = NULL;
 
-    SDL_AtomicSet(&self->atom, GxStatusNone);
+    SDL_AtomicSet(&self->atom, nUtil->status->NONE);
 
    
 	  //init SDL modules
@@ -161,14 +160,12 @@ static sScene* create(const sIni* ini) {
    
     SDL_SetRenderDrawBlendMode(self->renderer, SDL_BLENDMODE_BLEND);
 
-    self->status = GxStatusNone;
+    self->status = nUtil->status->NONE;
     self->snMain = GxCreateScene(ini);
     return self->snMain;
 }
 
-
-
-static SDL_Rect* calcDest(SDL_Rect* src, SDL_Rect* dest) {
+static sRect* calcDest(sRect* src, sRect* dest) {
 #define intround(x) ((x) >= 0.0 ? (int) ((x) + 0.5) : (int) ((x) - 0.5))
     sSize wsize = {0, 0};
     SDL_GetRendererOutputSize(nApp->SDLRenderer(), &wsize.w, &wsize.h);
@@ -187,7 +184,7 @@ static SDL_Rect* calcDest(SDL_Rect* src, SDL_Rect* dest) {
 #undef intround
 }
 
-static SDL_Rect* calcLabelDest(SDL_Rect* src, SDL_Rect* dest) {
+static sRect* calcLabelDest(sRect* src, sRect* dest) {
     calcDest(src, dest);
     SDL_Point center = {dest->x + dest->w/2, dest->y + dest->h/2};
     dest->x = center.x - src->w/2;
@@ -237,7 +234,7 @@ static sSize logicalSize() {
 }
 
 static bool isRunning() {
-    return self->status == GxStatusRunning;
+    return self->status == nUtil->status->RUNNING;
 }
 
 static void addScene(sScene* scene) {
@@ -342,7 +339,7 @@ static int threadLoadAsset() {
         if (!asset->resource) nApp->runtimeError(SDL_GetError());
     }
 
-    SDL_AtomicSet(&self->atom, GxStatusLoaded);
+    SDL_AtomicSet(&self->atom, nUtil->status->LOADED);
     return 0;
 }
 
@@ -352,13 +349,13 @@ static void run() {
     self->counter = SDL_GetTicks();
     
     //run
-    self->status = GxStatusRunning;
+    self->status = nUtil->status->RUNNING;
     nApp->loadScene(self->snMain);
 
-    while (self->status == GxStatusRunning) {
+    while (self->status == nUtil->status->RUNNING) {
 
         bool activeIsReady =  self->snActive ?
-            GxSceneGetStatus(self->snActive) == GxStatusRunning : false;
+            GxSceneGetStatus(self->snActive) == nUtil->status->RUNNING : false;
 
         self->counter = SDL_GetTicks();
         self->snRunning = self->snActive;
@@ -369,7 +366,7 @@ static void run() {
 
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) self->status = GxStatusUnloading;
+            if (e.type == SDL_QUIT) self->status = nUtil->status->UNLOADING;
 
             self->snRunning = self->snActive;
             if (activeIsReady && self->snActive) GxSceneOnSDLEvent_(self->snActive, &e);
@@ -387,17 +384,23 @@ static void run() {
 
 
         //...load assets
-        if (self->aLoaded == NULL && SDL_AtomicGet(&self->atom) == GxStatusLoaded) {
+        if (self->aLoaded == NULL && 
+            SDL_AtomicGet(&self->atom) == nUtil->status->LOADED) 
+        {
             self->aLoaded = self->aLoading;
             self->aLoading = NULL;
-            SDL_AtomicSet(&self->atom, GxStatusNone);
+            SDL_AtomicSet(&self->atom, nUtil->status->NONE);
         }
 
-        if (nList->size(self->aToLoad) && SDL_AtomicGet(&self->atom) == GxStatusNone) {
+        if (nList->size(self->aToLoad) && 
+            SDL_AtomicGet(&self->atom) == nUtil->status->NONE) 
+        {
             self->aLoading = self->aToLoad;
             self->aToLoad = nList->create();
-            SDL_AtomicSet(&self->atom, GxStatusLoading);
-            SDL_Thread* thread = SDL_CreateThread((SDL_ThreadFunction) threadLoadAsset, "loaderThread", self);
+            SDL_AtomicSet(&self->atom, nUtil->status->LOADING);
+            SDL_Thread* thread = (
+                SDL_CreateThread((SDL_ThreadFunction) threadLoadAsset, "loaderThread", self)
+            );
             SDL_DetachThread(thread);
         }
 
@@ -588,9 +591,6 @@ static const char* getFontPath(const char* name) {
     return nMap->get(self->fonts, name);
 }
 
-
-//... TEMPORARY RESOURCES FUNCTIONS
-
 static char* sf(const char* format, ...) {   
     static char buffer[1024]; //1kb
     va_list args;
@@ -607,7 +607,6 @@ static sArray* tokenize(const char* str, const char* sep){
     nArray->push(self->temporary, response, nArray->destroy);
     return response;
 }
-
 
 const sAppNamespace* nApp = &(sAppNamespace) { 
 	.create = create,

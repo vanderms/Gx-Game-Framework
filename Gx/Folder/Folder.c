@@ -1,5 +1,4 @@
 #include "../Folder/Folder.h"
-#include "../Private/GxGraphicAssets.h"
 #include "../Map/Map.h"
 #include "../Utilities/Util.h"
 #include "../Scene/Scene.h"
@@ -46,7 +45,7 @@ typedef struct sImage {
 
     //...
     SDL_Texture* resource;
-    SDL_Rect* src;
+    sRect* src;
     double proportion;
 
     //... opaque
@@ -88,7 +87,7 @@ static void create(const char* id, void(*loader)(void)) {
     sFolder* self = malloc(sizeof(sFolder));
     nUtil->assertAlloc(self);
     self->id = nUtil->createString(id);
-    self->status = loader ? GxStatusNone : GxStatusReady;
+    self->status = loader ? nUtil->status->NONE : nUtil->status->READY;
     self->assetsLoaded = 0;
     self->totalAssets = 0;
     self->assets = nMap->create();
@@ -154,8 +153,8 @@ static sAnimation* pGetAnimation(sFolder* self, const char* id) {
 }
 
 static void iLoadFolder(sFolder* self) {
-    if(self->status == GxStatusNone){
-        self->status = GxStatusLoading;
+    if(self->status == nUtil->status->NONE){
+        self->status = nUtil->status->LOADING;
         rFolder = self;
         self->loader();
         rFolder = NULL;
@@ -168,13 +167,13 @@ static int pGetPercLoaded(sFolder* self) {
 
 static void iUnloadFolder(sFolder* self) {
     nMap->clean(self->assets);
-    self->status = GxStatusNone;
+    self->status = nUtil->status->NONE;
 }
 
 static void iIncreaseAssetsLoaded(sFolder* self){
     self->assetsLoaded++;
     if(self->assetsLoaded == self->totalAssets){
-        self->status = GxStatusReady;
+        self->status = nUtil->status->READY;
     }
 }
 
@@ -242,11 +241,11 @@ static sImage* pCreateText(const char* text, const char* fontName, int size, SDL
     return self;
 }
 
-static void loadImage(const char* id, const char* path, SDL_Rect* src, double proportion) {
+static void loadImage(const char* id, const char* path, sRect* src, double proportion) {
 
     sFolder* self = rFolder;
     nUtil->assertArgument(self->assets == NULL || nMap->get(self->assets, id) == NULL);
-    nUtil->assertState(self->status == GxStatusLoading);
+    nUtil->assertState(self->status == nUtil->status->LOADING);
     sImage* img = iCreateImage(self, id, Texture);
     img->proportion = proportion;
     img->resource = NULL;
@@ -255,7 +254,7 @@ static void loadImage(const char* id, const char* path, SDL_Rect* src, double pr
     nApp->prv->loadSDLSurface(img, path);
 
     if (src) {
-        img->src = malloc(sizeof(SDL_Rect));
+        img->src = malloc(sizeof(sRect));
         nUtil->assertAlloc(img->src);
         *img->src = *src;
     }
@@ -293,9 +292,9 @@ static void createTilesetFromImage(const char* image, sSize size, sMatrix matrix
             char bId[64];
             snprintf(bId, 64, "%s|%d", source->id, ++counter);
             sImage* self = iCreateImage(folder, bId, Opaque);
-            self->src = malloc(sizeof(SDL_Rect));
+            self->src = malloc(sizeof(sRect));
             nUtil->assertAlloc(self->src);
-            *self->src = (SDL_Rect) { size.w * j, size.h * i, size.w, size.h };
+            *self->src = (sRect) { size.w * j, size.h * i, size.w, size.h };
             self->source = source;
             self->size = size;
 		}
@@ -307,7 +306,7 @@ static void createTilemap(const char* folderName, const char* name, const char* 
 ){
     sFolder* folder = nApp->prv->getFolder(folderName);
     nUtil->assertArgument(folder);
-    nUtil->assertArgument(folder->status != GxStatusNone);    
+    nUtil->assertArgument(folder->status != nUtil->status->NONE);    
     sImage* self = iCreateImage(folder, name, Palette);
     nUtil->assertAlloc(self);    
     self->size = size;
@@ -479,7 +478,7 @@ static void pSetMixMusic(sMusic* self, Mix_Music* music) {
 }
 
 
-static void pRenderImage(sImage* self, SDL_Rect* target, 
+static void pRenderImage(sImage* self, sRect* target, 
     double angle, SDL_RendererFlip orientation, Uint8 opacity) 
 {
     if (self->type == Texture || self->type == Opaque || self->type == Text){
@@ -498,9 +497,9 @@ static void pRenderImage(sImage* self, SDL_Rect* target,
                  SDL_SetTextureAlphaMod(resource, opacity);
             }           
             SDL_Renderer* renderer = nApp->SDLRenderer();
-            SDL_Rect* dst = ( self->type == Text ? 
-                nApp->calcLabelDest(target, &(SDL_Rect){0}) 
-                : nApp->calcDest(target, &(SDL_Rect){0, 0, 0, 0})
+            sRect* dst = ( self->type == Text ? 
+                nApp->calcLabelDest(target, &(sRect){0}) 
+                : nApp->calcDest(target, &(sRect){0, 0, 0, 0})
             );
              
             if ((angle <= -1.0 || angle >= 1.0) || orientation != SDL_FLIP_NONE) {
@@ -519,9 +518,9 @@ static void pRenderImage(sImage* self, SDL_Rect* target,
 	}
 }
 
-static void pRenderTilePallete(sImage* self, SDL_Rect* target, Uint8 opacity) {
+static void pRenderTilePallete(sImage* self, sRect* target, Uint8 opacity) {
 	
-    if (!nFolder->p->hasStatus(self->folder, GxStatusReady)){ return; }
+    if (!nFolder->p->hasStatus(self->folder, nUtil->status->READY)){ return; }
 
     int w = (self->size.w / self->matrix.nc);
     int h = (self->size.h / self->matrix.nr);
@@ -560,7 +559,7 @@ static void pRenderTilePallete(sImage* self, SDL_Rect* target, Uint8 opacity) {
             int x = (target->x + columns * w);
 
             //calc child pos
-            SDL_Rect pos = {
+            sRect pos = {
                 .x  = x - ((child->size.w - w) / 2), //...xcenter texture
                 .y = y - ((child->size.h - h) / 2), //... ycenter texture
                 .w = child->size.w,

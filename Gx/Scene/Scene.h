@@ -1,7 +1,6 @@
 #ifndef GX_SCENE_H
 #define GX_SCENE_H
 #include "../Utilities/Util.h"
-#include "../Event/GxEvent.h"
 #include "../App/App.h"
 
 //struct declaration 

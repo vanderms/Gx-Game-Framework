@@ -1,9 +1,75 @@
 #ifndef GX_UTIL_H
 #define GX_UTIL_H
-#include "../Public/GxPublic.h"
 
+#ifdef _MSC_VER
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
 
-//... INI
+#include "SDL.h"
+#include "SDL_mixer.h"
+#include "SDL_ttf.h"
+#include "SDL_image.h"
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+//... types:: alias
+typedef SDL_Rect sRect;
+typedef SDL_Point sPoint;
+typedef SDL_Point sVector;
+typedef Uint32 sElemId;
+
+//... types::containers
+typedef struct sList sList;
+typedef struct sArray sArray;
+typedef struct sMap sMap;
+typedef struct sQtree sQtree;
+
+//... types::main structs
+typedef struct sApp sApp;
+typedef struct sFolder sFolder;
+typedef struct sScene sScene;
+typedef struct sElement sElement;
+typedef struct sIni sIni;
+
+//... types:: auxiliary
+typedef struct sGraphics sGraphics;
+typedef struct sPhysics sPhysics;
+typedef struct sContact sContact;
+typedef struct sEvent sEvent;
+typedef struct sImage sImage;
+typedef struct sAnimation sAnimation;
+typedef struct sChunk sChunk;
+typedef struct sMusic sMusic;
+struct sElemRenderable;
+struct sElemBody;
+
+//... functions:: alias
+typedef void (*sDtor)();
+typedef int (*GxComp)(const void*, const void*);
+typedef void (*sHandler)(sEvent*);
+
+//... types:: definitions
+typedef struct sSize {
+	int w;
+	int h;
+} sSize;
+
+typedef struct sMatrix {
+	int nr;
+	int nc;
+} sMatrix;
+
+typedef struct sEvent {
+	void* target;
+	int type;
+	union { sContact* contact; SDL_Event* sdle; };
+} sEvent;
+
+//... sIni
 typedef struct sIni {
 	
 	//app
@@ -20,7 +86,7 @@ typedef struct sIni {
 	const char* className;
 	int display;
 	int body;
-	SDL_Rect* position;
+	sRect* position;
 
 	//widget
 	int zIndex;
@@ -63,8 +129,9 @@ typedef struct sIni {
 } sIni;
 
 
-//... NAMESPACE
+//... Util namespace
 extern const struct sUtilNamespace {	
+
 	int* (*createInt)(int value);
 	Uint32* (*createUint)(Uint32 value);
 	bool* (*createBool)(bool value);
@@ -86,8 +153,8 @@ extern const struct sUtilNamespace {
 	bool (*assertImplementation)(bool condition);
 	bool (*assertHash)(bool condition);
 	bool (*assertOutOfRange)(bool condition);
-	void (*onDestroyFreeTarget)(GxEvent* e);
-	void(*onDestroyDoNothing)(GxEvent* e);
+	void (*onDestroyFreeTarget)(sEvent* e);
+	void(*onDestroyDoNothing)(sEvent* e);
 	void (*splitAssetPath)(const char* path, char* folder, char* asset);
 
 	struct sUtilEventNamespace {
@@ -112,14 +179,21 @@ extern const struct sUtilNamespace {
 		const int TOTAL;
 	}* evn;
 
+	struct sUtilStatusNamespace {		
+		const int NONE;
+		const int LOADING;
+		const int LOADED;
+		const int RUNNING;
+		const int PAUSED;
+		const int READY;
+		const int UNLOADING;
+	}* status;
+
 	struct sUtilHash {
 		const Uint32 ELEMENT;
 		const Uint32 SCENE;
 		const Uint32 CONTACT;
 	}* hash;
 }* nUtil;
-
-
-
 
 #endif // !UTILITIES_H

@@ -1,5 +1,5 @@
 #include "../Utilities/Util.h"
-#include "../Quadtree/GxQuadtree.h"
+#include "../Qtree/Qtree.h"
 #include "../List/List.h"
 #include "../Array/Array.h"
 #include <stdint.h>
@@ -7,13 +7,15 @@
 #include <string.h>
 
 //... type
-typedef struct GxQtree {
+typedef struct sQtree {
 	const char* type;
-	GxQtree* parent;	
-	SDL_Rect pos;
+	sQtree* parent;	
+	sRect pos;
 	sArray* children;
 	sList* elements;
-} GxQtree;
+} sQtree;
+
+static void subdivide(sQtree* self);
 
 //static
 static uint32_t gWCounter = 0;
@@ -26,8 +28,9 @@ static const char* sGraphical = "graphical";
 static const char* sDynamic = "dynamic";
 static const char* sFixed = "fixed";
 
-GxQtree* GxCreateQtree_(GxQtree* parent, SDL_Rect pos, const char* type){		
-	GxQtree* self = malloc(sizeof(GxQtree));
+static sQtree* create(sQtree* parent, sRect pos, const char* type){		
+	
+	sQtree* self = malloc(sizeof(sQtree));
 	nUtil->assertAlloc(self);
 	self->parent = parent;
 	
@@ -48,7 +51,7 @@ GxQtree* GxCreateQtree_(GxQtree* parent, SDL_Rect pos, const char* type){
 	return self;
 }
 
-void GxDestroyQtree_(GxQtree* self) {
+static void destroy(sQtree* self) {
 	if (self) {
 		if (self->children) nArray->destroy(self->children);
 		if (self->elements) nList->destroy(self->elements);
@@ -57,21 +60,21 @@ void GxDestroyQtree_(GxQtree* self) {
 }
 
 //acessors and mutators
-SDL_Rect GxQtreeGetPosition_(GxQtree* self) {
+static sRect position(sQtree* self) {
 	return self->pos;
 }
 
 //methods
-void GxQtreeInsert_(GxQtree* self, sElement* element) {
+static void insert(sQtree* self, sElement* element) {
 
-	SDL_Rect elemPos = *nElem->position(element);
+	sRect elemPos = *nElem->position(element);
 		
 	if (SDL_HasIntersection(&self->pos, &elemPos)) {
 
 		if (self->children) {
 			for (Uint32 i = 0; i < nArray->size(self->children); i++) {
-				GxQtree* child = nArray->at(self->children, i);
-				GxQtreeInsert_(child, element);
+				sQtree* child = nArray->at(self->children, i);
+				nQtree->insert(child, element);
 			}
 		}
 		else if (!self->elements) {			
@@ -84,49 +87,49 @@ void GxQtreeInsert_(GxQtree* self, sElement* element) {
 		}
 		else if (nList->size(self->elements) >= kMaxElements) {			
 			//first subdivide
-			GxQtreeSubdivide_(self);
+			subdivide(self);
 			//then, insert element recursively
-			GxQtreeInsert_(self, element);
+			nQtree->insert(self, element);
 		}
 	}	
 }
 
-void GxQtreeRemove_(GxQtree* self, sElement* element) {	
-	SDL_Rect elemPos = *nElem->position(element);
+static void removeNode(sQtree* self, sElement* element) {	
+	sRect elemPos = *nElem->position(element);
 	if ((!self->elements && !self->children) || 
 		!SDL_HasIntersection(&self->pos, &elemPos)) return;
 	if (self->children) {
 		for (Uint32 i = 0; i < nArray->size(self->children); i++) {
-			GxQtree* child = nArray->at(self->children, i);
-			GxQtreeRemove_(child, element);			
+			sQtree* child = nArray->at(self->children, i);
+			nQtree->remove(child, element);			
 		}
 	}
 	else nList->remove(self->elements, element);
 }
 
-void GxQtreeUpdate_(GxQtree* self, sElement* element, SDL_Rect previous) {	
+static void update(sQtree* self, sElement* element, sRect previous) {	
 	
-	SDL_Rect elemPos = *nElem->position(element);	
+	sRect elemPos = *nElem->position(element);	
 	
 	bool has = SDL_HasIntersection(&self->pos, &elemPos);
 	bool had = SDL_HasIntersection(&self->pos, &previous);
 
 	if (self->children && (had || has)) {
 		for (Uint32 i = 0; i < nArray->size(self->children); i++) {
-			GxQtree* child = nArray->at(self->children, i);
-			GxQtreeUpdate_(child, element, previous);
+			sQtree* child = nArray->at(self->children, i);
+			nQtree->update(child, element, previous);
 		}
 	}
 	else if (had && !has) {
 		if (self->elements) nList->remove(self->elements, element);
 	}
 	else if (!had && has) {
-		GxQtreeInsert_(self, element);
+		nQtree->insert(self, element);
 	}	
 }
 
 
-void GxQtreeSubdivide_(GxQtree* self) {
+static void subdivide(sQtree* self) {
 
 	int xm = self->pos.w / 2; //middle x direction
 	int ym = self->pos.h / 2; // middle y direction
@@ -134,23 +137,23 @@ void GxQtreeSubdivide_(GxQtree* self) {
 	int ydif = self->pos.h % 2; // variable to adjust child size in case of odd parent size y direction
 
 	//caculate pos
-	SDL_Rect qtree01 = { self->pos.x, self->pos.y, xm, ym };
-	SDL_Rect qtree02 = { self->pos.x + xm, self->pos.y, xm + xdif, ym };
-	SDL_Rect qtree03 = { self->pos.x, self->pos.y + ym, xm, ym + ydif };
-	SDL_Rect qtree04 = { self->pos.x + xm, self->pos.y + ym, xm + xdif, ym + ydif };
+	sRect qtree01 = { self->pos.x, self->pos.y, xm, ym };
+	sRect qtree02 = { self->pos.x + xm, self->pos.y, xm + xdif, ym };
+	sRect qtree03 = { self->pos.x, self->pos.y + ym, xm, ym + ydif };
+	sRect qtree04 = { self->pos.x + xm, self->pos.y + ym, xm + xdif, ym + ydif };
 	
 	//create new qtrees and Push into children list
 	self->children = nArray->create();
-	nArray->push(self->children, GxCreateQtree_(self, qtree01, self->type), (sDtor) GxDestroyQtree_);
-	nArray->push(self->children, GxCreateQtree_(self, qtree02, self->type), (sDtor) GxDestroyQtree_);
-	nArray->push(self->children, GxCreateQtree_(self, qtree03, self->type), (sDtor) GxDestroyQtree_);
-	nArray->push(self->children, GxCreateQtree_(self, qtree04, self->type), (sDtor) GxDestroyQtree_);
+	nArray->push(self->children,nQtree->create(self, qtree01, self->type), (sDtor) nQtree->destroy);
+	nArray->push(self->children,nQtree->create(self, qtree02, self->type), (sDtor) nQtree->destroy);
+	nArray->push(self->children,nQtree->create(self, qtree03, self->type), (sDtor) nQtree->destroy);
+	nArray->push(self->children,nQtree->create(self, qtree04, self->type), (sDtor) nQtree->destroy);
 
 	//then transfer all entities to childrens
 	for (sElement* elem = nList->begin(self->elements); elem != NULL; 
 		elem = nList->next(self->elements)) 
 	{
-		GxQtreeInsert_(self, elem);
+		nQtree->insert(self, elem);
 	}
 
 	//finally, delete and nullify self->elements
@@ -158,7 +161,7 @@ void GxQtreeSubdivide_(GxQtree* self) {
 	self->elements = NULL;
 }
 
-void GxQtreeIterate_(GxQtree* self, SDL_Rect area, void(*callback)(sElement*), bool begin) {
+static void iterate(sQtree* self, sRect area, void(*callback)(sElement*), bool begin) {
 
 	//I am not very sure if it works flawlessly or is just a big undefined behaviour
 	//The problem is I cannot imagine everything that can happen when the qtree is 
@@ -197,9 +200,19 @@ void GxQtreeIterate_(GxQtree* self, SDL_Rect area, void(*callback)(sElement*), b
 
 		if (self->children) {
 			for (Uint32 i = 0; i < nArray->size(self->children); i++) {
-				GxQtree* child = nArray->at(self->children, i);
-				GxQtreeIterate_(child, area, callback, false);
+				sQtree* child = nArray->at(self->children, i);
+				nQtree->iterate(child, area, callback, false);
 			}
 		}
 	}
 }
+
+const struct sQtreeNamespace* nQtree = &(struct sQtreeNamespace){
+	.create = create,
+	.destroy = destroy,
+	.position = position,
+	.insert = insert,
+	.remove = removeNode,
+	.update = update,
+	.iterate = iterate,
+};

@@ -13,7 +13,7 @@ extern const struct sFolderNamespace {
 
     SDL_Texture* (*getSDLTexture)(const char* path);
 
-    void (*loadImage)(const char* id, const char* path, SDL_Rect* src, double proportion);
+    void (*loadImage)(const char* id, const char* path, sRect* src, double proportion);
 
     void (*loadTileset)(const char* id, const char* pathF, int start, int end, double proportion);
 
@@ -49,8 +49,8 @@ extern const struct sFolderNamespace {
         const char* (*getImageId)(sImage* self);            
         sSize (*getImageSize)(sImage* self);
         sImage* (*createText)(const char* text, const char* font, int size, SDL_Color* color);
-        void (*renderImage)(sImage* self, SDL_Rect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity);
-        void (*renderTilePallete)(sImage* self, SDL_Rect* target, Uint8 opacity);
+        void (*renderImage)(sImage* self, sRect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity);
+        void (*renderTilePallete)(sImage* self, sRect* target, Uint8 opacity);
 
         const char* (*getAnimId)(sAnimation* self);  
         bool (*isAnimContinuous)(sAnimation* self);

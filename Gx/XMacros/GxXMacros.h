@@ -55,7 +55,7 @@
 #define x49(...) x40(__VA_ARGS__), x5(__VA_ARGS__), __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, __VA_ARGS__
 #define x50(...) x40(__VA_ARGS__), x10(__VA_ARGS__)
 
-#define xrect32(x, y, w, h) (SDL_Rect){(int) ((x) * 32), (int) ((y) * 32), (int) ((w) * 32), (int) ((h) * 32)}
+#define xrect32(x, y, w, h) (sRect){(int) ((x) * 32), (int) ((y) * 32), (int) ((w) * 32), (int) ((h) * 32)}
 #define xpoint32(x, y) (sPoint){(int) ((x) * 32), (int)((y) * 32)}
 #define xsize32(w, h) (sSize){(int) ((w) * 32), (int)((h) * 32)}
 
@@ -65,7 +65,7 @@
 	.sequence = (int[w * h]) __VA_ARGS__
 
 
-#define xrect64(x, y, w, h) (SDL_Rect){(int) ((x) * 64), (int) ((y) * 64), (int) ((w) * 64), (int) ((h) * 64)}
+#define xrect64(x, y, w, h) (sRect){(int) ((x) * 64), (int) ((y) * 64), (int) ((w) * 64), (int) ((h) * 64)}
 #define xpoint64(x, y) (sPoint){(int) ((x) * 64), (int)((y) * 64)}
 #define xsize64(w, h) (sSize){(int) ((w) * 64), (int)((h) * 64)}
 

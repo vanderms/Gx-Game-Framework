@@ -11,7 +11,7 @@ extern const struct sPhysicsNamespace {
 	void (*update)(sPhysics* self);
 	void (*insert)(sPhysics* self, sElement* element);
 	void (*remove)(sPhysics* self, sElement* element);
-	void (*updateElem)(sPhysics* self, sElement* element, SDL_Rect previousPos);
+	void (*updateElem)(sPhysics* self, sElement* element, sRect previousPos);
 	sVector (*moveByElem)(sPhysics* self, sElement* element);
 	void (*createWalls)(sPhysics* self);
 }* nPhysics;
@@ -30,13 +30,14 @@ extern const struct sContactNamespace {
 	bool (*isFromLeft)(sContact* contact, sElement* self);
 	bool (*isFromBelow)(sContact* contact, sElement* self);
 	bool (*isFromAbove)(sContact* contact, sElement* self);
-	void (*oneWayPlatformCbk)(GxEvent* e);
+	void (*oneWayPlatformCbk)(sEvent* e);
 	const Uint32 RIGHT;
 	const Uint32 LEFT;
 	const Uint32 HORIZONTAL;
 	const Uint32 UP;
 	const Uint32 DOWN;
 	const Uint32 VERTICAL;
+	const Uint32 ALLOWED;
 	const Uint32 ALL;
 }* nContact;
 

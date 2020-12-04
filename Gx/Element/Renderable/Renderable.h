@@ -56,7 +56,7 @@ extern const struct sElemRenderableNamespace {
 	const SDL_Color* (*color)(sElement* self);
 	void (*setColor)(sElement* self, const char* color);
 
-	SDL_Rect (*calcPosOnCamera)(sElement* self);	
+	sRect (*calcPosOnCamera)(sElement* self);	
 	
 	struct sElemRenderablePrivateNamespace {
 		struct sElemRenderable* (*create)(sElement* elem, const sIni* ini);
@@ -64,7 +64,7 @@ extern const struct sElemRenderableNamespace {
 		void (*onRender)(sElement* self);		
 		uint32_t (*wFlag)(sElement* self);
 		void (*setWFlag)(sElement* self, uint32_t value);
-		SDL_Rect* (*calcImagePosOnCamera)(sElement* self, SDL_Rect* pos, sImage* image);
+		sRect* (*calcImagePosOnCamera)(sElement* self, sRect* pos, sImage* image);
 		sImage* (*getImageRef)(sElement* self);
 		sImage* (*label)(sElement* self);
 	}* p;
