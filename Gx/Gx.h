@@ -13,11 +13,11 @@ typedef sMatrix Matrix;
 typedef sIni sIni;
 typedef sList List;
 typedef sArray Array;
-typedef GxMap Map;
+typedef sMap Map;
 typedef GxEvent Event;
 typedef sScene Scene;
 typedef sElement sElement;
-typedef GxContact Contact;
+typedef sContact Contact;
 typedef GxElemID ElemID;
 
 #ifdef __GNUC__
@@ -26,8 +26,6 @@ typedef GxElemID ElemID;
 #endif
 
 //... NAMESPACES ALIASES
-static const GxMapNamespace* map = &GxMapNamespaceInstance;
-static const GxContactNamespace* contact = &GxContactNamespaceInstance;
 static const GxSceneNamespace* scene = &GxSceneNamespaceInstance;
 
 #ifdef __GNUC__

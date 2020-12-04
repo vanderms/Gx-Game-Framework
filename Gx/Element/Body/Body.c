@@ -1,5 +1,5 @@
 #include "../Element.h"
-#include "../../Physics/GxPhysics.h"
+#include "../../Physics/Physics.h"
 #include "../../Array/Array.h"
 #include "../../List/List.h"
 #include "../../Graphics/Graphics.h"
@@ -31,11 +31,11 @@ typedef struct sElemBody {
 	bool friction;
 	int maxgvel;
 
-	//Flags used by GxPhysics to control if a body can move
+	//Flags used by sPhysics to control if a body can move
 	bool mcflag; // movement contact flag
 	bool movflag; // movement flag
 
-	//Flags used by GxPhysics trees to identify repeated elements
+	//Flags used by sPhysics trees to identify repeated elements
 	uint32_t fflag; // fixed tree flag
 	uint32_t dflag; // dynamic tree flag
 
@@ -217,10 +217,10 @@ static sArray* getContacts(sElement* self, int direction) {
 
 	nArray->clean(body->temp);
 
-	for(GxContact* contact = nList->begin(body->contacts); contact != NULL;
+	for(sContact* contact = nList->begin(body->contacts); contact != NULL;
 		contact = nList->next(body->contacts))
 	{
-		if (GxContactHasDirection(contact, direction)) {
+		if (nContact->hasDirection(contact, direction)) {
 			nArray->push(body->temp, contact, NULL);
 		}
 	}
@@ -232,27 +232,27 @@ static sList* pGetContactList(sElement* self) {
 	return body->contacts;
 }
 
-static void pRemoveContact(sElement* self, GxContact* contact) {
+static void pRemoveContact(sElement* self, sContact* contact) {
 	sElemBody* body = nElem->p->body(self);
 
 	//first remove contact
 	nList->remove(body->contacts, contact);
 
 	//then change ground flag if contact is down and not prevented
-	if (GxContactIsElemDownContact(contact, self) && !GxContactIsPrevented(contact)){
+	if (nContact->isFromBelow(contact, self) && !nContact->wasAllowed(contact)){
 		--body->groundFlag;
 	}
 }
 
 
-static void pAddContact(sElement* self, GxContact* contact) {
+static void pAddContact(sElement* self, sContact* contact) {
 	sElemBody* body = nElem->p->body(self);
 
 	//fist add contact
 	nList->push(body->contacts, contact, NULL);
 
 	//then change ground flag if contact is down and not prevented
-	if (GxContactIsElemDownContact(contact, self) && !GxContactIsPrevented(contact)){
+	if (nContact->isFromBelow(contact, self) && !nContact->wasAllowed(contact)){
 		body->groundFlag++;
 	}	
 }
@@ -309,9 +309,8 @@ static sVector move(sElement* self, sVector vector, bool force) {
 	body->cmask = force ? 1u << 31 : mask;
 	body->velocity.x = vector.x;
 	body->velocity.y = vector.y;
-	body->maxgvel = 0;
-	sVector GxPhysicsMoveCalledByElem_(GxPhysics * self, sElement * element);
-	vector = GxPhysicsMoveCalledByElem_(GxSceneGetPhysics(scene), self);
+	body->maxgvel = 0;	
+	vector = nPhysics->moveByElem(GxSceneGetPhysics(scene), self);
 	body->cmask = mask;
 	body->velocity = velocity;
 	body->maxgvel = gvel;		

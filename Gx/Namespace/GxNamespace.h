@@ -44,34 +44,22 @@ struct sEventNamespace {
 
 
 
-typedef struct GxMapNamespace {	
-	GxMap* (*create)(void);
-	void (*destroy)(GxMap* self);	
-	Uint32 (*size)(GxMap* self);
-	Uint32 (*capacity)(GxMap* self);
-	void* (*get)(GxMap* self, const char* key);
-	void* (*at)(GxMap* self, Uint32 index);
-	void (*set)(GxMap* self, const char* key, void* value, sDtor dtor);
-	void (*rehash)(GxMap* self, Uint32 capacity);
-	void (*remove)(GxMap* self, const char* key);
-	void (*removeByIndex)(GxMap* self, Uint32 index);
-	void (*clean)(GxMap* self);
-}GxMapNamespace;
 
+/*
 
 typedef struct GxContactNamespace {	
-	sElement* (*getColliding)(GxContact* contact);
-	sElement* (*getCollided)(GxContact* contact);
-	bool (*isBetween)(GxContact* contact, sElement* self, sElement* other);
-	bool (*hasElement)(GxContact* contact, sElement* element);
-	bool (*hasDirection)(GxContact* contact, Uint32 direction);
-	Uint32 (*getDirection)(GxContact* contact);
-	sElement* (*getOppositeElement)(GxContact* contact, sElement* self);	
-	void (*allowCollision)(GxContact* contact);
-	bool (*isElemRightContact)(GxContact* contact, sElement* self);
-	bool (*isElemLeftContact)(GxContact* contact, sElement* self);
-	bool (*isElemDownContact)(GxContact* contact, sElement* self);
-	bool (*isElemUpContact)(GxContact* contact, sElement* self);
+	sElement* (*getColliding)(sContact* contact);
+	sElement* (*getCollided)(sContact* contact);
+	bool (*isBetween)(sContact* contact, sElement* self, sElement* other);
+	bool (*hasElement)(sContact* contact, sElement* element);
+	bool (*hasDirection)(sContact* contact, Uint32 direction);
+	Uint32 (*getDirection)(sContact* contact);
+	sElement* (*getOppositeElement)(sContact* contact, sElement* self);	
+	void (*allowCollision)(sContact* contact);
+	bool (*isElemRightContact)(sContact* contact, sElement* self);
+	bool (*isElemLeftContact)(sContact* contact, sElement* self);
+	bool (*isElemDownContact)(sContact* contact, sElement* self);
+	bool (*isElemUpContact)(sContact* contact, sElement* self);
 	void (*oneWayPlatform)(GxEvent* e);
 	const GxContactConstant RIGHT;
 	const GxContactConstant LEFT;
@@ -86,7 +74,7 @@ typedef struct GxContactNamespace {
 	const Uint32 CMASKDYNAMIC;
 	const Uint32 CMASKFIXED;
 }GxContactNamespace;
-
+*/
 
 struct GxStatusNamespace {
 	const int NONE;
@@ -119,8 +107,6 @@ typedef struct GxSceneNamespace {
 
 
 //... INSTANCES
-extern const GxMapNamespace GxMapNamespaceInstance;
-extern const GxContactNamespace GxContactNamespaceInstance;
 extern const GxSceneNamespace GxSceneNamespaceInstance;
 #endif // !GX_NAMESPACE_H
 

@@ -21,7 +21,7 @@ int GxSceneGetStatus(sScene* self);
 sElement* GxSceneGetElement(sScene* self, Uint32 id);
 int GxSceneGetGravity(sScene* self);
 bool GxSceneHasGravity(sScene* self);
-GxPhysics* GxSceneGetPhysics(sScene* self);
+sPhysics* GxSceneGetPhysics(sScene* self);
 sGraphics* GxSceneGetGraphics(sScene* self);
 sElement* GxSceneGetCamera(sScene* self);
 void GxSceneSetGravity(sScene* self, int gravity);
@@ -40,9 +40,9 @@ void GxSceneOnLoopBegin_(sScene* self);
 void GxSceneOnLoopEnd_(sScene* self);
 
 void GxSceneOnSDLEvent_(sScene* self, SDL_Event* e);
-void GxSceneOnPreContact_(sScene* self, GxContact* contact);
-void GxSceneOnContactBegin_(sScene* self, GxContact* contact);
-void GxSceneOnContactEnd_(sScene* self, GxContact* contact);
+void GxSceneOnPreContact_(sScene* self, sContact* contact);
+void GxSceneOnContactBegin_(sScene* self, sContact* contact);
+void GxSceneOnContactEnd_(sScene* self, sContact* contact);
 
 #endif // !GX_SCENE_H
 

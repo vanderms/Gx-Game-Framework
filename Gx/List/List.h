@@ -2,12 +2,13 @@
 #define GX_LIST_H
 #include "../Utilities/Util.h"
 
-extern const struct sListNamespace{
-	//constructor and destructor
+extern const struct sListNamespace {
+	
+	//...
 	sList* (*create)(void);
 	void (*destroy)(sList* self);
 
-	//methods
+	//...
 	int (*size)(sList* self);
 	void* (*first)(sList* self);
 	void* (*last)(sList* self);
@@ -22,4 +23,5 @@ extern const struct sListNamespace{
 	bool (*removeByIndex)(sList* self, int index);
 	void (*clean)(sList* self);
 }* nList;
+
 #endif // !GX_LIST_H

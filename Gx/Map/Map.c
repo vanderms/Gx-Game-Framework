@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "../List/List.h"
 #include "../Array/Array.h"
-#include "../Map/GxMap.h"
+#include "../Map/Map.h"
 #define SWAP(a, b) {void* temp = a; a = b; b = temp; }
 
 typedef struct GxInt { int value; }GxInt;
@@ -28,13 +28,13 @@ static inline GxInt* createInt(int value) {
 } Entry;
 
 
-typedef struct GxMap {
+typedef struct sMap {
 	Uint32 size;
 	Uint32 capacity;	
 	char** keys;
 	Entry* entries;
 	sList** table;
-} GxMap;
+} sMap;
 
 static inline int calcHash(const char* str, Uint32 max) {	
 	uint64_t hash = 5381;
@@ -47,8 +47,8 @@ static inline int calcHash(const char* str, Uint32 max) {
  *  *** CONSTRUCTOR AND DESTRUCTOR ***
  *************************************************************************************************************/
 
-GxMap* GmCreateMap() {
-	GxMap* self = malloc(sizeof(GxMap));
+static sMap* create() {
+	sMap* self = malloc(sizeof(sMap));
 	nUtil->assertAlloc(self);
 	self->size = 0;
 	self->capacity = 16;
@@ -69,7 +69,7 @@ GxMap* GmCreateMap() {
 }
 
 
-void GxDestroyMap(GxMap* self) {
+static void destroy(sMap* self) {
 	if (self) {
 		for (Uint32 i = 0; i < self->capacity; i++) {
 			nList->destroy(self->table[i]);
@@ -92,15 +92,15 @@ void GxDestroyMap(GxMap* self) {
  *  *** MAP METHODS ***
  *************************************************************************************************************/
 
-Uint32 GxMapSize(GxMap* self) {
+static Uint32 size(sMap* self) {
 	return self->size;
 }
 
-Uint32 GxMapCapacity(GxMap* self) {
+static Uint32 capacity(sMap* self) {
 	return self->capacity;
 }
 
-void* GxMapGet(GxMap* self, const char* key) {	
+static void* get(sMap* self, const char* key) {	
 	
 	sList* bucket = self->table[calcHash(key, self->capacity)];
 	for (char* k = nList->begin(bucket); k != NULL; k = nList->next(bucket)) {
@@ -112,15 +112,15 @@ void* GxMapGet(GxMap* self, const char* key) {
 	return NULL;
 }
 
-void* GxMapAt(GxMap* self, Uint32 index) {
+static void* at(sMap* self, Uint32 index) {
 	nUtil->assertOutOfRange(index < self->size);
 	return self->entries[index].value;
 }
 
-void GxMapSet(GxMap* self, const char* key, void* value, sDtor dtor) {
+static void set(sMap* self, const char* key, void* value, sDtor dtor) {
 	
 	if (self->size >= self->capacity){
-		GxMapRehash(self, self->capacity * 2);
+		nMap->rehash(self, self->capacity * 2);
 	}	
 
 	bool contains = false;
@@ -159,7 +159,7 @@ void GxMapSet(GxMap* self, const char* key, void* value, sDtor dtor) {
 }
 
 
-void GxMapRehash(GxMap* self, Uint32 capacity) {
+static void rehash(sMap* self, Uint32 capacity) {
 
 	if (self->capacity >= capacity) return;
 
@@ -199,7 +199,7 @@ void GxMapRehash(GxMap* self, Uint32 capacity) {
 	self->capacity = capacity;		
 }
 
-void GxMapRemove(GxMap* self, const char* key) {
+static void removeByKey(sMap* self, const char* key) {
 	
 	GxInt* index = NULL;
 	bool contains = false;
@@ -237,16 +237,16 @@ void GxMapRemove(GxMap* self, const char* key) {
 	}
 }
 
-void GxMapRemoveByIndex(GxMap* self, Uint32 index) {
+static void removeByIndex(sMap* self, Uint32 index) {
 	nUtil->assertOutOfRange(index < self->size);
 	char* key = self->keys[index];
-	GxMapRemove(self, key);
+	nMap->remove(self, key);
 }
 
-void  GxMapClean(GxMap* self) {
+static void  clean(sMap* self) {
 	
 	//first create a empty map
-	GxMap* empty = GmCreateMap();	
+	sMap* empty = nMap->create();	
 		
 	//then, swap table and keys
 	SWAP(self->table, empty->table)
@@ -261,5 +261,22 @@ void  GxMapClean(GxMap* self) {
 	self->size = 0;
 
 	//finally destroy empty
-	GxDestroyMap(empty);
+	nMap->destroy(empty);
 }
+
+
+const struct sMapNamespace* nMap = &(struct sMapNamespace) {
+	//...
+	.create = create,
+	.destroy = destroy,
+	//...
+	.size = size,
+	.capacity = capacity,
+	.get = get,
+	.at = at,
+	.set = set,
+	.rehash = rehash,
+	.remove =  removeByKey,
+	.removeByIndex = removeByIndex,
+	.clean = clean
+};

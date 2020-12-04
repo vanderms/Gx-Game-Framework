@@ -7,7 +7,7 @@
 #include "SDL_image.h"
 #include "SDL_ttf.h"
 #include "SDL_mixer.h"
-#include "../Map/GxMap.h"
+#include "../Map/Map.h"
 #include "../Folder/Folder.h"
 #include "../Array/Array.h"
 #include "../List/List.h"
@@ -19,8 +19,8 @@
 #endif
 
 //... #forward declarations
-static inline GxMap* createColorMap(void);
-static GxMap* createFontMap(void);
+static inline sMap* createColorMap(void);
+static sMap* createFontMap(void);
 
 
 //struct
@@ -42,10 +42,10 @@ typedef struct sApp {
     sScene* snRunning;
 
     //... containers
-	GxMap* scenes;
-    GxMap* folders;
-    GxMap* colors;
-    GxMap* fonts;
+	sMap* scenes;
+    sMap* folders;
+    sMap* colors;
+    sMap* fonts;
 
     //... temporary resources
     sArray* temporary;
@@ -84,8 +84,8 @@ static sScene* create(const sIni* ini) {
     self = calloc(1, sizeof(sApp));
     nUtil->assertAlloc(self);
     self->snActive = NULL;
-    self->folders = GmCreateMap();
-    self->scenes = GmCreateMap();
+    self->folders = nMap->create();
+    self->scenes = nMap->create();
     self->colors = createColorMap();
     self->fonts = createFontMap();
     self->temporary = nArray->create();
@@ -208,12 +208,12 @@ static void destroy() {
         nList->destroy(self->aToLoad);
         nList->destroy(self->aLoading);
         nList->destroy(self->aLoaded);
-        GxDestroyMap(self->scenes);
+        nMap->destroy(self->scenes);
         GxDestroyScene_(self->snMain);
         nArray->destroy(self->temporary);
-        GxDestroyMap(self->folders);
-        GxDestroyMap(self->colors);
-        GxDestroyMap(self->fonts);
+        nMap->destroy(self->folders);
+        nMap->destroy(self->colors);
+        nMap->destroy(self->fonts);
         free(self);
         self = NULL;
         IMG_Quit();
@@ -242,20 +242,20 @@ static bool isRunning() {
 
 static void addScene(sScene* scene) {
     if(self->snMain != NULL){
-        GxMapSet(self->scenes, GxSceneGetName(scene), scene, GxDestroyScene_);
+        nMap->set(self->scenes, GxSceneGetName(scene), scene, GxDestroyScene_);
     }
 }
 
 static sScene* getScene(const char* id) {
-    return GxMapGet(self->scenes, id);
+    return nMap->get(self->scenes, id);
 }
 
 static void addFolder(sFolder* folder) {   
-   GxMapSet(self->folders, nFolder->p->id(folder), folder, nFolder->p->destroy);
+   nMap->set(self->folders, nFolder->p->id(folder), folder, nFolder->p->destroy);
 }
 
 static sFolder* getFolder(const char* id) {
-    return GxMapGet(self->folders, id);
+    return nMap->get(self->folders, id);
 }
 
 static void loadSDLSurface(sImage* image, const char* path) {
@@ -498,42 +498,31 @@ static void playChunk(const char* path, int loops) {
     Mix_PlayChannel(-1, chunk, loops);
  }
 
-static void createColor(GxMap* map, const char* name, SDL_Color* color) {
+static void createColor(sMap* map, const char* name, SDL_Color* color) {
     SDL_Color* ncolor = malloc(sizeof(SDL_Color));
     nUtil->assertAlloc(ncolor);
     *ncolor = *color;
-    GxMapSet(map, name, ncolor, free);
+    nMap->set(map, name, ncolor, free);
 }
 
-static GxMap* createColorMap() {
+static sMap* createColorMap() {
 
-    GxMap* map = GmCreateMap();
+    sMap* map = nMap->create();
 
     createColor(map, "Black", &(SDL_Color){0, 0, 0, 255});
     createColor(map, "White", &(SDL_Color){255, 255, 255, 255});
     createColor(map, "Blue", &(SDL_Color){0, 0, 255, 255});
     createColor(map, "Aqua", &(SDL_Color){0, 255, 255, 255});
     createColor(map, "Coral", &(SDL_Color){255, 127, 80, 255});
-    createColor(map, "Crimson", &(SDL_Color){220, 20, 60, 255});
-    createColor(map, "DarkBlue", &(SDL_Color){0, 0, 139, 255});
-    createColor(map, "DarkGreen", &(SDL_Color){0, 100, 0, 255});
-    createColor(map, "DimGrey", &(SDL_Color){105, 105, 105, 255});
-    createColor(map, "FireBrick", &(SDL_Color){178, 34, 34, 255});
-    createColor(map, "ForestGreen", &(SDL_Color){34, 139, 34, 255});
+    createColor(map, "Crimson", &(SDL_Color){220, 20, 60, 255});   
+    createColor(map, "FireBrick", &(SDL_Color){178, 34, 34, 255});    
     createColor(map, "Gold", &(SDL_Color){255, 215, 0, 255});
-    createColor(map, "Green", &(SDL_Color){0, 128, 0, 255});
-    createColor(map, "IndianRed", &(SDL_Color){205, 92, 92, 255});
-    createColor(map, "LimeGreen", &(SDL_Color){50, 205, 50, 255});
-    createColor(map, "OrangeRed", &(SDL_Color){255, 69, 0, 255});
+    createColor(map, "Green", &(SDL_Color){0, 128, 0, 255});   
     createColor(map, "Red", &(SDL_Color){255, 0, 0, 255});
-    createColor(map, "Salmon", &(SDL_Color){250, 128, 114, 255});
-    createColor(map, "SeaGreen", &(SDL_Color){46, 139, 87, 255});
-    createColor(map, "SteelBlue", &(SDL_Color){70, 130, 180, 255});
+    createColor(map, "Salmon", &(SDL_Color){250, 128, 114, 255});  
     createColor(map, "Teal", &(SDL_Color){0, 128, 128, 255});
     createColor(map, "Tomato", &(SDL_Color){255, 99, 71, 255});
     createColor(map, "Yellow", &(SDL_Color){0, 0, 0, 255});
-    createColor(map, "YellowGreen", &(SDL_Color){154, 205, 50, 255});
-
     return map;
 }
 
@@ -564,7 +553,7 @@ static void convertColor(SDL_Color* destination, const char* color) {
 		destination->b = (Uint8) atoi(b);
 		destination->a = (Uint8) atoi(a);
 	}
-	else if((mapcolor = GxMapGet(self->colors, color))){
+	else if((mapcolor = nMap->get(self->colors, color))){
         *destination = *mapcolor;
 	}
     else {
@@ -573,13 +562,13 @@ static void convertColor(SDL_Color* destination, const char* color) {
 }
 
 
-static GxMap* createFontMap(void) {
-    GxMap* fonts = GmCreateMap();
+static sMap* createFontMap(void) {
+    sMap* fonts = nMap->create();
 #define FPATH "Gx/Font/PTSerif/PTSerif-"
-    GxMapSet(fonts, "Default", nUtil->createString(FPATH "Regular.ttf"), free);
-    GxMapSet(fonts, "Italic", nUtil->createString(FPATH "Italic.ttf"), free);
-    GxMapSet(fonts, "Bold", nUtil->createString(FPATH "Bold.ttf"), free);
-    GxMapSet(fonts, "BoldItalic", nUtil->createString(FPATH "BoldItalic.ttf"), free);
+    nMap->set(fonts, "Default", nUtil->createString(FPATH "Regular.ttf"), free);
+    nMap->set(fonts, "Italic", nUtil->createString(FPATH "Italic.ttf"), free);
+    nMap->set(fonts, "Bold", nUtil->createString(FPATH "Bold.ttf"), free);
+    nMap->set(fonts, "BoldItalic", nUtil->createString(FPATH "BoldItalic.ttf"), free);
 #undef FPATH
     return fonts;
 }
@@ -592,11 +581,11 @@ static void addFont(const char* name, const char* path){
         nApp->runtimeError(nApp->sf("Could not open path %s", path));
     }
     TTF_CloseFont(teste);
-    GxMapSet(self->fonts, name, nUtil->createString(path), free);    
+    nMap->set(self->fonts, name, nUtil->createString(path), free);    
 }
 
 static const char* getFontPath(const char* name) {
-    return GxMapGet(self->fonts, name);
+    return nMap->get(self->fonts, name);
 }
 
 

@@ -4,10 +4,10 @@
 #include "../Array/Array.h"
 #include "../Folder/Folder.h"
 #include "../Graphics/Graphics.h"
-#include "../Physics/GxPhysics.h"
+#include "../Physics/Physics.h"
 #include "../Scene/Scene.h"
 #include <string.h>
-#include "../Map/GxMap.h"
+#include "../Map/Map.h"
 
 typedef struct sElement {
 	
@@ -26,7 +26,7 @@ typedef struct sElement {
 	//event handler module
 	void* target;
 	sHandler* handlers;	
-	GxMap* rHandlers;
+	sMap* rHandlers;
 
 	//special elements
 	void* child;
@@ -93,7 +93,7 @@ static void pDestroy(sElement* self) {
 				.type = nUtil->evn->ON_DESTROY, 
 			});
 		}
-		GxDestroyMap(self->rHandlers);
+		nMap->destroy(self->rHandlers);
 		nElem->body->p->destroy(self->body);
 		nElem->style->p->destroy(self->renderable);
 		nArray->destroy(self->classList);
@@ -145,7 +145,7 @@ static sHandler getHandler(sElement* self, int type) {
 	return self->handlers ? self->handlers[type] : NULL;
 }
 
-static void pExecuteContactHandler(sElement* self, int type, GxContact* contact){
+static void pExecuteContactHandler(sElement* self, int type, sContact* contact){
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
 	if(self->handlers && self->handlers[type]){
@@ -194,12 +194,12 @@ static void setPosition(sElement* self, SDL_Rect pos) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
 	sGraphics* graphics = GxSceneGetGraphics(self->scene);
-	GxPhysics* physics = GxSceneGetPhysics(self->scene);
+	sPhysics* physics = GxSceneGetPhysics(self->scene);
 	if (self->renderable) nGraphics->remove(graphics, self);
-	if (self->body) GxPhysicsRemoveElement_(physics, self);
+	if (self->body) nPhysics->remove(physics, self);
 	*self->pos = pos;
 	if (self->renderable) nGraphics->insert(graphics, self);
-	if (self->body) GxPhysicsInsertElement_(physics, self);	
+	if (self->body) nPhysics->insert(physics, self);	
 }
 
 static void pUpdatePosition(sElement* self, sVector vector) {	
@@ -207,7 +207,7 @@ static void pUpdatePosition(sElement* self, sVector vector) {
 	self->pos->x += vector.x;
 	self->pos->y += vector.y;
 	nGraphics->updateElement(GxSceneGetGraphics(self->scene), self, previousPos);
-	GxPhysicsUpdateElementPosition_(GxSceneGetPhysics(self->scene), self, previousPos);
+	nPhysics->updateElem(GxSceneGetPhysics(self->scene), self, previousPos);
 }
 
 static sPoint calcCenter(sElement* self) {

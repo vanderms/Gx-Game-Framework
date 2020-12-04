@@ -6,7 +6,7 @@
 #include "../Private/GxGraphicAssets.h"
 #include "../Folder/Folder.h"
 #include "../List/List.h"
-#include "../Map/GxMap.h"
+#include "../Map/Map.h"
 
 typedef struct sGraphics {
 	sScene* scene;

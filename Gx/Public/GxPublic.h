@@ -25,7 +25,7 @@ typedef Uint32 GxElemID;
 //... TYPES :: FORWARD DECLARATION
 typedef struct sList sList;
 typedef struct sArray sArray;
-typedef struct GxMap GxMap;
+typedef struct sMap sMap;
 typedef struct sIni sIni;
 typedef struct GxIEventHandler GxIEventHandler;
 typedef struct GxEvent GxEvent;
@@ -34,8 +34,8 @@ typedef struct sElement sElement;
 struct sElemRenderable;
 struct sElemBody;
 typedef struct sGraphics sGraphics;
-typedef struct GxPhysics GxPhysics;
-typedef struct GxContact GxContact;
+typedef struct sPhysics sPhysics;
+typedef struct sContact sContact;
 typedef struct sImage sImage;
 typedef struct sAnimation sAnimation;
 typedef struct sFolder sFolder;
@@ -61,7 +61,7 @@ typedef struct sMatrix {
 typedef struct GxEvent {
 	void* target;
 	int type;
-	union { GxContact* contact; SDL_Event* sdle; };
+	union { sContact* contact; SDL_Event* sdle; };
 } GxEvent;
 
 

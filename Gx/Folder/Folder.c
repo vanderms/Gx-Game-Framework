@@ -1,6 +1,6 @@
 #include "../Folder/Folder.h"
 #include "../Private/GxGraphicAssets.h"
-#include "../Map/GxMap.h"
+#include "../Map/Map.h"
 #include "../Utilities/Util.h"
 #include "../Scene/Scene.h"
 #include "../Element/Element.h"
@@ -15,7 +15,7 @@
 typedef struct sFolder {
     char* id;
 	int status;   
-	GxMap* assets;
+	sMap* assets;
     //...
     int assetsLoaded;
     int totalAssets;
@@ -91,7 +91,7 @@ static void create(const char* id, void(*loader)(void)) {
     self->status = loader ? GxStatusNone : GxStatusReady;
     self->assetsLoaded = 0;
     self->totalAssets = 0;
-    self->assets = GmCreateMap();
+    self->assets = nMap->create();
     self->loader = loader;
     self->refCounter = 0;
     nApp->prv->addFolder(self);
@@ -100,7 +100,7 @@ static void create(const char* id, void(*loader)(void)) {
 static void pDestroy(sFolder* self) {
 
     if (self) {
-        GxDestroyMap(self->assets);
+       nMap->destroy(self->assets);
         free(self->id);
         free(self);
     }
@@ -116,7 +116,7 @@ static bool pHasStatus(sFolder* self, int status) {
 }
 
 static sImage* pGetImage(sFolder* self, const char* id) {
-    return GxMapGet(self->assets, id);
+    return nMap->get(self->assets, id);
 }
 
 static Mix_Music* getMixMusic(const char* path) {
@@ -124,7 +124,7 @@ static Mix_Music* getMixMusic(const char* path) {
     nUtil->assertArgument(nArray->size(tokens) == 2);
     sFolder* folder = nApp->prv->getFolder(nArray->at(tokens, 0));
     nUtil->assertArgument(folder);
-    sMusic* asset = GxMapGet(folder->assets, nArray->at(tokens, 1));
+    sMusic* asset = nMap->get(folder->assets, nArray->at(tokens, 1));
     nUtil->assertArgument(asset);
     return asset->music;
 }
@@ -134,7 +134,7 @@ static Mix_Chunk* getMixChunk(const char* path) {
     nUtil->assertArgument(nArray->size(tokens) == 2);
     sFolder* folder = nApp->prv->getFolder(nArray->at(tokens, 0));
     nUtil->assertArgument(folder);
-    sChunk* asset = GxMapGet(folder->assets, nArray->at(tokens, 1));
+    sChunk* asset = nMap->get(folder->assets, nArray->at(tokens, 1));
     nUtil->assertArgument(asset);
     return asset->chunk;
 }
@@ -144,13 +144,13 @@ static SDL_Texture* getSDLTexture(const char* path) {
     nUtil->assertArgument(nArray->size(tokens) == 2);
     sFolder* folder = nApp->prv->getFolder(nArray->at(tokens, 0));
     nUtil->assertArgument(folder);
-    sImage* asset = GxMapGet(folder->assets, nArray->at(tokens, 1));
+    sImage* asset = nMap->get(folder->assets, nArray->at(tokens, 1));
     nUtil->assertArgument(asset);
     return asset->resource;
 }
 
 static sAnimation* pGetAnimation(sFolder* self, const char* id) {
-     return GxMapGet(self->assets, id);
+     return nMap->get(self->assets, id);
 }
 
 static void iLoadFolder(sFolder* self) {
@@ -167,7 +167,7 @@ static int pGetPercLoaded(sFolder* self) {
 }
 
 static void iUnloadFolder(sFolder* self) {
-    GxMapClean(self->assets);
+    nMap->clean(self->assets);
     self->status = GxStatusNone;
 }
 
@@ -199,7 +199,7 @@ static sImage* iCreateImage(sFolder* folder, const char* id, ImageType type) {
     self->id = nUtil->createString(id);
     self->folder = folder;
     self->type = type;
-    GxMapSet(folder->assets, id, self, nFolder->p->destroyImage);
+    nMap->set(folder->assets, id, self, nFolder->p->destroyImage);
     return self;
 }
 
@@ -245,7 +245,7 @@ static sImage* pCreateText(const char* text, const char* fontName, int size, SDL
 static void loadImage(const char* id, const char* path, SDL_Rect* src, double proportion) {
 
     sFolder* self = rFolder;
-    nUtil->assertArgument(self->assets == NULL || GxMapGet(self->assets, id) == NULL);
+    nUtil->assertArgument(self->assets == NULL || nMap->get(self->assets, id) == NULL);
     nUtil->assertState(self->status == GxStatusLoading);
     sImage* img = iCreateImage(self, id, Texture);
     img->proportion = proportion;
@@ -283,7 +283,7 @@ static void createTilesetFromImage(const char* image, sSize size, sMatrix matrix
 
     sFolder* folder = nApp->prv->getFolder(folderId);
     nUtil->assertArgument(folder);
-    sImage* source = GxMapGet(folder->assets, imageId);
+    sImage* source = nMap->get(folder->assets, imageId);
     nUtil->assertArgument(source);
 
     int counter = 0;
@@ -334,7 +334,7 @@ static void createTilemap(const char* folderName, const char* name, const char* 
         else {
             stringImage = group;
         }
-        image = image ? image : GxMapGet(folder->assets, stringImage);
+        image = image ? image : nMap->get(folder->assets, stringImage);
         nUtil->assertResourceNotFound(image);
         nArray->push(self->children, image, NULL);
     }   
@@ -403,10 +403,10 @@ static void loadAnimation(const char* id, const char* pathF,
         snprintf(bId, 64, "%s|%d", id, i);
         snprintf(bPath, 256, pathF, i);
         nFolder->loadImage(bId, bPath, NULL, proportion);
-        nArray->push(self->images, GxMapGet(folder->assets, bId), NULL);
+        nArray->push(self->images, nMap->get(folder->assets, bId), NULL);
 	}
-    if (!folder->assets) folder->assets = GmCreateMap();
-    GxMapSet(folder->assets, self->id, self, (sDtor) iDestroyAnimation);
+    if (!folder->assets) folder->assets = nMap->create();
+    nMap->set(folder->assets, self->id, self, (sDtor) iDestroyAnimation);
 }
 
 static bool pIsAnimContinuous(sAnimation* self){
@@ -445,8 +445,8 @@ static void loadChunk(const char* id, const char* path) {
     self->chunk = NULL;
     nApp->prv->loadMixChunk(self, path);
     rFolder->totalAssets++;
-    if (!rFolder->assets) rFolder->assets = GmCreateMap();
-    GxMapSet(rFolder->assets, self->id, self, iDestroyChunk);
+    if (!rFolder->assets) rFolder->assets = nMap->create();
+    nMap->set(rFolder->assets, self->id, self, iDestroyChunk);
 }
 
 static void pSetMixChunk(sChunk* self, Mix_Chunk* chunk) {
@@ -469,8 +469,8 @@ static void loadMusic(const char* id, const char* path) {
     self->music = NULL;
     nApp->prv->loadMixMusic(self, path);
     rFolder->totalAssets++;
-    if (!rFolder->assets) rFolder->assets = GmCreateMap();
-    GxMapSet(rFolder->assets, self->id, self, (sDtor) iDestroyMusic);
+    if (!rFolder->assets) rFolder->assets = nMap->create();
+    nMap->set(rFolder->assets, self->id, self, (sDtor) iDestroyMusic);
 }
 
 static void pSetMixMusic(sMusic* self, Mix_Music* music) {

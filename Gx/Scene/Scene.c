@@ -3,10 +3,10 @@
 #include "../App/App.h"
 #include "../Element/Element.h"
 #include "../Event/GxEvent.h"
-#include "../Map/GxMap.h"
+#include "../Map/Map.h"
 #include "../List/List.h"
 #include "../Graphics/Graphics.h"
-#include "../Physics/GxPhysics.h"
+#include "../Physics/Physics.h"
 #include "../Folder/Folder.h"
 #include "../Event/GxEvent.h"
 #include <string.h>
@@ -17,7 +17,7 @@ typedef struct sScene {
 	sSize size;	
 	int status;
 	sGraphics* graphics;
-	GxPhysics* physics;	
+	sPhysics* physics;	
 	int gravity;
 	sElement* camera;
 	sArray* elements;	
@@ -28,7 +28,7 @@ typedef struct sScene {
 	//callbacks	
 	void* target;
 	sHandler* handlers;	
-	GxMap* rHandlers;
+	sMap* rHandlers;
 
 
 	//...
@@ -122,9 +122,9 @@ void GxDestroyScene_(sScene* self) {
 		}
 		
 		nGraphics->destroy(self->graphics);
-		GxDestroyPhysics_(self->physics);
+		nPhysics->destroy(self->physics);
 		nArray->destroy(self->elements);
-		GxDestroyMap(self->rHandlers);
+		nMap->destroy(self->rHandlers);
 		
 		if (self->handlers && self->handlers[nUtil->evn->ON_DESTROY]){
 			self->handlers[nUtil->evn->ON_DESTROY](&(GxEvent) {
@@ -172,7 +172,7 @@ sElement* GxSceneGetCamera(sScene* self) {
 	return self->camera;
 }
 
-GxPhysics* GxSceneGetPhysics(sScene* self) {	
+sPhysics* GxSceneGetPhysics(sScene* self) {	
 	return self->physics;
 }
 
@@ -287,7 +287,7 @@ Uint32 GxSceneAddElement_(sScene* self, sElement* elem) {
 	nUtil->assertState(self->status == GxStatusLoaded || self->status == GxStatusRunning);	
 	nArray->push(self->elements, elem, (sDtor) nElem->p->destroy);	
 	nGraphics->insert(self->graphics, elem);
-	GxPhysicsInsertElement_(self->physics, elem);
+	nPhysics->insert(self->physics, elem);
 	GxSceneSubscribeElemListeners_(self, elem);
 	Uint32 id = self->elemCounter++;
 	return id;
@@ -366,9 +366,9 @@ static inline void sceneExecuteListeners(sScene* self, int type, SDL_Event* sdle
 	}
 }
 
-static inline void sceneExecuteContactListeners(sScene* self, int type, GxContact* contact) {
-	sElement* elemSelf = GxContactGetColliding(contact);
-	sElement* elemOther = GxContactGetCollided(contact);
+static inline void sceneExecuteContactListeners(sScene* self, int type, sContact* contact) {
+	sElement* elemSelf = nContact->colliding(contact);
+	sElement* elemOther = nContact->collided(contact);
 	nElem->body->p->setMcFlag(elemSelf, true);
 	nElem->body->p->setMcFlag(elemOther, true);
 
@@ -395,7 +395,7 @@ void GxScenePreLoad_(sScene* self) {
 
 	//initialize containers and folders
 	self->graphics = nGraphics->create(self);
-	self->physics = GxCreatePhysics_(self);
+	self->physics = nPhysics->create(self);
 	self->elements = nArray->create();			
 	
 	for (int i = 0; i < nUtil->evn->TOTAL; i++) {
@@ -413,7 +413,7 @@ void GxScenePreLoad_(sScene* self) {
 static void GxSceneLoad_(sScene* self) {		
 	
 	//create physic walls and camera
-	GxPhysicsCreateWalls_(self->physics);
+	nPhysics->createWalls(self->physics);
 	sSize size = nApp->logicalSize();
 	self->camera = nElem->create(&(sIni) {
 		.display = nElem->display->NONE,
@@ -434,7 +434,7 @@ static void GxSceneLoad_(sScene* self) {
 void GxSceneUnload_(sScene* self) {
 	self->status = GxStatusUnloading;
 	nGraphics->destroy(self->graphics);
-	GxDestroyPhysics_(self->physics);	
+	nPhysics->destroy(self->physics);	
 	//delete buttons_;
 	
 	sceneExecuteListeners(self, nUtil->evn->ON_UNLOAD, NULL);
@@ -471,7 +471,7 @@ void GxSceneUnload_(sScene* self) {
 }
 
 void GxSceneRemoveElement_(sScene* self, sElement* elem) {	
-	if (nElem->hasBody(elem)) GxPhysicsRemoveElement_(self->physics, elem);
+	if (nElem->hasBody(elem)) nPhysics->remove(self->physics, elem);
 	if (nElem->isRenderable(elem)) nGraphics->remove(self->graphics, elem);
 	if (elem != self->camera) GxSceneUnsubscribeElemListeners_(self, elem);
 	nArray->removeByValue(self->elements, elem);	
@@ -508,7 +508,7 @@ void GxSceneOnUpdate_(sScene* self) {
 	
 		//execute update callbacks, then update physics
 		sceneExecuteListeners(self, nUtil->evn->ON_UPDATE, NULL);
-		GxPhysicsUpdate_(self->physics);	
+		nPhysics->update(self->physics);	
 
 		//execute preGraphical callbacks, then update graphics	
 		nGraphics->update(self->graphics);		
@@ -552,14 +552,14 @@ void GxSceneOnSDLEvent_(sScene* self, SDL_Event* e) {
 	}	
 }
 
-void GxSceneOnPreContact_(sScene* self, GxContact* contact) {
+void GxSceneOnPreContact_(sScene* self, sContact* contact) {
 	sceneExecuteContactListeners(self, nUtil->evn->ON_PRE_CONTACT, contact);
 }
 
-void GxSceneOnContactBegin_(sScene* self, GxContact* contact) {
+void GxSceneOnContactBegin_(sScene* self, sContact* contact) {
 	sceneExecuteContactListeners(self, nUtil->evn->ON_CONTACT_BEGIN, contact);
 }
 
-void GxSceneOnContactEnd_(sScene* self, GxContact* contact) {
+void GxSceneOnContactEnd_(sScene* self, sContact* contact) {
 	sceneExecuteContactListeners(self, nUtil->evn->ON_CONTACT_END, contact);
 }

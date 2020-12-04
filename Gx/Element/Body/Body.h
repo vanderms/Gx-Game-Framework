@@ -59,8 +59,8 @@ extern const struct sElemBodyNamespace {
 
 		sList* (*getContactList)(sElement* self);
 
-		void (*addContact)(sElement * self, GxContact * contact);
-		void (*removeContact)(sElement * self, GxContact * contact);
+		void (*addContact)(sElement * self, sContact * contact);
+		void (*removeContact)(sElement * self, sContact * contact);
 
 		uint32_t (*dFlag)(sElement* self);
 		void (*setDFlag)(sElement* self, uint32_t value);
