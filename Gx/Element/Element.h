@@ -47,6 +47,7 @@ extern const struct sElemNamespace {
 	struct sElemPrivateNamespace {
 		void (*destroy)(sElement* self);
 		Uint32 (*id)(sElement* self);
+		sRect (*posGetter)(void* value);
 		void (*executeContactHandler)(sElement* self, int type, sContact* contact);
 		struct sElemBody* (*body)(sElement* self);
 		struct sElemRenderable*(*renderable)(sElement* self);

@@ -3,7 +3,6 @@
 #include "../List/List.h"
 #include "../Array/Array.h"
 #include <stdint.h>
-#include "../Element/Element.h"
 #include <string.h>
 #define MAX_ELEMENTS 16
 #define MIN_LENGTH 64
@@ -14,7 +13,6 @@
 */
 
 typedef struct sQtree {
-	int type;
 	sQtree* parent;
 	Uint32* counter;
 	sRect pos;
@@ -23,15 +21,37 @@ typedef struct sQtree {
 } sQtree;
 
 
+typedef struct sQtreeElem {
+	void* elem;
+	sRect (*posGetter)(void* elem);
+	Uint32 flag;
+} sQtreeElem;
+
+sQtreeElem* createQtreeElem(void* elem, sRect(*posGetter)(void* elem)) {
+	sQtreeElem* self = nUtil->assertAlloc(malloc(sizeof(sQtreeElem)));
+	self->elem = elem;
+	self->posGetter = posGetter;
+	return self;
+}
+
+void destroyQtreeElem(sQtreeElem* self) {
+	if (self) {
+		free(self);
+	}
+}
+
+void* getElem(sQtreeElem* self){
+	return self->elem;
+};
+
 static void subdivide(sQtree* self);
 
-static sQtree* create(sQtree* parent, sRect pos, int type){		
+static sQtree* create(sQtree* parent, sRect pos){		
 	
 	sQtree* self = malloc(sizeof(sQtree));
 	nUtil->assertAlloc(self);
 	self->parent = parent;
-	self->counter = parent ? parent->counter : nUtil->createUint(0);	
-	self->type = type;	
+	self->counter = parent ? parent->counter : nUtil->createUint(0);
 	self->pos = pos;	
 	self->children = NULL;
 	self->elements = NULL;
@@ -55,9 +75,9 @@ static sRect position(sQtree* self) {
 }
 
 //methods
-static void insert(sQtree* self, sElement* element) {
+static void insert(sQtree* self, sQtreeElem* element) {
 
-	sRect elemPos = *nElem->position(element);
+	sRect elemPos = element->posGetter(element->elem);
 		
 	if (SDL_HasIntersection(&self->pos, &elemPos)) {
 
@@ -84,8 +104,8 @@ static void insert(sQtree* self, sElement* element) {
 	}	
 }
 
-static void removeNode(sQtree* self, sElement* element) {	
-	sRect elemPos = *nElem->position(element);
+static void removeNode(sQtree* self, sQtreeElem* element) {	
+	sRect elemPos = element->posGetter(element->elem);
 	if ((!self->elements && !self->children) || 
 		!SDL_HasIntersection(&self->pos, &elemPos)) return;
 	if (self->children) {
@@ -97,9 +117,9 @@ static void removeNode(sQtree* self, sElement* element) {
 	else nList->remove(self->elements, element);
 }
 
-static void update(sQtree* self, sElement* element, sRect previous) {	
+static void update(sQtree* self, sQtreeElem* element, sRect previous) {	
 	
-	sRect elemPos = *nElem->position(element);	
+	sRect elemPos = element->posGetter(element->elem);	
 	
 	bool has = SDL_HasIntersection(&self->pos, &elemPos);
 	bool had = SDL_HasIntersection(&self->pos, &previous);
@@ -134,13 +154,13 @@ static void subdivide(sQtree* self) {
 	
 	//create new qtrees and Push into children list
 	self->children = nArray->create();
-	nArray->push(self->children, create(self, qtree01, self->type), destroy);
-	nArray->push(self->children, create(self, qtree02, self->type), destroy);
-	nArray->push(self->children, create(self, qtree03, self->type), destroy);
-	nArray->push(self->children, create(self, qtree04, self->type), destroy);
+	nArray->push(self->children, create(self, qtree01), destroy);
+	nArray->push(self->children, create(self, qtree02), destroy);
+	nArray->push(self->children, create(self, qtree03), destroy);
+	nArray->push(self->children, create(self, qtree04), destroy);
 
 	//then transfer all entities to childrens
-	for (sElement* elem = nList->begin(self->elements); elem != NULL; 
+	for (sQtreeElem* elem = nList->begin(self->elements); elem != NULL; 
 		elem = nList->next(self->elements)) 
 	{
 		nQtree->insert(self, elem);
@@ -160,24 +180,13 @@ static void getAllElementsInArea(sQtree* self, sRect area, sArray* arr, bool beg
 
 	if (SDL_HasIntersection(&self->pos, &area)) {
 
-		for (sElement* elem = nList->begin(self->elements); elem != NULL; 
+		for (sQtreeElem* elem = nList->begin(self->elements); elem != NULL; 
 				elem = nList->next(self->elements)){			
 
-			if (self->type == nQtree->GRAPHICAL && nElem->style->p->wFlag(elem) != *self->counter) {
-				nElem->style->p->setWFlag(elem, *self->counter);
-				if(SDL_HasIntersection(nElem->position(elem), &area)){									
-					nArray->push(arr, elem, NULL);				
-				}
-			}
-			else if (self->type == nQtree->FIXED && nElem->body->p->fFlag(elem) != *self->counter) {
-				nElem->body->p->setFFlag(elem, *self->counter);				
-				if(SDL_HasIntersection(nElem->position(elem), &area)){									
-					nArray->push(arr, elem, NULL);				
-				}
-			}
-			else if (self->type == nQtree->DYNAMIC && nElem->body->p->dFlag(elem) != *self->counter) {
-				nElem->body->p->setDFlag(elem, *self->counter);				
-				if(SDL_HasIntersection(nElem->position(elem), &area)){									
+			if (elem->flag != *self->counter) {
+				elem->flag = *self->counter;
+				sRect elemPos = elem->posGetter(elem->elem);	
+				if(SDL_HasIntersection(&elemPos, &area)){									
 					nArray->push(arr, elem, NULL);				
 				}
 			}			
@@ -194,14 +203,14 @@ static void getAllElementsInArea(sQtree* self, sRect area, sArray* arr, bool beg
 
 
 const struct sQtreeNamespace* nQtree = &(struct sQtreeNamespace){
+	.createQtreeElem = createQtreeElem,
+	.destroyQtreeElem = destroyQtreeElem,
+	.getElem = getElem,
 	.create = create,
 	.destroy = destroy,
 	.position = position,
 	.insert = insert,
 	.remove = removeNode,
 	.update = update,
-	.getAllElementsInArea = getAllElementsInArea,
-	.GRAPHICAL = 0,
-	.FIXED = 1,
-	.DYNAMIC = 2,
+	.getAllElementsInArea = getAllElementsInArea,	
 };

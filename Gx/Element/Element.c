@@ -189,6 +189,11 @@ static const sRect* position(sElement* self) {
 	return self->pos;
 }
 
+static sRect posGetter(void* value){
+	sElement* self = value;
+	return *self->pos;
+};
+
 static void setPosition(sElement* self, sRect pos) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
@@ -290,6 +295,7 @@ const struct sElemNamespace* nElem = &(struct sElemNamespace){
 	.p = &(struct sElemPrivateNamespace){
 		.destroy = pDestroy,
 		.id = pId,
+		.posGetter = posGetter,
 		.executeContactHandler = pExecuteContactHandler,
 		.body = pBody,
 		.renderable = pRenderable,

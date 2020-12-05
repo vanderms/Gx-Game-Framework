@@ -20,7 +20,7 @@ static sGraphics* create(sScene* scene){
 	self->scene = scene;
 	sSize size = GxSceneGetSize(scene);
 	int length = size.w > size.h ? size.w : size.h ;	
-	self->rtree =nQtree->create(NULL, (sRect) { 0, 0, length, length }, nQtree->GRAPHICAL);	
+	self->rtree =nQtree->create(NULL, (sRect) { 0, 0, length, length });	
 	self->absolute = nArray->create();
 	self->renderables = nArray->create();
 	return self;
@@ -38,7 +38,8 @@ static void destroy(sGraphics* self) {
 static void insert(sGraphics* self, sElement* element) {	
 	if (nElem->isRenderable(element)) {
 		if(nElem->style->hasRelativePosition(element)){
-			nQtree->insert(self->rtree, element);
+			sQtreeElem* qtreeElem = nElem->style->p->getQtreeElem(element);
+			nQtree->insert(self->rtree, qtreeElem);
 		}
 		else if(nElem->style->hasAbsolutePosition(element)){
 			nArray->push(self->absolute, element, NULL);
@@ -48,14 +49,20 @@ static void insert(sGraphics* self, sElement* element) {
 
 static void updateElement(sGraphics* self, sElement* element, sRect previousPos) {	
 	if (nElem->style->hasRelativePosition(element)) {
-		nQtree->update(self->rtree, element, previousPos);
+		sQtreeElem* qtreeElem = nElem->style->p->getQtreeElem(element);
+		nQtree->update(self->rtree, qtreeElem, previousPos);
 	}
 }
 
 static void removeElement(sGraphics* self, sElement* element) {	
 	if (nElem->isRenderable(element)) {
-		if(nElem->style->hasRelativePosition(element)) nQtree->remove(self->rtree, element);
-		else if(nElem->style->hasAbsolutePosition(element)) nArray->removeByValue(self->absolute, element);
+		if(nElem->style->hasRelativePosition(element)){
+			sQtreeElem* qtreeElem = nElem->style->p->getQtreeElem(element);
+			nQtree->remove(self->rtree, qtreeElem);
+		}
+		else if(nElem->style->hasAbsolutePosition(element)){
+			nArray->removeByValue(self->absolute, element);
+		}
 	}
 }
 
@@ -92,8 +99,8 @@ static void update(sGraphics* self) {
 	const sRect* area = nElem->position(GxSceneGetCamera(self->scene));
 	sArray* temp = nArray->create();
 	nQtree->getAllElementsInArea(self->rtree, *area, temp, true);
-	for (Uint32 i = 0; i < nArray->size(temp); i++) {
-		iFillRenderables(nArray->at(temp, i));
+	for (Uint32 i = 0; i < nArray->size(temp); i++) {		
+		iFillRenderables(nQtree->getElem(nArray->at(temp, i)));
 	}
 	nArray->destroy(temp);	
 

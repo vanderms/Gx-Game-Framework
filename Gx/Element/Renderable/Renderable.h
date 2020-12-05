@@ -61,12 +61,12 @@ extern const struct sElemRenderableNamespace {
 	struct sElemRenderablePrivateNamespace {
 		struct sElemRenderable* (*create)(sElement* elem, const sIni* ini);
 		void (*destroy)(struct sElemRenderable* self);
-		void (*onRender)(sElement* self);		
-		uint32_t (*wFlag)(sElement* self);
-		void (*setWFlag)(sElement* self, uint32_t value);
+		void (*onRender)(sElement* self);	
+		sQtreeElem* (*getQtreeElem)(sElement* self);
 		sRect* (*calcImagePosOnCamera)(sElement* self, sRect* pos, sImage* image);
 		sImage* (*getImageRef)(sElement* self);
 		sImage* (*label)(sElement* self);
+
 	}* p;
 } nElemRenderable;
 

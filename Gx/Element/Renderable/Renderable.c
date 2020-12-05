@@ -3,6 +3,7 @@
 #include "../../Folder/Folder.h"
 #include "../../Scene/Scene.h"
 #include "../../Array/Array.h"
+#include "../../Qtree/Qtree.h"
 #include <string.h>
 
 //...RENDERABLE STRUCTS 
@@ -54,7 +55,7 @@ typedef struct sElemRenderable {
 	sImage* label;
 
 	//...
-	Uint32 wflag;
+	sQtreeElem* qtreeElem;
 } sElemRenderable;
 
 //... ALIGNMENT CONSTANTS
@@ -173,7 +174,7 @@ static sElemRenderable* pCreate(sElement* elem, const sIni* ini) {
 
 	self->border.color = createColor(NULL);
 	nElem->style->setBorder(elem, ini->border);
-	self->wflag = 0;
+	self->qtreeElem = nQtree->createQtreeElem(elem, nElem->p->posGetter);
 	return self;
 }
 
@@ -185,6 +186,7 @@ static void pDestroy(sElemRenderable* self) {
 				nFolder->p->decRefCounter(folder);
 			}
 		}
+		free(self->qtreeElem);
 		free(self->asset);
 		free(self->alignment);
 		free(self->text);
@@ -449,14 +451,9 @@ static void setBorder(sElement* self, const char* border) {
 	}
 }
 
-static uint32_t pWFlag(sElement* self) {
+static sQtreeElem* pGetQtreeElem(sElement* self) {
 	sElemRenderable* renderable = nElem->p->renderable(self);
-	return renderable->wflag;
-}
-
-static void pSetWFlag(sElement* self, uint32_t value) {
-	sElemRenderable* renderable = nElem->p->renderable(self);
-	renderable->wflag = value;
+	return renderable->qtreeElem;
 }
 
 enum AssetType{IMAGE, ANIMATION};
@@ -771,8 +768,7 @@ const struct sElemRenderableNamespace nElemRenderable = {
 		.create = pCreate,
 		.destroy = pDestroy,
 		.onRender = onRender,
-		.wFlag = pWFlag,
-		.setWFlag = pSetWFlag,
+		.getQtreeElem = pGetQtreeElem,
 		.calcImagePosOnCamera = pCalcImagePosOnCamera,
 		.getImageRef = pGetImageRef,
 		.label = pLabel

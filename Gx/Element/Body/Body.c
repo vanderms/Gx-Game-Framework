@@ -4,6 +4,7 @@
 #include "../../List/List.h"
 #include "../../Graphics/Graphics.h"
 #include "../../Scene/Scene.h"
+#include "../../Qtree/Qtree.h"
 #include <string.h>
 #include <limits.h>
 
@@ -31,13 +32,13 @@ typedef struct sElemBody {
 	bool friction;
 	int maxgvel;
 
+	//...Qtree interface
+	sQtreeElem* dynamic;
+	sQtreeElem* fixed;
+
 	//Flags used by sPhysics to control if a body can move
 	bool mcflag; // movement contact flag
-	bool movflag; // movement flag
-
-	//Flags used by sPhysics trees to identify repeated elements
-	uint32_t fflag; // fixed tree flag
-	uint32_t dflag; // dynamic tree flag
+	bool movflag; // movement flag	
 
 	//Flag used by Body to see if a element is on ground
 	int groundFlag;
@@ -72,8 +73,8 @@ static sElemBody* pCreate(sElement* elem, const sIni* ini) {
 	self->maxgvel = self->type == nElem->body->DYNAMIC? -20 : 0;		
 	self->mcflag = false;
 	self->movflag = false;
-	self->dflag = 0;
-	self->fflag = 0;
+	self->dynamic = nQtree->createQtreeElem(elem, nElem->p->posGetter);
+	self->fixed = nQtree->createQtreeElem(elem, nElem->p->posGetter);
 	self->contacts = nList->create();
 	self->temp = nArray->create();
 	self->groundFlag = 0;
@@ -82,6 +83,8 @@ static sElemBody* pCreate(sElement* elem, const sIni* ini) {
 
 static void pDestroy(sElemBody* self) {
 	if (self) {
+		nQtree->destroyQtreeElem(self->dynamic);
+		nQtree->destroyQtreeElem(self->fixed);
 		nArray->destroy(self->temp);
 		nList->destroy(self->contacts);
 		free(self);
@@ -259,24 +262,14 @@ static void pAddContact(sElement* self, sContact* contact) {
 	}	
 }
 
-static uint32_t pDFlag(sElement* self) {
+static sQtreeElem* pGetQtreeElemFixed(sElement* self) {
 	sElemBody* body = nElem->p->body(self);
-	return body->dflag;
+	return body->fixed;
 }
 
-static void pSetDFlag(sElement* self, uint32_t value) {
+static sQtreeElem* pGetQtreeElemDynamic(sElement* self) {
 	sElemBody* body = nElem->p->body(self);
-	body->dflag = value;
-}
-
-static uint32_t pFFlag(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
-	return body->fflag;
-}
-
-static void pSetFFlag(sElement* self, uint32_t value) {
-	sElemBody* body = nElem->p->body(self);
-	body->fflag = value;
+	return body->dynamic;
 }
 
 static bool pMcFlag(sElement* self) {
@@ -397,11 +390,8 @@ const struct sElemBodyNamespace nElemBody = {
 		.addContact = pAddContact,
 		.removeContact = pRemoveContact,
 
-		.dFlag = pDFlag,
-		.setDFlag = pSetDFlag,
-
-		.fFlag = pFFlag,
-		.setFFlag = pSetFFlag,
+		.getQtreeElemFixed = pGetQtreeElemFixed,
+		.getQtreeElemDynamic = pGetQtreeElemDynamic,
 
 		.mcFlag = pMcFlag,
 		.setMcFlag = pSetMcFlag,

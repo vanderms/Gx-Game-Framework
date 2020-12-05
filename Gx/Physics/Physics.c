@@ -49,8 +49,8 @@ static sPhysics* create(sScene* scene) {
 	self->contacts = nArray->create();
 	sSize size = GxSceneGetSize(scene);
 	int len = size.w > size.h ? size.w + 2 : size.h + 2;		
-	self->dynamic =nQtree->create(NULL, (sRect) { -1, -1, len, len }, nQtree->DYNAMIC);
-	self->fixed =nQtree->create(NULL, (sRect) { -1, -1, len, len }, nQtree->FIXED);	
+	self->dynamic =nQtree->create(NULL, (sRect) { -1, -1, len, len });
+	self->fixed =nQtree->create(NULL, (sRect) { -1, -1, len, len });	
 
 	//buffers
 	self->walls = NULL;
@@ -150,7 +150,7 @@ static void update(sPhysics* self) {
 	sArray* temp = nArray->create();
 	nQtree->getAllElementsInArea(self->dynamic, area, temp, true);
 	for (Uint32 i = 0; i < nArray->size(temp); i++) {
-		physicsMoveElement_(nArray->at(temp, i));
+		physicsMoveElement_(nQtree->getElem(nArray->at(temp, i)));
 	}
 	nArray->destroy(temp);	
 	nArray->clean(self->mvstack);
@@ -158,18 +158,22 @@ static void update(sPhysics* self) {
 
 static void insert(sPhysics* self, sElement* element) {
 	if (!nElem->hasBody(element)) { return; }
-	nQtree->insert(self->fixed, element);
+	sQtreeElem* fixed = nElem->body->p->getQtreeElemFixed(element);
+	nQtree->insert(self->fixed, fixed);
 	if (nElem->body->isDynamic(element)) {
-		nQtree->insert(self->dynamic, element);
+		sQtreeElem* dynamic = nElem->body->p->getQtreeElemDynamic(element);
+		nQtree->insert(self->dynamic, dynamic);
 	}
 }
 
 static void removeElem(sPhysics* self, sElement* element) {
 	if (!nElem->hasBody(element)) return;
-	nQtree->remove(self->fixed, element);
+	sQtreeElem* fixed = nElem->body->p->getQtreeElemFixed(element);
+	nQtree->remove(self->fixed, fixed);
 	
 	if (nElem->body->isDynamic(element)) {
-		nQtree->remove(self->dynamic, element);
+		sQtreeElem* dynamic = nElem->body->p->getQtreeElemDynamic(element);
+		nQtree->remove(self->dynamic, dynamic);
 	}
 
 	sArray* contacts = nArray->create();
@@ -187,9 +191,11 @@ static void removeElem(sPhysics* self, sElement* element) {
 static void updateElem(sPhysics* self, sElement* element, sRect previousPos) {	
 	if(nElem->hasBody(element)){
 		if (nElem->body->isDynamic(element)) {
-			nQtree->update(self->dynamic, element, previousPos);
+			sQtreeElem* dynamic = nElem->body->p->getQtreeElemDynamic(element);
+			nQtree->update(self->dynamic, dynamic, previousPos);
 		}	
-		nQtree->update(self->fixed, element, previousPos);
+		sQtreeElem* fixed = nElem->body->p->getQtreeElemFixed(element);
+		nQtree->update(self->fixed, fixed, previousPos);
 	}	
 }
 
@@ -219,8 +225,8 @@ static void physicsMoveElement_(sElement* element) {
 	nArray->push(physics->emdstack, emdata, (sDtor) destroyEmData);
 	sArray* temp = nArray->create();
 	nQtree->getAllElementsInArea(physics->fixed, emdata->trajetory, temp, true);
-	for (Uint32 i = 0; i < nArray->size(temp); i++) {
-		physicsCheckCollision(nArray->at(temp, i));
+	for (Uint32 i = 0; i < nArray->size(temp); i++) {		
+		physicsCheckCollision(nQtree->getElem(nArray->at(temp, i)));
 	}	
 	sVector* vec = nUtil->assertAlloc(malloc(sizeof(sVector)));		
 	*vec = physicsProcessMovementData(physics);
@@ -230,7 +236,7 @@ static void physicsMoveElement_(sElement* element) {
 		nElem->body->maxgvel(element)
 	){				
 		for (Uint32 i = 0; i < nArray->size(temp); i++) {
-			physicsCheckGround(nArray->at(temp, i));
+			physicsCheckGround(nQtree->getElem(nArray->at(temp, i)));
 		}
 	}
 	nArray->destroy(temp);

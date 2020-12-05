@@ -67,11 +67,8 @@ extern const struct sElemBodyNamespace {
 		void (*addContact)(sElement * self, sContact * contact);
 		void (*removeContact)(sElement * self, sContact * contact);
 
-		uint32_t (*dFlag)(sElement* self);
-		void (*setDFlag)(sElement* self, uint32_t value);
-
-		uint32_t (*fFlag)(sElement* self);
-		void (*setFFlag)(sElement* self, uint32_t value);
+		sQtreeElem* (*getQtreeElemFixed)(sElement* self);
+		sQtreeElem* (*getQtreeElemDynamic)(sElement* self);
 
 		bool (*mcFlag)(sElement* self);
 		void (*setMcFlag)(sElement* self, bool value);

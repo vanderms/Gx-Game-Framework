@@ -27,6 +27,7 @@ typedef struct sList sList;
 typedef struct sArray sArray;
 typedef struct sMap sMap;
 typedef struct sQtree sQtree;
+typedef struct sQtreeElem sQtreeElem;
 
 //... types::main structs
 typedef struct sApp sApp;
