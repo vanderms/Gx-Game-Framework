@@ -20,7 +20,7 @@ static sGraphics* create(sScene* scene){
 	self->scene = scene;
 	sSize size = GxSceneGetSize(scene);
 	int length = size.w > size.h ? size.w : size.h ;	
-	self->rtree =nQtree->create(NULL, (sRect) { 0, 0, length, length }, "graphical");	
+	self->rtree =nQtree->create(NULL, (sRect) { 0, 0, length, length }, nQtree->GRAPHICAL);	
 	self->absolute = nArray->create();
 	self->renderables = nArray->create();
 	return self;

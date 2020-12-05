@@ -48,9 +48,9 @@ static sPhysics* create(sScene* scene) {
 	self->scene = scene;	
 	self->contacts = nArray->create();
 	sSize size = GxSceneGetSize(scene);
-	int length = size.w > size.h ? size.w + 2 : size.h + 2;		
-	self->dynamic =nQtree->create(NULL, (sRect) { -1, -1, length, length }, "dynamic");
-	self->fixed =nQtree->create(NULL, (sRect) { -1, -1, length, length }, "fixed");	
+	int len = size.w > size.h ? size.w + 2 : size.h + 2;		
+	self->dynamic =nQtree->create(NULL, (sRect) { -1, -1, len, len }, nQtree->DYNAMIC);
+	self->fixed =nQtree->create(NULL, (sRect) { -1, -1, len, len }, nQtree->FIXED);	
 
 	//buffers
 	self->walls = NULL;

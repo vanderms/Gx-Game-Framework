@@ -8,10 +8,13 @@
 #define MAX_ELEMENTS 16
 #define MIN_LENGTH 64
 
+/*
+	I have to uncouple the Qtree from sPhysics, sGraphics, sBody and sRenderable.
+	But the task is not easy. Todo someday...
+*/
 
-//... type
 typedef struct sQtree {
-	const char* type;
+	int type;
 	sQtree* parent;
 	Uint32* counter;
 	sRect pos;
@@ -19,30 +22,16 @@ typedef struct sQtree {
 	sList* elements;
 } sQtree;
 
+
 static void subdivide(sQtree* self);
 
-static const char* sGraphical = "graphical";
-static const char* sDynamic = "dynamic";
-static const char* sFixed = "fixed";
-
-static sQtree* create(sQtree* parent, sRect pos, const char* type){		
+static sQtree* create(sQtree* parent, sRect pos, int type){		
 	
 	sQtree* self = malloc(sizeof(sQtree));
 	nUtil->assertAlloc(self);
 	self->parent = parent;
 	self->counter = parent ? parent->counter : nUtil->createUint(0);	
-	
-	if (type == sGraphical || strcmp(type, "graphical") == 0) {
-		self->type = sGraphical;
-	}
-	else if (type == sFixed || strcmp(type, "fixed") == 0) {
-		self->type = sFixed;
-	}
-	else if (type == sDynamic || strcmp(type, "dynamic") == 0) {
-		self->type = sDynamic;
-	}
-	
-	self->type = type;
+	self->type = type;	
 	self->pos = pos;	
 	self->children = NULL;
 	self->elements = NULL;
@@ -145,10 +134,10 @@ static void subdivide(sQtree* self) {
 	
 	//create new qtrees and Push into children list
 	self->children = nArray->create();
-	nArray->push(self->children,nQtree->create(self, qtree01, self->type), nQtree->destroy);
-	nArray->push(self->children,nQtree->create(self, qtree02, self->type), nQtree->destroy);
-	nArray->push(self->children,nQtree->create(self, qtree03, self->type), nQtree->destroy);
-	nArray->push(self->children,nQtree->create(self, qtree04, self->type), nQtree->destroy);
+	nArray->push(self->children, create(self, qtree01, self->type), destroy);
+	nArray->push(self->children, create(self, qtree02, self->type), destroy);
+	nArray->push(self->children, create(self, qtree03, self->type), destroy);
+	nArray->push(self->children, create(self, qtree04, self->type), destroy);
 
 	//then transfer all entities to childrens
 	for (sElement* elem = nList->begin(self->elements); elem != NULL; 
@@ -174,19 +163,19 @@ static void getAllElementsInArea(sQtree* self, sRect area, sArray* arr, bool beg
 		for (sElement* elem = nList->begin(self->elements); elem != NULL; 
 				elem = nList->next(self->elements)){			
 
-			if (self->type == sGraphical && nElem->style->p->wFlag(elem) != *self->counter) {
+			if (self->type == nQtree->GRAPHICAL && nElem->style->p->wFlag(elem) != *self->counter) {
 				nElem->style->p->setWFlag(elem, *self->counter);
 				if(SDL_HasIntersection(nElem->position(elem), &area)){									
 					nArray->push(arr, elem, NULL);				
 				}
 			}
-			else if (self->type == sFixed && nElem->body->p->fFlag(elem) != *self->counter) {
+			else if (self->type == nQtree->FIXED && nElem->body->p->fFlag(elem) != *self->counter) {
 				nElem->body->p->setFFlag(elem, *self->counter);				
 				if(SDL_HasIntersection(nElem->position(elem), &area)){									
 					nArray->push(arr, elem, NULL);				
 				}
 			}
-			else if (self->type == sDynamic && nElem->body->p->dFlag(elem) != *self->counter) {
+			else if (self->type == nQtree->DYNAMIC && nElem->body->p->dFlag(elem) != *self->counter) {
 				nElem->body->p->setDFlag(elem, *self->counter);				
 				if(SDL_HasIntersection(nElem->position(elem), &area)){									
 					nArray->push(arr, elem, NULL);				
@@ -212,4 +201,7 @@ const struct sQtreeNamespace* nQtree = &(struct sQtreeNamespace){
 	.remove = removeNode,
 	.update = update,
 	.getAllElementsInArea = getAllElementsInArea,
+	.GRAPHICAL = 0,
+	.FIXED = 1,
+	.DYNAMIC = 2,
 };
