@@ -4,7 +4,7 @@
 
 
 extern const struct sQtreeNamespace {
-	sQtreeElem* (*createQtreeElem)(void* elem, sRect(*posGetter)(void* elem));
+	sQtreeElem* (*createQtreeElem)(void* elem, const sRect* (*posGetter)(void* elem));
 	void (*destroyQtreeElem)(sQtreeElem* self);
 	void* (*getElem)(sQtreeElem* self);
 	sQtree* (*create)(sQtree* parent, sRect pos);
@@ -13,7 +13,7 @@ extern const struct sQtreeNamespace {
 	void (*insert)(sQtree* self, sQtreeElem* element);
 	void (*remove)(sQtree* self, sQtreeElem* element);
 	void (*update)(sQtree* self, sQtreeElem* element, sRect previous);	
-	void (*getAllElementsInArea)(sQtree* self, sRect area, sArray* arr, bool begin);	
+	void (*getAllElementsInArea)(sQtree* self, const sRect* area, sArray* arr, bool begin);	
 }* nQtree;
 
 #endif // !GX_QUADTREE_H

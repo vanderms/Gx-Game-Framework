@@ -7,10 +7,10 @@
 #define MAX_ELEMENTS 16
 #define MIN_LENGTH 64
 
-/*
-	I have to uncouple the Qtree from sPhysics, sGraphics, sBody and sRenderable.
-	But the task is not easy. Todo someday...
-*/
+
+#define hasIntersection(a, b)\
+(!((a)->x >= (b)->x + (b)->w || (a)->x + (a)->w <= (b)->x ||\
+(a)->y >= (b)->y + (b)->h || (a)->y + (a)->h <= (b)->y))
 
 typedef struct sQtree {
 	sQtree* parent;
@@ -23,11 +23,11 @@ typedef struct sQtree {
 
 typedef struct sQtreeElem {
 	void* elem;
-	sRect (*posGetter)(void* elem);
+	const sRect* (*posGetter)(void* elem);
 	Uint32 flag;
 } sQtreeElem;
 
-sQtreeElem* createQtreeElem(void* elem, sRect(*posGetter)(void* elem)) {
+sQtreeElem* createQtreeElem(void* elem, const sRect* (*posGetter)(void* elem)) {
 	sQtreeElem* self = nUtil->assertAlloc(malloc(sizeof(sQtreeElem)));
 	self->elem = elem;
 	self->posGetter = posGetter;
@@ -77,9 +77,9 @@ static sRect position(sQtree* self) {
 //methods
 static void insert(sQtree* self, sQtreeElem* element) {
 
-	sRect elemPos = element->posGetter(element->elem);
+	const sRect* elemPos = element->posGetter(element->elem);
 		
-	if (SDL_HasIntersection(&self->pos, &elemPos)) {
+	if (hasIntersection(&self->pos, elemPos)) {
 
 		if (self->children) {
 			for (Uint32 i = 0; i < nArray->size(self->children); i++) {
@@ -101,13 +101,13 @@ static void insert(sQtree* self, sQtreeElem* element) {
 			//then, insert element recursively
 			nQtree->insert(self, element);
 		}
-	}	
+	}
 }
 
 static void removeNode(sQtree* self, sQtreeElem* element) {	
-	sRect elemPos = element->posGetter(element->elem);
+	const sRect* elemPos = element->posGetter(element->elem);
 	if ((!self->elements && !self->children) || 
-		!SDL_HasIntersection(&self->pos, &elemPos)) return;
+		!hasIntersection(&self->pos, elemPos)) return;
 	if (self->children) {
 		for (Uint32 i = 0; i < nArray->size(self->children); i++) {
 			sQtree* child = nArray->at(self->children, i);
@@ -119,10 +119,10 @@ static void removeNode(sQtree* self, sQtreeElem* element) {
 
 static void update(sQtree* self, sQtreeElem* element, sRect previous) {	
 	
-	sRect elemPos = element->posGetter(element->elem);	
+	const sRect* elemPos = element->posGetter(element->elem);	
 	
-	bool has = SDL_HasIntersection(&self->pos, &elemPos);
-	bool had = SDL_HasIntersection(&self->pos, &previous);
+	bool has = hasIntersection(&self->pos, elemPos);
+	bool had = hasIntersection(&self->pos, &previous);
 
 	if (self->children && (had || has)) {
 		for (Uint32 i = 0; i < nArray->size(self->children); i++) {
@@ -172,21 +172,21 @@ static void subdivide(sQtree* self) {
 }
 
 
-static void getAllElementsInArea(sQtree* self, sRect area, sArray* arr, bool begin){
+static void getAllElementsInArea(sQtree* self, const sRect* area, sArray* arr, bool begin){
 	
 	if (begin) {
 		*self->counter = *self->counter + 1; 
 	}
 
-	if (SDL_HasIntersection(&self->pos, &area)) {
+	if (hasIntersection(&self->pos, area)) {
 
 		for (sQtreeElem* elem = nList->begin(self->elements); elem != NULL; 
 				elem = nList->next(self->elements)){			
 
 			if (elem->flag != *self->counter) {
 				elem->flag = *self->counter;
-				sRect elemPos = elem->posGetter(elem->elem);	
-				if(SDL_HasIntersection(&elemPos, &area)){									
+				const sRect* elemPos = elem->posGetter(elem->elem);	
+				if(hasIntersection(elemPos, area)){									
 					nArray->push(arr, elem, NULL);				
 				}
 			}			
@@ -200,7 +200,6 @@ static void getAllElementsInArea(sQtree* self, sRect area, sArray* arr, bool beg
 		}
 	}
 }
-
 
 const struct sQtreeNamespace* nQtree = &(struct sQtreeNamespace){
 	.createQtreeElem = createQtreeElem,

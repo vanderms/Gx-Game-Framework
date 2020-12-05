@@ -18,7 +18,7 @@ static sGraphics* create(sScene* scene){
 	sGraphics* self = malloc(sizeof(sGraphics));
 	nUtil->assertAlloc(self);
 	self->scene = scene;
-	sSize size = GxSceneGetSize(scene);
+	sSize size = nScene->size(scene);
 	int length = size.w > size.h ? size.w : size.h ;	
 	self->rtree =nQtree->create(NULL, (sRect) { 0, 0, length, length });	
 	self->absolute = nArray->create();
@@ -67,7 +67,7 @@ static void removeElement(sGraphics* self, sElement* element) {
 }
 
 static void iFillRenderables(sElement* elem) {
-	sGraphics* self = GxSceneGetGraphics(nElem->scene(elem));
+	sGraphics* self = nScene->p->getGraphics(nElem->scene(elem));
 	if (!nElem->style->isHidden(elem)) {
 			nArray->push(self->renderables, elem, NULL);
 	}	
@@ -87,7 +87,7 @@ static void update(sGraphics* self) {
 	for (Uint32 i = 0; i < nArray->size(self->absolute); i++){	
 		sElement* e = nArray->at(self->absolute, i);
 		if(nElem->style->isHidden(e)) continue;
-		sSize size = GxSceneGetSize(self->scene);
+		sSize size = nScene->size(self->scene);
 		sRect pos = (sRect){ 0, 0, size.w, size.h };
 		const sRect* elemPos = nElem->position(e);
 		if (SDL_HasIntersection(&pos, elemPos)) {
@@ -96,9 +96,9 @@ static void update(sGraphics* self) {
 	}
 
 	//fill with relative elements
-	const sRect* area = nElem->position(GxSceneGetCamera(self->scene));
+	const sRect* area = nElem->position(nScene->getCamera(self->scene));
 	sArray* temp = nArray->create();
-	nQtree->getAllElementsInArea(self->rtree, *area, temp, true);
+	nQtree->getAllElementsInArea(self->rtree, area, temp, true);
 	for (Uint32 i = 0; i < nArray->size(temp); i++) {		
 		iFillRenderables(nQtree->getElem(nArray->at(temp, i)));
 	}

@@ -77,14 +77,14 @@ static sElement* create(const sIni* ini){
 	self->rHandlers = NULL;
 
 	//add element to scene then return
-	self->id = GxSceneAddElement_(self->scene, self);
+	self->id = nScene->p->addElem(self->scene, self);
 	return self;
 }
 
 static void pDestroy(sElement* self) {	
 	if (self) {
 		if (self->child) {
-			GxSceneExecuteElemChildDtor_(self->scene, self->child);
+			nScene->p->executeCompDtor(self->scene, self->child);
 		}
 		if(self->handlers && self->handlers[nUtil->evn->ON_DESTROY]){
 			self->handlers[nUtil->evn->ON_DESTROY](&(sEvent){
@@ -107,7 +107,7 @@ static void pDestroy(sElement* self) {
 static void removeElement(sElement* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);	
-	GxSceneRemoveElement_(self->scene, self);
+	nScene->p->removeElem(self->scene, self);
 }
 
 static void* target(sElement* self) {
@@ -189,16 +189,16 @@ static const sRect* position(sElement* self) {
 	return self->pos;
 }
 
-static sRect posGetter(void* value){
+static const sRect* posGetter(void* value){
 	sElement* self = value;
-	return *self->pos;
+	return self->pos;
 };
 
 static void setPosition(sElement* self, sRect pos) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	sGraphics* graphics = GxSceneGetGraphics(self->scene);
-	sPhysics* physics = GxSceneGetPhysics(self->scene);
+	sGraphics* graphics = nScene->p->getGraphics(self->scene);
+	sPhysics* physics = nScene->p->getPhysics(self->scene);
 	if (self->renderable) nGraphics->remove(graphics, self);
 	if (self->body) nPhysics->remove(physics, self);
 	*self->pos = pos;
@@ -211,10 +211,10 @@ static void pUpdatePosition(sElement* self, sVector vector) {
 	self->pos->x += vector.x;
 	self->pos->y += vector.y;
 	if(self->renderable){
-		nGraphics->updateElement(GxSceneGetGraphics(self->scene), self, previousPos);
+		nGraphics->updateElement(nScene->p->getGraphics(self->scene), self, previousPos);
 	}
 	if(self->body){
-		nPhysics->updateElem(GxSceneGetPhysics(self->scene), self, previousPos);
+		nPhysics->updateElem(nScene->p->getPhysics(self->scene), self, previousPos);
 	}
 }
 

@@ -4,27 +4,6 @@
 #include "../Element/Element.h"
 #include "../Folder/Folder.h"
 
-//... NAMESPACES
-
-
-struct sEventNamespace {
-	const int LOAD;
-	const int LOOP_BEGIN;
-	const int UPDATE;
-	const int ON_RENDER;	
-	const int LOOP_END;
-	const int UNLOAD;
-	const int KEYBOARD;
-	const int MOUSE;
-	const int FINGER;
-	const int SDL_DEFAULT;
-	const int PRE_CONTACT;
-	const int CONTACT_BEGIN;
-	const int CONTACT_END;
-	const int TIMEOUT;
-	const int DESTROY;
-	const int ELEM_REMOVAL;
-};
 
 
 

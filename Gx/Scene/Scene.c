@@ -45,7 +45,7 @@ typedef struct Listener {
 }Listener;
 
 //constructor and destructor
-sScene* GxCreateScene(const sIni* ini) {
+static sScene* create(const sIni* ini) {
 	
 	nUtil->assertState(nApp->isCreated());
 
@@ -105,7 +105,7 @@ sScene* GxCreateScene(const sIni* ini) {
 	return self;
 }
 
-void GxDestroyScene_(sScene* self) {
+static void pDestroy(sScene* self) {
 
 	if (self) {
 		self->status = nUtil->status->UNLOADING;
@@ -152,45 +152,45 @@ void GxDestroyScene_(sScene* self) {
 
 
 
-const char* GxSceneGetName(sScene* self) {
+static const char* name(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	return self->name;
 }
 
-sSize GxSceneGetSize(sScene* self) {
+static sSize size(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	return self->size;
 }
 
-sElement* GxSceneGetCamera(sScene* self) {
+static sElement* getCamera(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	return self->camera;
 }
 
-sPhysics* GxSceneGetPhysics(sScene* self) {	
+static sPhysics* pGetPhysics(sScene* self) {	
 	return self->physics;
 }
 
-sGraphics* GxSceneGetGraphics(sScene* self) {
+static sGraphics* pGetGraphics(sScene* self) {
 	return self->graphics;
 }
 
-bool GxSceneHasStatus(sScene* self, int status) {
+static bool hasStatus(sScene* self, int status) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	return self->status == status;
 }
 
-int GxSceneGetStatus(sScene* self) {
+static int status(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	return self->status;
 }
 
-sElement* GxSceneGetElement(sScene* self, Uint32 id) {
+static sElement* getElem(sScene* self, Uint32 id) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	if (id > nArray->size(self->elements)) {
@@ -218,25 +218,25 @@ sElement* GxSceneGetElement(sScene* self, Uint32 id) {
     return NULL;
 }
 
-int GxSceneGetGravity(sScene* self) {
+static int gravity(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	return self->gravity;
 }
 
-bool GxSceneHasGravity(sScene* self) {
+static bool hasGravity(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	return self->gravity;
 }
 
-void GxSceneSetGravity(sScene* self, int gravity) {
+static void setGravity(sScene* self, int gravity) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	self->gravity = gravity > 0 ? -gravity : gravity;
 }
 
-Uint32 GxSceneGetPercLoaded(sScene* self) {
+static Uint32 getPercLoaded(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	
@@ -253,7 +253,7 @@ Uint32 GxSceneGetPercLoaded(sScene* self) {
 	return total / nArray->size(self->folders);
 }
 
-void GxSceneExecuteElemChildDtor_(sScene* self, void* child) {
+static void pExecuteCompDtor(sScene* self, void* child) {
 	
 	if(self->status == nUtil->status->UNLOADING){return ;}
 
@@ -270,7 +270,7 @@ void GxSceneExecuteElemChildDtor_(sScene* self, void* child) {
 	}
 }
 
-void GxSceneSetTimeout(sScene* self, int interval, sHandler callback, void* target) {
+static void setTimeout(sScene* self, int interval, sHandler callback, void* target) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	Timer* timer = malloc(sizeof(Timer));
@@ -281,45 +281,43 @@ void GxSceneSetTimeout(sScene* self, int interval, sHandler callback, void* targ
 	nList->push(self->listeners[nUtil->evn->ON_TIMEOUT], timer, free);
 }
 
-Uint32 GxSceneAddElement_(sScene* self, sElement* elem) {	
+static Uint32 addElem(sScene* self, sElement* elem) {	
 	nUtil->assertState(self->status == nUtil->status->LOADED || self->status == nUtil->status->RUNNING);	
 	nArray->push(self->elements, elem, (sDtor) nElem->p->destroy);	
 	nGraphics->insert(self->graphics, elem);
 	nPhysics->insert(self->physics, elem);
-	GxSceneSubscribeElemListeners_(self, elem);
+	nScene->p->subsElemListeners(self, elem);
 	Uint32 id = self->elemCounter++;
 	return id;
 }
 
 
-void GxSceneSubscribeElemListeners_(sScene* self, sElement* elem) {
+static void pSubsElemListeners(sScene* self, sElement* elem) {
 	for (int i = 0; i < nUtil->evn->TOTAL; i++) {
 		if(i == nUtil->evn->ON_DESTROY){ continue; }
 		sHandler handler = nElem->getHandler(elem, i);
 		if (handler) {
 			void* target = nElem->target(elem);
-			GxSceneAddEventListener(self, i, handler, target);
+			nScene->addListener(self, i, handler, target);
 		}
 	}
 }
 
-void GxSceneUnsubscribeElemListeners_(sScene* self, sElement* elem) {
+static void pUnsubsElemListeners(sScene* self, sElement* elem) {
 	
 	for (int i = 0; i < nUtil->evn->TOTAL; i++) {
 		sHandler handler = nElem->getHandler(elem, i);
 		if (handler) {
 			void* target = nElem->target(elem);
-			GxSceneRemoveEventListener(self, i, handler, target);
+			nScene->removeListener(self, i, handler, target);
 		}	
 	}
 }
 
-void GxSceneAddEventListener(sScene* self, int type, sHandler handler, void* target) {
-	nUtil->assertNullPointer(self);
-	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
+static void addListener(sScene* self, int type, sHandler handler, void* target) {
+	nUtil->assertArgument(self && handler && target);
 	nUtil->assertArgument(type >= 0 && type < nUtil->evn->TOTAL);
-	nUtil->assertNullPointer(handler);
-	nUtil->assertNullPointer(target);
+	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);	
 	Listener* listener = malloc(sizeof(Listener));
 	nUtil->assertAlloc(listener);
 	listener->e.target = target;
@@ -328,7 +326,7 @@ void GxSceneAddEventListener(sScene* self, int type, sHandler handler, void* tar
 	nList->push(self->listeners[type], listener, free);
 }
 
-bool GxSceneRemoveEventListener(sScene* self, int type, sHandler handler, void* target) {
+static bool removeListener(sScene* self, int type, sHandler handler, void* target) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	if (self->status == nUtil->status->UNLOADING) { return true; }
@@ -346,7 +344,7 @@ bool GxSceneRemoveEventListener(sScene* self, int type, sHandler handler, void* 
 	return false;
 }
 
-static inline void sceneExecuteListeners(sScene* self, int type, SDL_Event* sdle) {	
+static void sceneExecuteListeners(sScene* self, int type, SDL_Event* sdle) {	
 		
 	if (self->handlers && self->handlers[type]){
 		self->handlers[type](&(sEvent) {
@@ -364,7 +362,7 @@ static inline void sceneExecuteListeners(sScene* self, int type, SDL_Event* sdle
 	}
 }
 
-static inline void sceneExecuteContactListeners(sScene* self, int type, sContact* contact) {
+static void sceneExecuteContactListeners(sScene* self, int type, sContact* contact) {
 	sElement* elemSelf = nContact->colliding(contact);
 	sElement* elemOther = nContact->collided(contact);
 	nElem->body->p->setMcFlag(elemSelf, true);
@@ -384,7 +382,7 @@ static inline void sceneExecuteContactListeners(sScene* self, int type, sContact
 	nElem->body->p->setMcFlag(elemOther, false);
 }
 
-void GxScenePreLoad_(sScene* self) {
+static void pPreLoad(sScene* self) {
 	
 	nUtil->assertState(self->status == nUtil->status->NONE);
 
@@ -408,7 +406,7 @@ void GxScenePreLoad_(sScene* self) {
 	}
 }
 
-static void GxSceneLoad_(sScene* self) {		
+static void pLoad(sScene* self) {		
 	
 	//create physic walls and camera
 	nPhysics->createWalls(self->physics);
@@ -429,7 +427,7 @@ static void GxSceneLoad_(sScene* self) {
 	self->status = nUtil->status->RUNNING;
 }
 
-void GxSceneUnload_(sScene* self) {
+static void pUnLoad(sScene* self) {
 	self->status = nUtil->status->UNLOADING;
 	nGraphics->destroy(self->graphics);
 	nPhysics->destroy(self->physics);	
@@ -468,25 +466,25 @@ void GxSceneUnload_(sScene* self) {
 	self->status = nUtil->status->NONE;
 }
 
-void GxSceneRemoveElement_(sScene* self, sElement* elem) {	
+static void pRemoveElem(sScene* self, sElement* elem) {	
 	if (nElem->hasBody(elem)) nPhysics->remove(self->physics, elem);
 	if (nElem->isRenderable(elem)) nGraphics->remove(self->graphics, elem);
-	if (elem != self->camera) GxSceneUnsubscribeElemListeners_(self, elem);
+	if (elem != self->camera) nScene->p->unsubsElemListeners(self, elem);
 	nArray->removeByValue(self->elements, elem);	
 }
 
-void GxSceneOnLoopBegin_(sScene* self) {	
+static void pOnLoopBegin(sScene* self) {	
 	if(self->status == nUtil->status->RUNNING){
 		sceneExecuteListeners(self, nUtil->evn->ON_LOOP_BEGIN, NULL);		
 	}
 }
 
-void GxSceneOnUpdate_(sScene* self) {
+static void pUpdate(sScene* self) {
 	
 	if (self->status == nUtil->status->LOADING) {
-		if (GxSceneGetPercLoaded(self) == 100) {
+		if (nScene->getPercLoaded(self) == 100) {
 			self->status = nUtil->status->LOADED;
-			GxSceneLoad_(self);
+			pLoad(self);
 		}		
 	}
 
@@ -513,13 +511,13 @@ void GxSceneOnUpdate_(sScene* self) {
 	}
 }
 
-void GxSceneOnLoopEnd_(sScene* self) {
+static void pOnLoopEnd(sScene* self) {
 	if(self->status == nUtil->status->RUNNING){
 		sceneExecuteListeners(self, nUtil->evn->ON_LOOP_END, NULL);
 	}
 }
 
-void GxSceneOnSDLEvent_(sScene* self, SDL_Event* e) {	
+static void pOnSDLEvent(sScene* self, SDL_Event* e) {	
 	if (self->status != nUtil->status->RUNNING) {
 		return;
 	}
@@ -550,14 +548,53 @@ void GxSceneOnSDLEvent_(sScene* self, SDL_Event* e) {
 	}	
 }
 
-void GxSceneOnPreContact_(sScene* self, sContact* contact) {
+static void pOnPreContact(sScene* self, sContact* contact) {
 	sceneExecuteContactListeners(self, nUtil->evn->ON_PRE_CONTACT, contact);
 }
 
-void GxSceneOnContactBegin_(sScene* self, sContact* contact) {
+static void pOnContactBegin(sScene* self, sContact* contact) {
 	sceneExecuteContactListeners(self, nUtil->evn->ON_CONTACT_BEGIN, contact);
 }
 
-void GxSceneOnContactEnd_(sScene* self, sContact* contact) {
+static void pOnContactEnd(sScene* self, sContact* contact) {
 	sceneExecuteContactListeners(self, nUtil->evn->ON_CONTACT_END, contact);
 }
+
+
+const struct sSceneNamespace* nScene = &(struct sSceneNamespace) {
+	
+	.create = create,
+	.getPercLoaded = getPercLoaded,
+	.size = size,
+	.hasStatus = hasStatus,
+	.status = status,
+	.getElem = getElem,
+	.gravity = gravity,
+	.hasGravity = hasGravity,
+	.name = name,
+	.setGravity = setGravity,
+	.setTimeout = setTimeout,
+	.getCamera = getCamera,
+	.addListener = addListener,
+	.removeListener = removeListener,
+
+	.p = &(struct sScenePrivateNamespace) {
+		.destroy = pDestroy,
+		.executeCompDtor = pExecuteCompDtor,	
+		.getPhysics = pGetPhysics,
+		.getGraphics = pGetGraphics,	
+		.addElem = addElem,
+		.removeElem = pRemoveElem,
+		.subsElemListeners = pSubsElemListeners,
+		.unsubsElemListeners = pUnsubsElemListeners,
+		.preLoad = pPreLoad,
+		.unLoad = pUnLoad,
+		.update = pUpdate,
+		.onLoopBegin = pOnLoopBegin,
+		.onLoopEnd = pOnLoopEnd,
+		.onSDLEvent = pOnSDLEvent,
+		.onPreContact = pOnPreContact,
+		.onContactBegin = pOnContactBegin,
+		.onContactEnd = pOnContactEnd,
+	},
+};

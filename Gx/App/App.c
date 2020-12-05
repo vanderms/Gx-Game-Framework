@@ -13,7 +13,7 @@
 #include "../List/List.h"
 
 #ifdef NDEBUG
-    #define GX_DEV 0
+    #define GX_DEV 1
 #else
     #define GX_DEV 1
 #endif
@@ -163,7 +163,7 @@ static sScene* create(const sIni* ini) {
     SDL_SetRenderDrawBlendMode(self->renderer, SDL_BLENDMODE_BLEND);
 
     self->status = nUtil->status->NONE;
-    self->snMain = GxCreateScene(ini);
+    self->snMain = nScene->create(ini);
     return self->snMain;
 }
 
@@ -208,7 +208,7 @@ static void destroy() {
         nList->destroy(self->aLoading);
         nList->destroy(self->aLoaded);
         nMap->destroy(self->scenes);
-        GxDestroyScene_(self->snMain);
+        nScene->p->destroy(self->snMain);
         nArray->destroy(self->temporary);
         nMap->destroy(self->folders);
         nMap->destroy(self->colors);
@@ -241,7 +241,7 @@ static bool isRunning() {
 
 static void addScene(sScene* scene) {
     if(self->snMain != NULL){
-        nMap->set(self->scenes, GxSceneGetName(scene), scene, GxDestroyScene_);
+        nMap->set(self->scenes, nScene->name(scene), scene, nScene->p->destroy);
     }
 }
 
@@ -357,32 +357,32 @@ static void run() {
     while (self->status == nUtil->status->RUNNING) {
 
         bool activeIsReady =  self->snActive ?
-            GxSceneGetStatus(self->snActive) == nUtil->status->RUNNING : false;
+            nScene->status(self->snActive) == nUtil->status->RUNNING : false;
 
         self->counter = SDL_GetTicks();
         self->snRunning = self->snActive;
-        if (activeIsReady && self->snActive) GxSceneOnLoopBegin_(self->snActive);
+        if (activeIsReady && self->snActive) nScene->p->onLoopBegin(self->snActive);
 
         self->snRunning = self->snMain;
-        GxSceneOnLoopBegin_(self->snMain);
+        nScene->p->onLoopBegin(self->snMain);
 
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) self->status = nUtil->status->UNLOADING;
 
             self->snRunning = self->snActive;
-            if (activeIsReady && self->snActive) GxSceneOnSDLEvent_(self->snActive, &e);
+            if (activeIsReady && self->snActive) nScene->p->onSDLEvent(self->snActive, &e);
 
             self->snRunning = self->snMain;
-            GxSceneOnSDLEvent_(self->snMain, &e);
+            nScene->p->onSDLEvent(self->snMain, &e);
         }
 
         //... update
         self->snRunning = self->snActive;
-        if (self->snActive) GxSceneOnUpdate_(self->snActive);
+        if (self->snActive) nScene->p->update(self->snActive);
 
         self->snRunning = self->snMain;
-        GxSceneOnUpdate_(self->snMain);
+        nScene->p->update(self->snMain);
 
 
         //...load assets
@@ -440,10 +440,10 @@ static void run() {
 
         //call loop end handlers
         self->snRunning = self->snActive;
-        if (activeIsReady && self->snActive) GxSceneOnLoopEnd_(self->snActive);
+        if (activeIsReady && self->snActive) nScene->p->onLoopEnd(self->snActive);
 
         self->snRunning = self->snMain;
-        GxSceneOnLoopEnd_(self->snMain);
+        nScene->p->onLoopEnd(self->snMain);
         nArray->clean(self->temporary);
 
          //clear window
@@ -463,12 +463,12 @@ static void loadScene(sScene* scene) {
     }
 
     self->snRunning = scene;
-    GxScenePreLoad_(scene);
+    nScene->p->preLoad(scene);
 
     if (scene != self->snMain){
         if(self->snActive){
             self->snRunning = self->snActive;
-            GxSceneUnload_(self->snActive);
+            nScene->p->unLoad(self->snActive);
         }
         self->snActive = scene;
     }

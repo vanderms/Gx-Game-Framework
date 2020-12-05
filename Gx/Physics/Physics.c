@@ -47,7 +47,7 @@ static sPhysics* create(sScene* scene) {
 	nUtil->assertAlloc(self);
 	self->scene = scene;	
 	self->contacts = nArray->create();
-	sSize size = GxSceneGetSize(scene);
+	sSize size = nScene->size(scene);
 	int len = size.w > size.h ? size.w + 2 : size.h + 2;		
 	self->dynamic =nQtree->create(NULL, (sRect) { -1, -1, len, len });
 	self->fixed =nQtree->create(NULL, (sRect) { -1, -1, len, len });	
@@ -120,10 +120,10 @@ static sContact* createContact(sElement* self, sElement* other, int amove, Uint3
 static void destroyContact(sContact* self) {
 	if (self) {
 		sScene* scene = nElem->scene(self->colliding);
-		if (self->effective && !GxSceneHasStatus(scene, nUtil->status->UNLOADING)) {			
+		if (self->effective && !nScene->hasStatus(scene, nUtil->status->UNLOADING)) {			
 			nElem->body->p->removeContact(self->colliding, self);
 			nElem->body->p->removeContact(self->collided, self);
-			nArray->removeByValue(GxSceneGetPhysics(scene)->contacts, self);
+			nArray->removeByValue(nScene->p->getPhysics(scene)->contacts, self);
 		}
 		free(self);
 	}
@@ -141,14 +141,14 @@ static bool contactIsEqual(sContact* lhs, sContact* rhs);
 //... METHODS
 static void update(sPhysics* self) {
 	
-	sRect area = *nElem->position(GxSceneGetCamera(self->scene));
+	sRect area = *nElem->position(nScene->getCamera(self->scene));
 	area.x -= 64;
 	area.y -= 64;
 	area.w += 128;
 	area.h += 128;
 	
 	sArray* temp = nArray->create();
-	nQtree->getAllElementsInArea(self->dynamic, area, temp, true);
+	nQtree->getAllElementsInArea(self->dynamic, &area, temp, true);
 	for (Uint32 i = 0; i < nArray->size(temp); i++) {
 		physicsMoveElement_(nQtree->getElem(nArray->at(temp, i)));
 	}
@@ -207,7 +207,7 @@ static sVector moveByElem(sPhysics* self, sElement* element) {
 static void physicsMoveElement_(sElement* element) {
 
 	nUtil->assertState(!nElem->body->p->mcFlag(element));
-	sPhysics* physics = GxSceneGetPhysics(nElem->scene(element));			
+	sPhysics* physics = nScene->p->getPhysics(nElem->scene(element));			
 	physicsApplyGravity(physics, element);
 	bool cantmove = nElem->body->p->movFlag(element) || !nElem->body->isMoving(element);		
 	if (cantmove) {
@@ -224,7 +224,7 @@ static void physicsMoveElement_(sElement* element) {
 	EmData* emdata = createEmData(element);
 	nArray->push(physics->emdstack, emdata, (sDtor) destroyEmData);
 	sArray* temp = nArray->create();
-	nQtree->getAllElementsInArea(physics->fixed, emdata->trajetory, temp, true);
+	nQtree->getAllElementsInArea(physics->fixed, &emdata->trajetory, temp, true);
 	for (Uint32 i = 0; i < nArray->size(temp); i++) {		
 		physicsCheckCollision(nQtree->getElem(nArray->at(temp, i)));
 	}	
@@ -232,7 +232,7 @@ static void physicsMoveElement_(sElement* element) {
 	*vec = physicsProcessMovementData(physics);
 	nArray->push(physics->mvstack, vec, free);
 
-	if (GxSceneHasGravity(physics->scene) &&
+	if (nScene->hasGravity(physics->scene) &&
 		nElem->body->maxgvel(element)
 	){				
 		for (Uint32 i = 0; i < nArray->size(temp); i++) {
@@ -256,7 +256,7 @@ static void physicsMoveElement_(sElement* element) {
 static void physicsApplyGravity(sPhysics* self, sElement* elem) {	
 
 	int maxgvel = nElem->body->maxgvel(elem);
-	int gravity = GxSceneGetGravity(self->scene);
+	int gravity = nScene->gravity(self->scene);
 	int vely = nElem->body->vely(elem);
 	if (gravity && (maxgvel < vely) && !nElem->body->isOnGround(elem)) {
 		double acceleration = gravity / 60.0;
@@ -265,7 +265,7 @@ static void physicsApplyGravity(sPhysics* self, sElement* elem) {
 }
 
 static void physicsApplyFriction(sPhysics* self, sElement* element, sVector move) {	
-	if (GxSceneHasGravity(self->scene) && nElem->body->hasFriction(element)) {
+	if (nScene->hasGravity(self->scene) && nElem->body->hasFriction(element)) {
 		move = (sVector) { move.x, move.y < 0 ? move.y : 0 };
 		sArray* up = nElem->body->getContacts(element, nContact->UP);
 		for (Uint32 i = 0; i < nArray->size(up); i++){
@@ -279,7 +279,7 @@ static void physicsApplyFriction(sPhysics* self, sElement* element, sVector move
 static void physicsCheckCollision(sElement* other) {	
 	
 	//create alias	
-	sPhysics* physics = GxSceneGetPhysics(nElem->scene(other));
+	sPhysics* physics = nScene->p->getPhysics(nElem->scene(other));
 	EmData* emdata = nArray->last(physics->emdstack);
 	sElement* self = emdata->self;	
 
@@ -341,7 +341,7 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 
 	for (Uint32 i = 0; i < nArray->size(emdata->contacts); i++){
 		sContact* contact = nArray->at(emdata->contacts, i);
-		GxSceneOnPreContact_(self->scene, contact);
+		nScene->p->onPreContact(self->scene, contact);
 		if (contact->prevented) { continue; }
 
 		int spref = nElem->body->preference(contact->colliding);
@@ -449,7 +449,7 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 		//notify collision callback handler
 	while (previousSize < nArray->size(self->contacts)) {
 		sContact* contact = nArray->at(self->contacts, previousSize);
-		GxSceneOnContactBegin_(self->scene, contact);
+		nScene->p->onContactBegin(self->scene, contact);
 		previousSize++;
 	}
 	return move;
@@ -525,7 +525,7 @@ static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 	
 	for (Uint32 i = 0; i < nArray->size(contactsToRemove); i++){
 		sContact* contact = nArray->at(contactsToRemove, i);		
-		GxSceneOnContactEnd_(self->scene, contact);		
+		nScene->p->onContactEnd(self->scene, contact);		
 	}
 	
 	//... sArray destructor delete contacts //-> and sContact sDtor remove it from arrays.
@@ -533,7 +533,7 @@ static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 }
 
 static void physicsCheckGround(sElement* other) {
-	sPhysics* physics = GxSceneGetPhysics(nElem->scene(other));
+	sPhysics* physics = nScene->p->getPhysics(nElem->scene(other));
 	EmData* emdata = nArray->last(physics->emdstack);
 	sElement* self = emdata->self;
 	
@@ -544,16 +544,16 @@ static void physicsCheckGround(sElement* other) {
 	bool ytouching =  (s->y == o->y + o->h);
 	if (samecolumn && ytouching) {
 		sContact* contact = createContact(self, other, 0, nContact->DOWN);
-		GxSceneOnPreContact_(physics->scene, contact);
+		nScene->p->onPreContact(physics->scene, contact);
 		if (physicsAddContact(physics, contact)) {
-			GxSceneOnContactBegin_(physics->scene, contact);
+			nScene->p->onContactBegin(physics->scene, contact);
 		}
 	}
 }
 
 static void createWalls(sPhysics* self) {
 	
-	sSize size = GxSceneGetSize(self->scene);
+	sSize size = nScene->size(self->scene);
 	sIni ini = {
 		.className = "__WALL__",				
 		.display = nElem->display->NONE,

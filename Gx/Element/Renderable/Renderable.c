@@ -613,7 +613,7 @@ static sRect calcAbsolutePos(sElemRenderable* ren) {
 }
 
 static sRect calcRelativePos(sElemRenderable* ren) {
-	const sRect* cpos = nElem->position(GxSceneGetCamera(nElem->scene(ren->elem)));
+	const sRect* cpos = nElem->position(nScene->getCamera(nElem->scene(ren->elem)));
 	int x = ren->pos->x - cpos->x;
 	int y = (cpos->y + cpos->h) - (ren->pos->y + ren->pos->h);
 	return (sRect) { x, y, ren->pos->w, ren->pos->h };

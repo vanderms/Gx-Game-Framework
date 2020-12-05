@@ -14,19 +14,19 @@
 
 
 const GxSceneNamespace GxSceneNamespaceInstance = {
-	.create = GxCreateScene,		
-	.getPercLoaded = GxSceneGetPercLoaded,
-	.getName = GxSceneGetName,
-	.getSize = GxSceneGetSize,
-	.hasStatus = GxSceneHasStatus,
-	.getStatus = GxSceneGetStatus,
-	.getElem = GxSceneGetElement,
-	.getGravity = GxSceneGetGravity,
-	.hasGravity = GxSceneHasGravity,
-	.getCamera = GxSceneGetCamera,	
-	.setGravity = GxSceneSetGravity,
-	.setTimeout = GxSceneSetTimeout,
-	.addEventListener = GxSceneAddEventListener,
-	.removeEventListener = GxSceneRemoveEventListener,	
+	.create = nScene->create,		
+	.getPercLoaded = nScene->getPercLoaded,
+	.getName = nScene->name,
+	.getSize = nScene->size,
+	.hasStatus = nScene->hasStatus,
+	.getStatus = nScene->status,
+	.getElem = nScene->getElem,
+	.getGravity = nScene->gravity,
+	.hasGravity = nScene->hasGravity,
+	.getCamera = nScene->getCamera,	
+	.setGravity = nScene->setGravity,
+	.setTimeout = nScene->setTimeout,
+	.addEventListener = nScene->addListener,
+	.removeEventListener = nScene->removeListener,	
 };
 

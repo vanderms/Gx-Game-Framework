@@ -305,7 +305,7 @@ static sVector move(sElement* self, sVector vector, bool force) {
 	body->velocity.x = vector.x;
 	body->velocity.y = vector.y;
 	body->maxgvel = 0;	
-	vector = nPhysics->moveByElem(GxSceneGetPhysics(scene), self);
+	vector = nPhysics->moveByElem(nScene->p->getPhysics(scene), self);
 	body->cmask = mask;
 	body->velocity = velocity;
 	body->maxgvel = gvel;		
