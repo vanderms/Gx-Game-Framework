@@ -30,6 +30,7 @@ typedef struct sAppNamespace {
 	char* (*sf)(const char* format, ...);
 	sRect* (*calcDest)(sRect* src, sRect* dest);
 	sRect* (*calcLabelDest)(sRect* src, sRect* dest);
+	void (*countCallsPerFrame)(Uint32* counter, Uint32* frame, const char* callId);
 	struct sAppPrivate {
 		void (*addScene)(sScene* scene);
 		void (*addFolder)(sFolder* handler);

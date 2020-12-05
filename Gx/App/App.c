@@ -54,7 +54,8 @@ typedef struct sApp {
     sList* aToLoad;
     sList* aLoading;
     sList* aLoaded;
-    uint32_t counter;
+    Uint32 counter;
+    Uint32 currentFrame;
     SDL_atomic_t atom;
 } sApp;
 
@@ -91,6 +92,7 @@ static sScene* create(const sIni* ini) {
     self->aToLoad = nList->create();
     self->aLoading = NULL;
     self->aLoaded = NULL;
+    self->currentFrame = 0;
 
     SDL_AtomicSet(&self->atom, nUtil->status->NONE);
 
@@ -433,6 +435,8 @@ static void run() {
 
         //... present
         SDL_RenderPresent(self->renderer);
+       
+        self->currentFrame++;
 
         //call loop end handlers
         self->snRunning = self->snActive;
@@ -476,6 +480,17 @@ static sScene* getRunningScene() {
 
 static sScene* getMainScene(void) {
     return self->snMain;
+}
+
+
+static void countCallsPerFrame(Uint32* counter, Uint32* frame, const char* callId) {  
+    
+    if (*frame != self->currentFrame) {        
+        printf("%s called %u times\n", callId, *counter);
+        *frame = self->currentFrame;
+        *counter = 0;
+    }
+    *counter = *counter + 1;
 }
 
 
@@ -634,6 +649,7 @@ const sAppNamespace* nApp = &(sAppNamespace) {
     .sf = sf,
     .calcDest = calcDest,
     .calcLabelDest = calcLabelDest,
+    .countCallsPerFrame = countCallsPerFrame,
     .prv = &(struct sAppPrivate) {
 		.addScene = addScene,
 		.addFolder = addFolder,

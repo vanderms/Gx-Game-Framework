@@ -59,11 +59,11 @@ static void removeElement(sGraphics* self, sElement* element) {
 	}
 }
 
-static void fillRenderables_(sElement* element) {
-	sGraphics* graphics = GxSceneGetGraphics(nElem->scene(element));
-	if (!nElem->style->isHidden(element)) {
-		nArray->push(graphics->renderables, element, NULL);
-	}
+static void iFillRenderables(sElement* elem) {
+	sGraphics* self = GxSceneGetGraphics(nElem->scene(elem));
+	if (!nElem->style->isHidden(elem)) {
+			nArray->push(self->renderables, elem, NULL);
+	}	
 }
 
 static int compareIndexes_(sElement* lhs, sElement* rhs) {
@@ -89,8 +89,13 @@ static void update(sGraphics* self) {
 	}
 
 	//fill with relative elements
-	const sRect* area = nElem->position(GxSceneGetCamera(self->scene));	
-	nQtree->iterate(self->rtree, *area, fillRenderables_, true);
+	const sRect* area = nElem->position(GxSceneGetCamera(self->scene));
+	sArray* temp = nArray->create();
+	nQtree->getAllElementsInArea(self->rtree, *area, temp, true);
+	for (Uint32 i = 0; i < nArray->size(temp); i++) {
+		iFillRenderables(nArray->at(temp, i));
+	}
+	nArray->destroy(temp);	
 
 	//sort
 	nArray->sort(self->renderables, (GxComp) compareIndexes_);

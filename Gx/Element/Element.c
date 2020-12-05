@@ -205,8 +205,12 @@ static void pUpdatePosition(sElement* self, sVector vector) {
 	sRect previousPos = *self->pos;
 	self->pos->x += vector.x;
 	self->pos->y += vector.y;
-	nGraphics->updateElement(GxSceneGetGraphics(self->scene), self, previousPos);
-	nPhysics->updateElem(GxSceneGetPhysics(self->scene), self, previousPos);
+	if(self->renderable){
+		nGraphics->updateElement(GxSceneGetGraphics(self->scene), self, previousPos);
+	}
+	if(self->body){
+		nPhysics->updateElem(GxSceneGetPhysics(self->scene), self, previousPos);
+	}
 }
 
 static sPoint calcCenter(sElement* self) {

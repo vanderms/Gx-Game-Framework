@@ -147,7 +147,12 @@ static void update(sPhysics* self) {
 	area.w += 128;
 	area.h += 128;
 	
-	nQtree->iterate(self->dynamic, area, physicsMoveElement_, true);
+	sArray* temp = nArray->create();
+	nQtree->getAllElementsInArea(self->dynamic, area, temp, true);
+	for (Uint32 i = 0; i < nArray->size(temp); i++) {
+		physicsMoveElement_(nArray->at(temp, i));
+	}
+	nArray->destroy(temp);	
 	nArray->clean(self->mvstack);
 }
 
@@ -212,16 +217,23 @@ static void physicsMoveElement_(sElement* element) {
 				
 	EmData* emdata = createEmData(element);
 	nArray->push(physics->emdstack, emdata, (sDtor) destroyEmData);
-	nQtree->iterate(physics->fixed, emdata->trajetory, physicsCheckCollision, true);
-	sVector* vec = malloc(sizeof(sVector));
-	nUtil->assertAlloc(vec);
-	
+	sArray* temp = nArray->create();
+	nQtree->getAllElementsInArea(physics->fixed, emdata->trajetory, temp, true);
+	for (Uint32 i = 0; i < nArray->size(temp); i++) {
+		physicsCheckCollision(nArray->at(temp, i));
+	}	
+	sVector* vec = nUtil->assertAlloc(malloc(sizeof(sVector)));		
 	*vec = physicsProcessMovementData(physics);
 	nArray->push(physics->mvstack, vec, free);
 
-	if (GxSceneHasGravity(physics->scene) && nElem->body->maxgvel(element)) {		
-		nQtree->iterate(physics->fixed, emdata->trajetory, physicsCheckGround, true);
+	if (GxSceneHasGravity(physics->scene) &&
+		nElem->body->maxgvel(element)
+	){				
+		for (Uint32 i = 0; i < nArray->size(temp); i++) {
+			physicsCheckGround(nArray->at(temp, i));
+		}
 	}
+	nArray->destroy(temp);
 	
 	nArray->remove(physics->emdstack, nArray->size(physics->emdstack) - 1);
 	nElem->body->p->setMovFlag(element, false);	
@@ -271,40 +283,37 @@ static void physicsCheckCollision(sElement* other) {
 	//create alias
 	sVector v = nElem->body->velocity(self);
 	const sRect* s = nElem->position(self);
-	const sRect* o = nElem->position(other);	
-	
-	if (SDL_HasIntersection(&emdata->trajetory, o)) {
+	const sRect* o = nElem->position(other);		
 
-		if (!emdata->contacts) emdata->contacts = nArray->create();
+	if (!emdata->contacts) emdata->contacts = nArray->create();
 
-		//check horizontal direction
-		if (v.x > 0) {
-			int amove = o->x - (s->x + s->w);
-			if (amove >= 0 && amove < v.x) {
-				nArray->push(emdata->contacts, createContact(self, other, amove, nContact->RIGHT), NULL);
-			}
+	//check horizontal axis
+	if (v.x > 0) {
+		int amove = o->x - (s->x + s->w);
+		if (amove >= 0 && amove < v.x) {
+			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->RIGHT), NULL);
 		}
-		else if (v.x < 0) {
-			int amove = (o->x + o->w) - s->x;
-			if (amove <= 0 && amove > v.x) {
-				nArray->push(emdata->contacts, createContact(self, other, amove, nContact->LEFT), NULL);
-			}		
-		}
-
-		//check vertical direction
-		if (v.y > 0) {
-			int amove = o->y - (s->y + s->h);
-			if (amove >= 0 && amove < v.y) {
-				nArray->push(emdata->contacts, createContact(self, other, amove, nContact->UP), NULL);
-			}
-		}
-		else if (v.y < 0) {
-			int amove = (o->y + o->h) - s->y;
-			if (amove <= 0 && amove > v.y) {
-				nArray->push(emdata->contacts, createContact(self, other, amove, nContact->DOWN), NULL);
-			}		
+	}
+	else if (v.x < 0) {
+		int amove = (o->x + o->w) - s->x;
+		if (amove <= 0 && amove > v.x) {
+			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->LEFT), NULL);
 		}		
 	}
+
+	//check vertical axis
+	if (v.y > 0) {
+		int amove = o->y - (s->y + s->h);
+		if (amove >= 0 && amove < v.y) {
+			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->UP), NULL);
+		}
+	}
+	else if (v.y < 0) {
+		int amove = (o->y + o->h) - s->y;
+		if (amove <= 0 && amove > v.y) {
+			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->DOWN), NULL);
+		}		
+	}	
 }
 
 static sVector physicsProcessMovementData(sPhysics* self) {	

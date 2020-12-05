@@ -125,6 +125,7 @@ static sElemRenderable* pCreate(sElement* elem, const sIni* ini) {
 	);
 	self->pos = nElem->position(elem);
 	self->zIndex = ini->zIndex;
+	self->elem = elem;
 	nElem->p->setRenderable(elem, self);
 	self->opacity = 255;
 	//... folders

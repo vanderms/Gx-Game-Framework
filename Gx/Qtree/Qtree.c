@@ -5,24 +5,21 @@
 #include <stdint.h>
 #include "../Element/Element.h"
 #include <string.h>
+#define MAX_ELEMENTS 16
+#define MIN_LENGTH 64
+
 
 //... type
 typedef struct sQtree {
 	const char* type;
-	sQtree* parent;	
+	sQtree* parent;
+	Uint32* counter;
 	sRect pos;
 	sArray* children;
 	sList* elements;
 } sQtree;
 
 static void subdivide(sQtree* self);
-
-//static
-static uint32_t gWCounter = 0;
-static uint32_t gFCounter = 0;
-static uint32_t gDCounter = 0;
-static const int kMaxElements = 10;
-static const int kMinLength = 100;
 
 static const char* sGraphical = "graphical";
 static const char* sDynamic = "dynamic";
@@ -33,6 +30,7 @@ static sQtree* create(sQtree* parent, sRect pos, const char* type){
 	sQtree* self = malloc(sizeof(sQtree));
 	nUtil->assertAlloc(self);
 	self->parent = parent;
+	self->counter = parent ? parent->counter : nUtil->createUint(0);	
 	
 	if (type == sGraphical || strcmp(type, "graphical") == 0) {
 		self->type = sGraphical;
@@ -55,6 +53,9 @@ static void destroy(sQtree* self) {
 	if (self) {
 		if (self->children) nArray->destroy(self->children);
 		if (self->elements) nList->destroy(self->elements);
+		if (!self->parent) {
+			free(self->counter);
+		}
 		free(self);
 	}
 }
@@ -81,11 +82,11 @@ static void insert(sQtree* self, sElement* element) {
 			self->elements = nList->create();
 			nList->push(self->elements, element, NULL);				
 		}
-		else if (nList->size(self->elements) < kMaxElements ||			
-			(self->pos.w / 2) < kMinLength) {
+		else if (nList->size(self->elements) < MAX_ELEMENTS ||			
+			(self->pos.w / 2) < MIN_LENGTH) {
 			if(!nList->contains(self->elements, element)) nList->push(self->elements, element, NULL);
 		}
-		else if (nList->size(self->elements) >= kMaxElements) {			
+		else if (nList->size(self->elements) >= MAX_ELEMENTS) {			
 			//first subdivide
 			subdivide(self);
 			//then, insert element recursively
@@ -144,10 +145,10 @@ static void subdivide(sQtree* self) {
 	
 	//create new qtrees and Push into children list
 	self->children = nArray->create();
-	nArray->push(self->children,nQtree->create(self, qtree01, self->type), (sDtor) nQtree->destroy);
-	nArray->push(self->children,nQtree->create(self, qtree02, self->type), (sDtor) nQtree->destroy);
-	nArray->push(self->children,nQtree->create(self, qtree03, self->type), (sDtor) nQtree->destroy);
-	nArray->push(self->children,nQtree->create(self, qtree04, self->type), (sDtor) nQtree->destroy);
+	nArray->push(self->children,nQtree->create(self, qtree01, self->type), nQtree->destroy);
+	nArray->push(self->children,nQtree->create(self, qtree02, self->type), nQtree->destroy);
+	nArray->push(self->children,nQtree->create(self, qtree03, self->type), nQtree->destroy);
+	nArray->push(self->children,nQtree->create(self, qtree04, self->type), nQtree->destroy);
 
 	//then transfer all entities to childrens
 	for (sElement* elem = nList->begin(self->elements); elem != NULL; 
@@ -161,51 +162,47 @@ static void subdivide(sQtree* self) {
 	self->elements = NULL;
 }
 
-static void iterate(sQtree* self, sRect area, void(*callback)(sElement*), bool begin) {
 
-	//I am not very sure if it works flawlessly or is just a big undefined behaviour
-	//The problem is I cannot imagine everything that can happen when the qtree is 
-	//subdivided in the iteration callback... and I don't know how to test it either :)
-
+static void getAllElementsInArea(sQtree* self, sRect area, sArray* arr, bool begin){
+	
 	if (begin) {
-		if (self->type == sGraphical){
-			gWCounter++;
-		}
-		else if (self->type == sFixed){
-			gFCounter++;
-		}
-		else if (self->type == sDynamic){
-			gDCounter++;
-		}
+		*self->counter = *self->counter + 1; 
 	}
 
 	if (SDL_HasIntersection(&self->pos, &area)) {
 
 		for (sElement* elem = nList->begin(self->elements); elem != NULL; 
-				elem = nList->next(self->elements)){
-		
-			if (self->type == sGraphical && nElem->style->p->wFlag(elem) != gWCounter) {
-				nElem->style->p->setWFlag(elem, gWCounter);
-				callback(elem);
+				elem = nList->next(self->elements)){			
+
+			if (self->type == sGraphical && nElem->style->p->wFlag(elem) != *self->counter) {
+				nElem->style->p->setWFlag(elem, *self->counter);
+				if(SDL_HasIntersection(nElem->position(elem), &area)){									
+					nArray->push(arr, elem, NULL);				
+				}
 			}
-			else if (self->type == sFixed && nElem->body->p->fFlag(elem) != gFCounter) {
-				nElem->body->p->setFFlag(elem, gFCounter);
-				callback(elem);
+			else if (self->type == sFixed && nElem->body->p->fFlag(elem) != *self->counter) {
+				nElem->body->p->setFFlag(elem, *self->counter);				
+				if(SDL_HasIntersection(nElem->position(elem), &area)){									
+					nArray->push(arr, elem, NULL);				
+				}
 			}
-			else if (self->type == sDynamic && nElem->body->p->dFlag(elem) != gDCounter) {
-				nElem->body->p->setDFlag(elem, gDCounter);
-				callback(elem);
-			}
+			else if (self->type == sDynamic && nElem->body->p->dFlag(elem) != *self->counter) {
+				nElem->body->p->setDFlag(elem, *self->counter);				
+				if(SDL_HasIntersection(nElem->position(elem), &area)){									
+					nArray->push(arr, elem, NULL);				
+				}
+			}			
 		}
 
 		if (self->children) {
 			for (Uint32 i = 0; i < nArray->size(self->children); i++) {
 				sQtree* child = nArray->at(self->children, i);
-				nQtree->iterate(child, area, callback, false);
+				getAllElementsInArea(child, area, arr, false);
 			}
 		}
 	}
 }
+
 
 const struct sQtreeNamespace* nQtree = &(struct sQtreeNamespace){
 	.create = create,
@@ -214,5 +211,5 @@ const struct sQtreeNamespace* nQtree = &(struct sQtreeNamespace){
 	.insert = insert,
 	.remove = removeNode,
 	.update = update,
-	.iterate = iterate,
+	.getAllElementsInArea = getAllElementsInArea,
 };
