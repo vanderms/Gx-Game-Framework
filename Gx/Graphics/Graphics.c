@@ -6,6 +6,7 @@
 #include "../Folder/Folder.h"
 #include "../List/List.h"
 #include "../Map/Map.h"
+#include <time.h>
 
 typedef struct sGraphics {
 	sScene* scene;
@@ -75,7 +76,7 @@ static void iFillRenderables(sElement* elem) {
 
 static int compareIndexes_(sElement* lhs, sElement* rhs) {
 	int i01 = nElem->style->zIndex(lhs);
-	int i02 = nElem->style->zIndex(rhs);
+	int i02 = nElem->style->zIndex(rhs);	
 	return i01 == i02 ? 0 : (i01 > i02 ? 1 : -1);
 }
 
@@ -104,8 +105,8 @@ static void update(sGraphics* self) {
 	}
 	nArray->destroy(temp);	
 
-	//sort
-	nArray->sort(self->renderables, (GxComp) compareIndexes_);
+	//sort	
+	nArray->sort(self->renderables, (sComp) compareIndexes_);		
 
 	//then iterate
 	for (Uint32 i = 0; i < nArray->size(self->renderables); i++){

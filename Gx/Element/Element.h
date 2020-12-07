@@ -29,6 +29,7 @@ extern const struct sElemNamespace {
 
 	bool (*hasBody)(sElement* self);
 	bool (*isRenderable)(sElement* self);	
+	void (*addComponent)(sElement* self, sComponent* comp);
 
 	const struct sElemBodyNamespace* body;
 	const struct sElemRenderableNamespace* style;	
@@ -48,7 +49,8 @@ extern const struct sElemNamespace {
 		void (*destroy)(sElement* self);
 		Uint32 (*id)(sElement* self);
 		const sRect* (*posGetter)(void* value);
-		void (*executeContactHandler)(sElement* self, int type, sContact* contact);
+		void (*executeHandler)(sElement* self, sEvent* ev);
+		
 		struct sElemBody* (*body)(sElement* self);
 		struct sElemRenderable*(*renderable)(sElement* self);
 		void (*setBody)(sElement* self, struct sElemBody* body);

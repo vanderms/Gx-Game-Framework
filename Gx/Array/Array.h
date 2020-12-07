@@ -17,7 +17,7 @@ typedef struct sArrayNamespace {
 	int64_t (*indexOf)(sArray* self, void* value);
 	void (*reserve)(sArray* self, Uint32 capacity);
 	void (*clean)(sArray* self);
-	void (*sort)(sArray* self, GxComp compare);
+	void (*sort)(sArray* self, sComp compare);	
 } sArrayNamespace;
 
 extern const sArrayNamespace* nArray;

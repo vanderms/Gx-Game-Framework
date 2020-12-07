@@ -17,18 +17,16 @@ extern const struct sSceneNamespace {
 	void (*setGravity)(sScene* self, int gravity);
 	void (*setTimeout)(sScene* self, int interval, sHandler callback, void* target);
 	sElement* (*getCamera)(sScene* self);
-	void (*addListener)(sScene* self, int type, sHandler handler, void* target);
-	bool (*removeListener)(sScene* self, int type, sHandler handler, void* target);
+	void (*addComponent)(sScene* self, sComponent* comp);
 
 	const struct sScenePrivateNamespace {
-		void (*destroy)(sScene* self);
-		void (*executeCompDtor)(sScene* self, void* child);	
+		void (*destroy)(sScene* self);	
 		sPhysics* (*getPhysics)(sScene* self);
 		sGraphics* (*getGraphics)(sScene* self);	
 		Uint32 (*addElem)(sScene* self, sElement* elem);
 		void (*removeElem) (sScene* self, sElement* elem);
-		void (*subsElemListeners)(sScene* self, sElement* elem);
-		void (*unsubsElemListeners)(sScene* self, sElement* elem);
+		void (*subscribeComponent)(sScene* self, sComponent* comp);
+		void (*unsubscribeComponent)(sScene* self, sComponent* comp);
 		void (*preLoad)(sScene* self);
 		void (*unLoad)(sScene* self);
 		void (*update)(sScene* self);

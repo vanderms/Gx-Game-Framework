@@ -22,13 +22,9 @@ typedef struct sElement {
 	struct sElemRenderable* renderable;
 	struct sElemBody* body;
 
-	//event handler module
-	void* target;
-	sHandler* handlers;	
-	sMap* rHandlers;
-
-	//special elements
-	void* child;
+	//components
+	sComponent* comp;
+	sMap* components;
 	
 } sElement;
 
@@ -36,29 +32,23 @@ static sElement* create(const sIni* ini){
 
 	sElement* self = malloc(sizeof(sElement));
 	nUtil->assertAlloc(self);
-	self->hash = nUtil->hash->ELEMENT;	
+	self->hash = nUtil->hash->ELEMENT;
 
 	//set type, scene and target 
 	self->className = ini->className ? nUtil->createString(ini->className) : NULL;
 	self->classList = ini->className ? nUtil->split(ini->className, "|") : NULL;
 	self->scene = nApp->getRunningScene();
-	self->target = ini->target ? ini->target : self;
-	self->child = NULL;
+	
+	self->components = NULL;
+	self->comp = nComponent->create(ini);
+	if (self->comp){
+		if(!self->comp->target) {
+			self->comp->target = self;
+		}
+		nScene->p->subscribeComponent(self->scene, self->comp);		
+	}	
 
-	if (ini->target) {
-		nUtil->assertArgument(ini->onDestroy);
-	}
-		
-	//event handler module
-	if (nUtil->evn->hasHandler(ini)) {
-		self->handlers = calloc(nUtil->evn->TOTAL, sizeof(sHandler));
-		nUtil->assertAlloc(self->handlers);
-		nUtil->evn->setHandlers(self->handlers, ini);
-	}
-	else {
-		self->handlers = NULL;
-	}
-
+	
 	//set position
 	if (ini->display != nElem->display->NONE || ini->body != nElem->body->NONE) {
 		nUtil->assertArgument(ini->position);
@@ -71,10 +61,7 @@ static sElement* create(const sIni* ini){
 	}
 			
 	self->body = nElem->body->p->create(self, ini);
-	self->renderable = nElem->style->p->create(self, ini);
-
-	//getHandler and putHandler		
-	self->rHandlers = NULL;
+	self->renderable = nElem->style->p->create(self, ini);	
 
 	//add element to scene then return
 	self->id = nScene->p->addElem(self->scene, self);
@@ -83,23 +70,36 @@ static sElement* create(const sIni* ini){
 
 static void pDestroy(sElement* self) {	
 	if (self) {
-		if (self->child) {
-			nScene->p->executeCompDtor(self->scene, self->child);
+		if (self->components) {
+			for (Uint32 i = 0; i < nMap->size(self->components); i++) {
+				sComponent* comp = nMap->at(self->components, i);
+				if (comp->onDestroy) {
+					comp->onDestroy(&(sEvent) {
+						.target = comp->target,
+						.type = nComponent->ON_DESTROY
+					});
+				}
+				nScene->p->unsubscribeComponent(self->scene, comp);
+			}
+			nMap->destroy(self->components);
 		}
-		if(self->handlers && self->handlers[nUtil->evn->ON_DESTROY]){
-			self->handlers[nUtil->evn->ON_DESTROY](&(sEvent){
-				.target = self->target, 
-				.type = nUtil->evn->ON_DESTROY, 
-			});
+		
+		if(self->comp){
+			if(self->comp->onDestroy){
+				self->comp->onDestroy(&(sEvent){
+					.target = self->comp->target, 
+					.type = nComponent->ON_DESTROY, 
+				});
+			}		
+			nScene->p->unsubscribeComponent(self->scene, self->comp);
 		}
-		nMap->destroy(self->rHandlers);
+		nComponent->destroy(self->comp);
 		nElem->body->p->destroy(self->body);
 		nElem->style->p->destroy(self->renderable);
-		nArray->destroy(self->classList);
-		self->hash = 0;
-		free(self->handlers);
+		nArray->destroy(self->classList);				
 		free(self->pos);
 		free(self->className);
+		self->hash = 0;
 		free(self);
 	}
 }
@@ -110,10 +110,15 @@ static void removeElement(sElement* self) {
 	nScene->p->removeElem(self->scene, self);
 }
 
-static void* target(sElement* self) {
+static void* getComponent(sElement* self, const char* name) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	return self->target;
+	if (!name) {
+		nUtil->assertImplementation(self->components != NULL);
+		sComponent* comp = nMap->get(self->components, name);
+		return comp->target;
+	}
+	return self->comp->target;
 }
 
 static Uint32 pId(sElement* self) {
@@ -132,28 +137,39 @@ static const char* className(sElement* self) {
 	return self->className;
 }
 
-static bool hasHandler(sElement* self, int type) {
-	nUtil->assertNullPointer(self);
-	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	return self->handlers && self->handlers[type] ? true : false;
-}
 
-static sHandler getHandler(sElement* self, int type) {
+static void pExecuteHandler(sElement* self, sEvent* ev){
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	return self->handlers ? self->handlers[type] : NULL;
-}
-
-static void pExecuteContactHandler(sElement* self, int type, sContact* contact){
-	nUtil->assertNullPointer(self);
-	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	if(self->handlers && self->handlers[type]){
-		self->handlers[type](&(sEvent){
-			.type = type, 
-			.target = self->target,
-			.contact = contact,			
-		});
+	if (self->comp) {
+		sHandler handler = nComponent->getHandler(self->comp, ev->type);
+		if(handler){
+			ev->target = self->comp->target;
+			handler(ev);
+		}
 	}
+	if (self->components) {
+		for (Uint32 i = 0; i < nMap->size(self->components); i++) {
+			sComponent* comp = nMap->at(self->components, i);
+			sHandler handler = nComponent->getHandler(comp, ev->type);
+			if(handler){
+				ev->target = comp->target;
+				handler(ev);
+			}
+		}
+	}	
+}
+
+static void addComponent(sElement* self, sComponent* comp) {
+	nUtil->assertNullPointer(self);
+	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
+	nUtil->assertArgument(comp->name && !nComponent->isComponentEmpty(comp));
+	sComponent* copy = nComponent->copy(comp);
+	if (!self->components) {
+		self->components = nMap->create();
+	}
+	nMap->set(self->components, comp->name, copy, nComponent->destroy);
+	nScene->p->subscribeComponent(self->scene, comp);
 }
 
 static bool hasClass(sElement* self, const char* type) {
@@ -262,13 +278,11 @@ static void pSetRenderable(sElement* self, struct sElemRenderable* renderable){
 const struct sElemNamespace* nElem = &(struct sElemNamespace){
 	.create = create,	
 	.remove = removeElement,
-	.target = target,
+	
 		
 	.id = id,
 	.className = className,
-	.hasHandler = hasHandler,
-	.getHandler = getHandler,	
-
+	
 	.hasClass = hasClass,
 
 	.scene = scene,
@@ -278,9 +292,11 @@ const struct sElemNamespace* nElem = &(struct sElemNamespace){
 
 	.hasBody = hasBody,
 	.isRenderable = isRenderable,
+	.addComponent = addComponent,
 
 	.body = &nElemBody,
 	.style = &nElemRenderable,
+	
 
 	.display = &(struct sElemDisplay){
 		.NONE = 1,
@@ -296,7 +312,7 @@ const struct sElemNamespace* nElem = &(struct sElemNamespace){
 		.destroy = pDestroy,
 		.id = pId,
 		.posGetter = posGetter,
-		.executeContactHandler = pExecuteContactHandler,
+		.executeHandler = pExecuteHandler,		
 		.body = pBody,
 		.renderable = pRenderable,
 		.setBody = pSetBody,

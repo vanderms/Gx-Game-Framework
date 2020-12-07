@@ -23,10 +23,9 @@ typedef struct sScene {
 	sList** listeners;
 	bool freeze;	
 
-	//callbacks	
-	void* target;
-	sHandler* handlers;	
-	sMap* rHandlers;
+	//callbacks		
+	sComponent* comp;
+	sMap* components;
 
 
 	//...
@@ -39,10 +38,6 @@ typedef struct Timer {
 	sHandler callback;	
 } Timer;
 
-typedef struct Listener {
-	sEvent e;
-	sHandler handler;	
-}Listener;
 
 //constructor and destructor
 static sScene* create(const sIni* ini) {
@@ -69,23 +64,16 @@ static sScene* create(const sIni* ini) {
 	self->size.h = ini->size.h > windowSize.h ? ini->size.h : windowSize.h;
 	self->status = nUtil->status->NONE;
 	self->gravity = ini->gravity > 0 ? -ini->gravity : ini->gravity;	
-
-	//set callback module
-	self->target = ini->target ? ini->target : self;
-
-	//event handler module
-	if (nUtil->evn->hasHandler(ini)) {
-		self->handlers = calloc(nUtil->evn->TOTAL, sizeof(sHandler));
-		nUtil->assertAlloc(self->handlers);
-		nUtil->evn->setHandlers(self->handlers, ini);
+		
+	self->comp = nComponent->create(ini);
+	if (self->comp){
+		if(!self->comp->target) {
+			self->comp->target = self;
+		}				
 	}
-	else {
-		self->handlers = NULL;
-	}	
 
-	self->listeners = calloc(nUtil->evn->TOTAL, sizeof(sList*));
-	nUtil->assertAlloc(self->listeners);
-	self->rHandlers = NULL;
+	self->listeners = calloc(nComponent->TOTAL, sizeof(sList*));
+	nUtil->assertAlloc(self->listeners);	
 	self->elemCounter = 0;
 
 	//set folders
@@ -110,27 +98,29 @@ static void pDestroy(sScene* self) {
 	if (self) {
 		self->status = nUtil->status->UNLOADING;
 		
-		for(Listener* listener = nList->begin(self->listeners[nUtil->evn->ON_DESTROY]); 
-			listener != NULL; listener = nList->next(self->listeners[nUtil->evn->ON_DESTROY]))
-		{		
-			listener->handler(&(sEvent) {
-				.target = listener->e.target,
-				.type = nUtil->evn->ON_DESTROY,				
-			});			
+		if (self->components) {
+			for (Uint32 i = 0; i < nMap->size(self->components); i++) {
+				sComponent* comp = nMap->at(self->components, i);
+				if (comp->onDestroy) {
+					comp->onDestroy(&(sEvent) {
+						.target = comp->target,
+						.type = nComponent->ON_DESTROY
+					});
+				}
+			}			
 		}
-		
+		nMap->destroy(self->components);
+		if(self->comp && self->comp->onDestroy){
+			self->comp->onDestroy(&(sEvent){
+				.target = self->comp->target, 
+				.type = nComponent->ON_DESTROY, 
+			});
+		}
+		nComponent->destroy(self->comp);
 		nGraphics->destroy(self->graphics);
 		nPhysics->destroy(self->physics);
-		nArray->destroy(self->elements);
-		nMap->destroy(self->rHandlers);
+		nArray->destroy(self->elements);		
 		
-		if (self->handlers && self->handlers[nUtil->evn->ON_DESTROY]){
-			self->handlers[nUtil->evn->ON_DESTROY](&(sEvent) {
-				.target = self->target,
-				.type = nUtil->evn->ON_DESTROY,
-			});
-		}	
-
 		if(self->folders){
 			for (Uint32 i = 0; i < nArray->size(self->folders); i++) {
 				sFolder* folder = nArray->at(self->folders, i);
@@ -139,11 +129,10 @@ static void pDestroy(sScene* self) {
 			nArray->destroy(self->folders);		
 		}
 		//events
-		for (int i = 0; i < nUtil->evn->TOTAL; i++) {
+		for (int i = 0; i < nComponent->TOTAL; i++) {
 			nList->destroy(self->listeners[i]);		
 		}
-		free(self->listeners);
-		free(self->handlers);
+		free(self->listeners);		
 		free(self->name);
 		self->hash = 0;
 		free(self);
@@ -253,22 +242,6 @@ static Uint32 getPercLoaded(sScene* self) {
 	return total / nArray->size(self->folders);
 }
 
-static void pExecuteCompDtor(sScene* self, void* child) {
-	
-	if(self->status == nUtil->status->UNLOADING){return ;}
-
-	for(Listener* listener = nList->begin(self->listeners[nUtil->evn->ON_DESTROY]);
-		listener != NULL; listener = nList->next(self->listeners[nUtil->evn->ON_DESTROY])) 
-	{
-		if (listener->e.target == child) {
-			listener->handler(&(sEvent) {
-				.target = listener->e.target,
-				.type = nUtil->evn->ON_DESTROY,				
-			});
-			nList->remove(self->listeners[nUtil->evn->ON_DESTROY], listener);
-		}
-	}
-}
 
 static void setTimeout(sScene* self, int interval, sHandler callback, void* target) {
 	nUtil->assertNullPointer(self);
@@ -278,108 +251,95 @@ static void setTimeout(sScene* self, int interval, sHandler callback, void* targ
 	timer->callback = callback;
 	timer->counter = interval;
 	timer->target = target;	
-	nList->push(self->listeners[nUtil->evn->ON_TIMEOUT], timer, free);
+	nList->push(self->listeners[nComponent->ON_TIMEOUT], timer, free);
 }
 
 static Uint32 addElem(sScene* self, sElement* elem) {	
 	nUtil->assertState(self->status == nUtil->status->LOADED || self->status == nUtil->status->RUNNING);	
 	nArray->push(self->elements, elem, (sDtor) nElem->p->destroy);	
 	nGraphics->insert(self->graphics, elem);
-	nPhysics->insert(self->physics, elem);
-	nScene->p->subsElemListeners(self, elem);
+	nPhysics->insert(self->physics, elem);	
 	Uint32 id = self->elemCounter++;
 	return id;
 }
 
-
-static void pSubsElemListeners(sScene* self, sElement* elem) {
-	for (int i = 0; i < nUtil->evn->TOTAL; i++) {
-		if(i == nUtil->evn->ON_DESTROY){ continue; }
-		sHandler handler = nElem->getHandler(elem, i);
-		if (handler) {
-			void* target = nElem->target(elem);
-			nScene->addListener(self, i, handler, target);
-		}
-	}
-}
-
-static void pUnsubsElemListeners(sScene* self, sElement* elem) {
-	
-	for (int i = 0; i < nUtil->evn->TOTAL; i++) {
-		sHandler handler = nElem->getHandler(elem, i);
-		if (handler) {
-			void* target = nElem->target(elem);
-			nScene->removeListener(self, i, handler, target);
-		}	
-	}
-}
-
-static void addListener(sScene* self, int type, sHandler handler, void* target) {
-	nUtil->assertArgument(self && handler && target);
-	nUtil->assertArgument(type >= 0 && type < nUtil->evn->TOTAL);
-	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);	
-	Listener* listener = malloc(sizeof(Listener));
-	nUtil->assertAlloc(listener);
-	listener->e.target = target;
-	listener->e.type = type;
-	listener->handler = handler;
-	nList->push(self->listeners[type], listener, free);
-}
-
-static bool removeListener(sScene* self, int type, sHandler handler, void* target) {
+static void addComponent(sScene* self, sComponent* comp) {
 	nUtil->assertNullPointer(self);
-	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
-	if (self->status == nUtil->status->UNLOADING) { return true; }
-
-	nUtil->assertArgument(type >= 0 && type < nUtil->evn->TOTAL);
-	nUtil->assertNullPointer(handler);
-	nUtil->assertNullPointer(target);
-	for(Listener* listener = nList->begin(self->listeners[type]);
-		listener != NULL; listener = nList->next(self->listeners[type])) {
-		if (listener->handler == handler && listener->e.target == target) {
-			nList->remove(self->listeners[type], listener);
-			return true;
-		}
+	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
+	nUtil->assertArgument(comp->name && !nComponent->isComponentEmpty(comp));
+	sComponent* copy = nComponent->copy(comp);
+	if (!self->components) {
+		self->components = nMap->create();
 	}
-	return false;
+	nMap->set(self->components, comp->name, copy, nComponent->destroy);
+	nScene->p->subscribeComponent(self, comp);
 }
 
-static void sceneExecuteListeners(sScene* self, int type, SDL_Event* sdle) {	
-		
-	if (self->handlers && self->handlers[type]){
-		self->handlers[type](&(sEvent) {
-			.target = self->target,
-			.type = type,	
-			.sdle = sdle
-		});
-	}
+
+static void pSubscribeComponent(sScene* self, sComponent* comp) {	
 	
-	for (Listener* listener = nList->begin(self->listeners[type]); listener != NULL;
-		listener = nList->next(self->listeners[type]))
-	{			
-		listener->e.sdle = sdle;
-		listener->handler(&listener->e);		
+	if(comp->onLoad){
+		nList->push(self->listeners[nComponent->ON_LOAD], comp, NULL);						
+	}
+	if (comp->onLoopBegin) {
+		nList->push(self->listeners[nComponent->ON_LOOP_BEGIN], comp, NULL);
+	}
+	if(comp->onUpdate){
+		nList->push(self->listeners[nComponent->ON_UPDATE], comp, NULL);			
+	}
+	if(comp->onLoopEnd){
+		nList->push(self->listeners[nComponent->ON_LOOP_END], comp, NULL);			
+	}
+	if(comp->onUnload){
+		nList->push(self->listeners[nComponent->ON_UNLOAD], comp, NULL);		
+	}	
+	if(comp->onKeyboard){
+		nList->push(self->listeners[nComponent->ON_KEYBOARD], comp, NULL);				
+	}
+	if(comp->onMouse){
+		nList->push(self->listeners[nComponent->ON_MOUSE], comp, NULL);			
+	}
+	if(comp->onFinger){
+		nList->push(self->listeners[nComponent->ON_FINGER], comp, NULL);				
+	}
+	if(comp->onSDLDefault){
+		nList->push(self->listeners[nComponent->ON_SDL_DEFAULT], comp, NULL);				
 	}
 }
 
-static void sceneExecuteContactListeners(sScene* self, int type, sContact* contact) {
-	sElement* elemSelf = nContact->colliding(contact);
-	sElement* elemOther = nContact->collided(contact);
-	nElem->body->p->setMcFlag(elemSelf, true);
-	nElem->body->p->setMcFlag(elemOther, true);
-
-	if (self->handlers && self->handlers[type]){
-		self->handlers[type](&(sEvent) {
-			.target = self->target,
-			.type = type,	
-			.contact = contact
-		});
-	}
-	nElem->p->executeContactHandler(elemSelf, type, contact);
-	nElem->p->executeContactHandler(elemOther, type, contact);
+static void pUnsubscribeComponent(sScene* self, sComponent* comp) {
 	
-	nElem->body->p->setMcFlag(elemSelf, false);
-	nElem->body->p->setMcFlag(elemOther, false);
+	if (self->status == nUtil->status->UNLOADING) { 
+		return; 
+	}
+
+	if(comp->onLoad){
+		nList->remove(self->listeners[nComponent->ON_LOAD], comp);						
+	}
+	if (comp->onLoopBegin) {
+		nList->remove(self->listeners[nComponent->ON_LOOP_BEGIN], comp);
+	}
+	if(comp->onUpdate){
+		nList->remove(self->listeners[nComponent->ON_UPDATE], comp);			
+	}
+	if(comp->onLoopEnd){
+		nList->remove(self->listeners[nComponent->ON_LOOP_END], comp);			
+	}
+	if(comp->onUnload){
+		nList->remove(self->listeners[nComponent->ON_UNLOAD], comp);		
+	}	
+	if(comp->onKeyboard){
+		nList->remove(self->listeners[nComponent->ON_KEYBOARD], comp);				
+	}
+	if(comp->onMouse){
+		nList->remove(self->listeners[nComponent->ON_MOUSE], comp);			
+	}
+	if(comp->onFinger){
+		nList->remove(self->listeners[nComponent->ON_FINGER], comp);				
+	}
+	if(comp->onSDLDefault){
+		nList->remove(self->listeners[nComponent->ON_SDL_DEFAULT], comp);				
+	}
 }
 
 static void pPreLoad(sScene* self) {
@@ -394,8 +354,12 @@ static void pPreLoad(sScene* self) {
 	self->physics = nPhysics->create(self);
 	self->elements = nArray->create();			
 	
-	for (int i = 0; i < nUtil->evn->TOTAL; i++) {
+	for (int i = 0; i < nComponent->TOTAL; i++) {
 		self->listeners[i] = nList->create();
+	}
+	
+	if(self->comp) {
+		nScene->p->subscribeComponent(self, self->comp);
 	}
 
 	//load folders
@@ -421,29 +385,39 @@ static void pLoad(sScene* self) {
 	nElem->body->setCmask(self->camera, nElem->body->CMASK_CAMERA);
 	
 	//execute onload callbacks 
-	sceneExecuteListeners(self, nUtil->evn->ON_LOAD, NULL);
+	for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_LOAD]); 
+		comp != NULL; comp = nList->next(self->listeners[nComponent->ON_LOAD])
+	){
+		nUtil->assertState(comp->onLoad);
+		comp->onLoad(&(sEvent){
+			.target = comp->target,
+			.type = nComponent->ON_LOAD
+		});
+	}
 
 	//change status to running
 	self->status = nUtil->status->RUNNING;
 }
 
 static void pUnLoad(sScene* self) {
-	self->status = nUtil->status->UNLOADING;
+	
+	self->status = nUtil->status->UNLOADING;	
+	
+	//execute unload callbacks	
+	for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_UNLOAD]); 
+		comp != NULL; comp = nList->next(self->listeners[nComponent->ON_UNLOAD])
+	){
+		nUtil->assertState(comp->onUnload);
+		comp->onUnload(&(sEvent){
+			.target = comp->target,
+			.type = nComponent->ON_UNLOAD
+		});
+	}
+	
+	//destroy elements
+	nArray->destroy(self->elements);
 	nGraphics->destroy(self->graphics);
 	nPhysics->destroy(self->physics);	
-	//delete buttons_;
-	
-	sceneExecuteListeners(self, nUtil->evn->ON_UNLOAD, NULL);
-	
-	for(Listener* listener = nList->begin(self->listeners[nUtil->evn->ON_DESTROY]); 
-		listener != NULL; listener = nList->next(self->listeners[nUtil->evn->ON_DESTROY]))
-	{		
-		listener->handler(&(sEvent) {
-			.target = listener->e.target,
-			.type = nUtil->evn->ON_DESTROY,				
-		});			
-	}
-	nArray->destroy(self->elements);	
 	
 	if(self->folders){
 		for (Uint32 i = 0; i< nArray->size(self->folders); i++){
@@ -451,8 +425,9 @@ static void pUnLoad(sScene* self) {
 			nFolder->p->decRefCounter(folder);
 		}	
 	}
-			
-	for (int i = 0; i < nUtil->evn->TOTAL; i++) {
+	
+	//destroy self->listeners lists
+	for (int i = 0; i < nComponent->TOTAL; i++) {
 		nList->destroy(self->listeners[i]);
 		self->listeners[i] = NULL;
 	}
@@ -467,15 +442,26 @@ static void pUnLoad(sScene* self) {
 }
 
 static void pRemoveElem(sScene* self, sElement* elem) {	
-	if (nElem->hasBody(elem)) nPhysics->remove(self->physics, elem);
-	if (nElem->isRenderable(elem)) nGraphics->remove(self->graphics, elem);
-	if (elem != self->camera) nScene->p->unsubsElemListeners(self, elem);
+	if (nElem->hasBody(elem)){
+		nPhysics->remove(self->physics, elem);
+	}
+	if (nElem->isRenderable(elem)){
+		nGraphics->remove(self->graphics, elem);
+	}
 	nArray->removeByValue(self->elements, elem);	
 }
 
 static void pOnLoopBegin(sScene* self) {	
 	if(self->status == nUtil->status->RUNNING){
-		sceneExecuteListeners(self, nUtil->evn->ON_LOOP_BEGIN, NULL);		
+		for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_LOOP_BEGIN]); 
+			comp != NULL; comp = nList->next(self->listeners[nComponent->ON_LOOP_BEGIN])
+		){
+			nUtil->assertState(comp->onLoopBegin);
+			comp->onLoopBegin(&(sEvent){
+				.target = comp->target,
+				.type = nComponent->ON_LOOP_BEGIN
+			});
+		}		
 	}
 }
 
@@ -490,30 +476,46 @@ static void pUpdate(sScene* self) {
 
 	if(self->status == nUtil->status->RUNNING){
 
-		for (Timer* timer = nList->begin(self->listeners[nUtil->evn->ON_TIMEOUT]); timer != NULL;
-			timer = nList->next(self->listeners[nUtil->evn->ON_TIMEOUT])
+		for (Timer* timer = nList->begin(self->listeners[nComponent->ON_TIMEOUT]); timer != NULL;
+			timer = nList->next(self->listeners[nComponent->ON_TIMEOUT])
 		){						
 			if (--timer->counter <= 0) {
 				timer->callback(&(sEvent){
 					.target = timer->target,
-					.type = nUtil->evn->ON_TIMEOUT
+					.type = nComponent->ON_TIMEOUT
 				});	
-				nList->remove(self->listeners[nUtil->evn->ON_TIMEOUT], timer);
+				nList->remove(self->listeners[nComponent->ON_TIMEOUT], timer);
 			}
 		}
 	
 		//execute update callbacks, then update physics
-		sceneExecuteListeners(self, nUtil->evn->ON_UPDATE, NULL);
+		for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_UPDATE]); 
+			comp != NULL; comp = nList->next(self->listeners[nComponent->ON_UPDATE])
+		){
+			nUtil->assertState(comp->onUpdate);
+			comp->onUpdate(&(sEvent){
+				.target = comp->target,
+				.type = nComponent->ON_UPDATE
+			});
+		}
+		
 		nPhysics->update(self->physics);	
-
-		//execute preGraphical callbacks, then update graphics	
+			
 		nGraphics->update(self->graphics);		
 	}
 }
 
 static void pOnLoopEnd(sScene* self) {
 	if(self->status == nUtil->status->RUNNING){
-		sceneExecuteListeners(self, nUtil->evn->ON_LOOP_END, NULL);
+		for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_LOOP_END]); 
+			comp != NULL; comp = nList->next(self->listeners[nComponent->ON_LOOP_END])
+		){
+			nUtil->assertState(comp->onLoopEnd);
+			comp->onLoopEnd(&(sEvent){
+				.target = comp->target,
+				.type = nComponent->ON_LOOP_END
+			});
+		}
 	}
 }
 
@@ -527,37 +529,123 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 		case SDL_KEYUP:
 		case SDL_TEXTEDITING:
 		case SDL_TEXTINPUT:			
-			sceneExecuteListeners(self, nUtil->evn->ON_KEYBOARD, e);
+			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_KEYBOARD]); 
+				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_KEYBOARD])
+			){
+				nUtil->assertState(comp->onKeyboard);
+				comp->onKeyboard(&(sEvent){
+					.target = comp->target,
+					.type = nComponent->ON_KEYBOARD
+				});
+			}
 			break;
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEWHEEL:			
-			sceneExecuteListeners(self, nUtil->evn->ON_MOUSE, e);
+			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_MOUSE]); 
+				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_MOUSE])
+			){
+				nUtil->assertState(comp->onMouse);
+				comp->onMouse(&(sEvent){
+					.target = comp->target,
+					.type = nComponent->ON_MOUSE
+				});
+			}
 			break;
 		case SDL_FINGERMOTION:
 		case SDL_FINGERDOWN:
 		case SDL_FINGERUP:
 		case SDL_MULTIGESTURE:
 		case SDL_DOLLARGESTURE:			
-			sceneExecuteListeners(self, nUtil->evn->ON_FINGER, e);
+			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_FINGER]); 
+				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_FINGER])
+			){
+				nUtil->assertState(comp->onFinger);
+				comp->onFinger(&(sEvent){
+					.target = comp->target,
+					.type = nComponent->ON_FINGER
+				});
+			}
 			break;
 		default:		
-			sceneExecuteListeners(self, nUtil->evn->ON_SDL_DEFAULT, e);
+			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_SDL_DEFAULT]); 
+				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_SDL_DEFAULT])
+			){
+				nUtil->assertState(comp->onSDLDefault);
+				comp->onSDLDefault(&(sEvent){
+					.target = comp->target,
+					.type = nComponent->ON_SDL_DEFAULT
+				});
+			}
 			break;
 	}	
 }
 
 static void pOnPreContact(sScene* self, sContact* contact) {
-	sceneExecuteContactListeners(self, nUtil->evn->ON_PRE_CONTACT, contact);
+	sElement* elemSelf = nContact->colliding(contact);
+	sElement* elemOther = nContact->collided(contact);
+	nElem->body->p->setMcFlag(elemSelf, true);
+	nElem->body->p->setMcFlag(elemOther, true);
+	
+
+	nElem->body->p->setMcFlag(elemSelf, false);
+	nElem->body->p->setMcFlag(elemOther, false);
 }
 
 static void pOnContactBegin(sScene* self, sContact* contact) {
-	sceneExecuteContactListeners(self, nUtil->evn->ON_CONTACT_BEGIN, contact);
+	sElement* elemSelf = nContact->colliding(contact);
+	sElement* elemOther = nContact->collided(contact);
+	nElem->body->p->setMcFlag(elemSelf, true);
+	nElem->body->p->setMcFlag(elemOther, true);
+	
+	if (self->comp && self->comp->onPreContact) {
+		self->comp->onPreContact(&(sEvent){
+			.target = self->comp->target,
+			.type = nComponent->ON_PRE_CONTACT,
+			.contact = contact,
+		});
+	}
+	nElem->p->executeHandler(elemSelf, &(sEvent){
+			.target = self->comp->target,
+			.type = nComponent->ON_PRE_CONTACT,
+			.contact = contact,
+	});
+	nElem->p->executeHandler(elemOther, &(sEvent){
+			.target = self->comp->target,
+			.type = nComponent->ON_PRE_CONTACT,
+			.contact = contact,
+	});
+	nElem->body->p->setMcFlag(elemSelf, false);
+	nElem->body->p->setMcFlag(elemOther, false);
 }
 
 static void pOnContactEnd(sScene* self, sContact* contact) {
-	sceneExecuteContactListeners(self, nUtil->evn->ON_CONTACT_END, contact);
+	sElement* elemSelf = nContact->colliding(contact);
+	sElement* elemOther = nContact->collided(contact);
+	nElem->body->p->setMcFlag(elemSelf, true);
+	nElem->body->p->setMcFlag(elemOther, true);
+	
+	if (self->comp && self->comp->onContactEnd) {
+		self->comp->onContactEnd(&(sEvent){
+			.target = self->comp->target,
+			.type = nComponent->ON_CONTACT_END,
+			.contact = contact,
+		});
+	}
+	nElem->p->executeHandler(elemSelf, &(sEvent){
+			.target = self->comp->target,
+			.type = nComponent->ON_CONTACT_END,
+			.contact = contact,
+	});
+	nElem->p->executeHandler(elemOther, &(sEvent){
+			.target = self->comp->target,
+			.type = nComponent->ON_CONTACT_END,
+			.contact = contact,
+	});
+
+	nElem->body->p->setMcFlag(elemSelf, false);
+	nElem->body->p->setMcFlag(elemOther, false);
 }
 
 
@@ -575,18 +663,18 @@ const struct sSceneNamespace* nScene = &(struct sSceneNamespace) {
 	.setGravity = setGravity,
 	.setTimeout = setTimeout,
 	.getCamera = getCamera,
-	.addListener = addListener,
-	.removeListener = removeListener,
+	.addComponent = addComponent,
+	
 
 	.p = &(struct sScenePrivateNamespace) {
 		.destroy = pDestroy,
-		.executeCompDtor = pExecuteCompDtor,	
+		
 		.getPhysics = pGetPhysics,
 		.getGraphics = pGetGraphics,	
 		.addElem = addElem,
 		.removeElem = pRemoveElem,
-		.subsElemListeners = pSubsElemListeners,
-		.unsubsElemListeners = pUnsubsElemListeners,
+		.subscribeComponent = pSubscribeComponent,
+		.unsubscribeComponent = pUnsubscribeComponent,
 		.preLoad = pPreLoad,
 		.unLoad = pUnLoad,
 		.update = pUpdate,

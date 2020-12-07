@@ -50,7 +50,7 @@ struct sElemBody;
 
 //... functions:: alias
 typedef void (*sDtor)();
-typedef int (*GxComp)(const void*, const void*);
+typedef int (*sComp)(const void*, const void*);
 typedef void (*sHandler)(sEvent*);
 
 //... types:: definitions
@@ -69,6 +69,27 @@ typedef struct sEvent {
 	int type;
 	union { sContact* contact; SDL_Event* sdle; };
 } sEvent;
+
+
+//...sComponent
+typedef struct sComponent {
+	void* target;
+	const char* name;
+	sHandler onLoad;
+	sHandler onLoopBegin;
+	sHandler onUpdate;
+	sHandler onRender;	
+	sHandler onLoopEnd;
+	sHandler onUnload;	
+	sHandler onDestroy;
+	sHandler onKeyboard;
+	sHandler onMouse;
+	sHandler onFinger;
+	sHandler onSDLDefault;
+	sHandler onPreContact;
+	sHandler onContactBegin;
+	sHandler onContactEnd;	
+} sComponent;
 
 //... sIni
 typedef struct sIni {
@@ -110,8 +131,8 @@ typedef struct sIni {
 	sVector velocity;	
 	bool friction;
 
-	//callbacks
-	void* target;
+	//component
+	void* target;	
 	sHandler onLoad;
 	sHandler onLoopBegin;
 	sHandler onUpdate;
@@ -153,32 +174,8 @@ extern const struct sUtilNamespace {
 	bool (*assertResourceNotFound)(bool condition);
 	bool (*assertImplementation)(bool condition);
 	bool (*assertHash)(bool condition);
-	bool (*assertOutOfRange)(bool condition);
-	void (*onDestroyFreeTarget)(sEvent* e);
-	void(*onDestroyDoNothing)(sEvent* e);
+	bool (*assertOutOfRange)(bool condition);	
 	void (*splitAssetPath)(const char* path, char* folder, char* asset);
-
-	struct sUtilEventNamespace {
-		void (*setHandlers)(sHandler* ihandlers, const sIni* ini);
-		bool (*hasHandler)(const sIni* ini);
-		const int ON_LOAD;
-		const int ON_LOOP_BEGIN;
-		const int ON_UPDATE;
-		const int ON_RENDER;
-		const int ON_LOOP_END;
-		const int ON_UNLOAD;	
-		const int ON_KEYBOARD;
-		const int ON_MOUSE;
-		const int ON_FINGER;
-		const int ON_SDL_DEFAULT;
-		const int ON_PRE_CONTACT;
-		const int ON_CONTACT_BEGIN;
-		const int ON_CONTACT_END;
-		const int ON_TIMEOUT;
-		const int ON_DESTROY;
-		const int ON_ELEM_REMOVAL;
-		const int TOTAL;
-	}* evn;
 
 	struct sUtilStatusNamespace {		
 		const int NONE;
@@ -196,5 +193,34 @@ extern const struct sUtilNamespace {
 		const Uint32 CONTACT;
 	}* hash;
 }* nUtil;
+
+//...component namespace
+extern const struct sComponentNamespace {		
+		bool (*isIniComponentEmpty)(const sIni* ini);
+		bool (*isComponentEmpty)(const sComponent* comp);
+		sComponent* (*create)(const sIni* ini);
+		sComponent* (*copy)(const sComponent* comp);
+		void (*destroy)(sComponent* self);
+		void (*onDestroyFreeTarget)(sEvent* e);
+		void(*onDestroyDoNothing)(sEvent* e);
+		sHandler (*getHandler)(sComponent* comp, int type);
+		const int ON_LOAD;
+		const int ON_LOOP_BEGIN;
+		const int ON_UPDATE;
+		const int ON_RENDER;
+		const int ON_LOOP_END;
+		const int ON_UNLOAD;	
+		const int ON_KEYBOARD;
+		const int ON_MOUSE;
+		const int ON_FINGER;
+		const int ON_SDL_DEFAULT;
+		const int ON_PRE_CONTACT;
+		const int ON_CONTACT_BEGIN;
+		const int ON_CONTACT_END;
+		const int ON_TIMEOUT;
+		const int ON_DESTROY;
+		const int ON_ELEM_REMOVAL;
+		const int TOTAL;
+}* nComponent;
 
 #endif // !UTILITIES_H

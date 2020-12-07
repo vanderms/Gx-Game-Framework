@@ -26,11 +26,8 @@ enum sEventType {
 
 	//events not inside ihandlers
 	EventTimeout,
-	EventOnDestroy,
-	EventOnElemRemoval,
-
-	//number of events
-	EventTotalHandlers,
+	EventOnDestroy,	
+    EventTotal,
 };
 
 typedef enum sStatus {
@@ -233,44 +230,7 @@ static bool assertState(bool condition){
 }
 
 
-static void onDestroyFreeTarget(sEvent* e) {
-    free(e->target);
-}
 
-static void onDestroyDoNothing(sEvent* e) {
-    (void) e;
-}
-
-static void evnSetHandlers(sHandler* handlers, const sIni* ini) {
-      
-    //lifecycle
-	handlers[EventOnLoad] = ini->onLoad;
-	handlers[EventOnLoopBegin] = ini->onLoopBegin;
-	handlers[EventOnUpdate] = ini->onUpdate;	
-	handlers[EventOnRender] = ini->onRender;
-	handlers[EventOnLoopEnd] = ini->onLoopEnd;
-	handlers[EventOnUnload] = ini->onUnload;
-
-    //precontact
-    handlers[EventOnKeyboard] = ini->onKeyboard;
-    handlers[EventMouse] = ini->onMouse;
-    handlers[EventFinger] = ini->onFinger;
-    handlers[EventSDLDefault] = ini->onSDLDefault;
-
-    //contact
-    handlers[EventPreContact] = ini->onPreContact;
-    handlers[EventContactBegin] = ini->onContactBegin;
-    handlers[EventContactEnd] = ini->onContactEnd;
-    handlers[EventOnDestroy] = ini->onDestroy;    
-}
-
-static bool evnIniHasHandler(const sIni* ini) {
-    return ( ini->onLoad || ini->onLoopBegin || ini->onUpdate ||
-        ini->onRender || ini->onLoopEnd ||
-        ini->onUnload || ini->onKeyboard || ini->onMouse ||
-        ini->onFinger || ini->onSDLDefault || ini->onPreContact ||
-        ini->onContactBegin || ini->onContactEnd || ini->onDestroy);
-}
 
 const struct sUtilNamespace*  nUtil = &(struct sUtilNamespace){
 	.createInt = createInt,
@@ -292,31 +252,9 @@ const struct sUtilNamespace*  nUtil = &(struct sUtilNamespace){
     .assertHash = assertHash,
 	.assertState =assertState,
 	.assertAlloc = assertAlloc,
-	.assertOutOfRange = assertOutOfRange,
-	.onDestroyFreeTarget = onDestroyFreeTarget,
-	.onDestroyDoNothing = onDestroyDoNothing,
+	.assertOutOfRange = assertOutOfRange,	
 	.splitAssetPath = splitAssetPath,
-    .evn = &(struct sUtilEventNamespace) {
-        .setHandlers = evnSetHandlers,
-        .hasHandler = evnIniHasHandler,
-        .ON_LOAD = EventOnLoad,
-		.ON_LOOP_BEGIN = EventOnLoopBegin,
-		.ON_UPDATE = EventOnUpdate,
-		.ON_RENDER = EventOnRender,
-		.ON_LOOP_END = EventOnLoopEnd,
-		.ON_UNLOAD = EventOnUnload,	
-		.ON_KEYBOARD = EventOnKeyboard,
-		.ON_MOUSE = EventMouse,
-		.ON_FINGER = EventFinger,
-		.ON_SDL_DEFAULT = EventSDLDefault,
-		.ON_PRE_CONTACT = EventPreContact,
-		.ON_CONTACT_BEGIN = EventContactBegin,
-		.ON_CONTACT_END = EventContactEnd,
-		.ON_TIMEOUT = EventTimeout,
-		.ON_DESTROY = EventOnDestroy,
-		.ON_ELEM_REMOVAL = EventOnElemRemoval,
-		.TOTAL = EventTotalHandlers,
-    },
+    
     .status = &(struct sUtilStatusNamespace){
 		.NONE =StatusNone,
 		.LOADING = StatusLoading,
@@ -332,4 +270,148 @@ const struct sUtilNamespace*  nUtil = &(struct sUtilNamespace){
 	    .SCENE = 2066184690,
 	    .CONTACT = 804125936,
     },
+};
+
+static void onDestroyFreeTarget(sEvent* e) {
+    free(e->target);
+}
+
+static void onDestroyDoNothing(sEvent* e) {
+    (void) e;
+}
+
+static bool isComponentEmpty(const sComponent* comp) {
+    return (!(comp && (comp->onLoad || comp->onLoopBegin || comp->onUpdate ||
+        comp->onRender || comp->onLoopEnd ||
+        comp->onUnload || comp->onKeyboard || comp->onMouse ||
+        comp->onFinger || comp->onSDLDefault || comp->onPreContact ||
+        comp->onContactBegin || comp->onContactEnd || comp->onDestroy
+    )));
+}
+
+static bool isIniComponentEmpty(const sIni* comp) {
+    return (!(comp && (comp->onLoad || comp->onLoopBegin || comp->onUpdate ||
+        comp->onRender || comp->onLoopEnd ||
+        comp->onUnload || comp->onKeyboard || comp->onMouse ||
+        comp->onFinger || comp->onSDLDefault || comp->onPreContact ||
+        comp->onContactBegin || comp->onContactEnd || comp->onDestroy
+    )));
+}
+
+static sComponent* createComponent(const sIni* ini) {
+    if (isIniComponentEmpty(ini)) {
+        return NULL;
+    }    
+    nUtil->assertArgument(!ini->target || ini->onDestroy);
+
+    sComponent* self = nUtil->assertAlloc(malloc(sizeof(sComponent)));
+    
+    self->target = ini->target;
+    self->name = NULL;
+    self->onLoad = ini->onLoad;
+    self->onLoopBegin = ini->onLoopBegin;
+    self->onUpdate = ini->onUpdate;
+    self->onRender = ini->onRender;
+    self->onLoopEnd = ini->onLoopEnd;
+    self->onUnload = ini->onUnload;
+    self->onKeyboard = ini->onKeyboard;
+    self->onMouse = ini->onMouse;
+    self->onFinger = ini->onFinger;
+    self->onSDLDefault = ini->onSDLDefault;
+    self->onPreContact = ini->onPreContact;
+    self->onContactBegin = ini->onContactBegin;
+    self->onContactEnd = ini->onContactEnd;
+    self->onDestroy = ini->onDestroy;   
+    return self;
+}
+static sComponent* copyComponent(const sComponent* comp) {
+    if (isComponentEmpty(comp)) {
+        return NULL;
+    }
+    sComponent* self = nUtil->assertAlloc(malloc(sizeof(sComponent)));
+    *self = *comp;
+    self->name = NULL;
+    return self;
+}
+
+static void destroyComponent(sComponent* self) {
+    free(self);
+}
+
+static sHandler getHandler(sComponent* comp, int type){    
+    
+    if (!comp) {
+        return NULL;
+    }
+    if (type == EventOnRender) {
+        return comp->onRender;
+    }
+    if (type == EventPreContact) {
+        return comp->onPreContact;
+    }
+    if (type == EventContactBegin) {
+        return comp->onContactBegin;
+    }
+    if (type == EventContactEnd) {
+        return comp->onContactEnd;
+    }
+    if (type == EventOnUpdate) {
+        return comp->onUpdate;
+    }   
+    if(type == EventOnLoopBegin){
+        return comp->onLoopBegin;
+    }   
+    if (type == EventOnLoopEnd) {
+        return comp->onLoopEnd;
+    }   
+    if (type == EventOnKeyboard) {
+        return comp->onKeyboard;
+    }
+    if (type == EventMouse) {
+        return comp->onMouse;
+    }
+    if (type == EventFinger) {
+        return comp->onFinger;
+    }
+    if (type == EventSDLDefault) {
+        return comp->onSDLDefault;
+    }   
+    if (type == EventOnUnload) {
+        return comp->onUnload;
+    }
+    if (type == EventOnLoad) {
+        return comp->onLoad;
+    }
+    if (type == EventOnDestroy) {
+        return comp->onDestroy;
+    }
+    return NULL;
+};
+
+
+const struct sComponentNamespace* nComponent = &(struct sComponentNamespace) {
+    .create = createComponent,
+    .copy = copyComponent,
+    .destroy = destroyComponent,
+    .isComponentEmpty = isComponentEmpty,
+    .isIniComponentEmpty = isIniComponentEmpty,
+    .onDestroyFreeTarget = onDestroyFreeTarget,
+	.onDestroyDoNothing = onDestroyDoNothing,
+    .getHandler = getHandler,
+    .ON_LOAD = EventOnLoad,
+	.ON_LOOP_BEGIN = EventOnLoopBegin,
+	.ON_UPDATE = EventOnUpdate,
+	.ON_RENDER = EventOnRender,
+	.ON_LOOP_END = EventOnLoopEnd,
+	.ON_UNLOAD = EventOnUnload,	
+	.ON_KEYBOARD = EventOnKeyboard,
+	.ON_MOUSE = EventMouse,
+	.ON_FINGER = EventFinger,
+	.ON_SDL_DEFAULT = EventSDLDefault,
+	.ON_PRE_CONTACT = EventPreContact,
+	.ON_CONTACT_BEGIN = EventContactBegin,
+	.ON_CONTACT_END = EventContactEnd,
+	.ON_TIMEOUT = EventTimeout,
+	.ON_DESTROY = EventOnDestroy,	
+    .TOTAL = EventTotal
 };
