@@ -1,6 +1,6 @@
 #ifndef GX_MODULE_H
 #define GX_MODULE_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 
 
 extern const struct sFolderNamespace {
@@ -59,6 +59,6 @@ extern const struct sFolderNamespace {
         sImage* (*getAnimImage)(sAnimation* self, Uint32 index);
 
     }* p;
-}* nFolder;
+}* const nFolder;
 
 #endif // !GX_MODULE_H

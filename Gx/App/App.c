@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../App/App.h"
 #include "../Scene/Scene.h"
 #include <stdbool.h>
@@ -623,7 +623,7 @@ static sArray* tokenize(const char* str, const char* sep){
     return response;
 }
 
-const sAppNamespace* nApp = &(sAppNamespace) { 
+const struct sAppNamespace* const nApp = &(struct sAppNamespace) { 
 	.create = create,
 	.run = run,
     .isCreated = isCreated,

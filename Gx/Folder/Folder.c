@@ -1,6 +1,6 @@
 #include "../Folder/Folder.h"
 #include "../Map/Map.h"
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../Scene/Scene.h"
 #include "../Element/Element.h"
 #include "../App/App.h"
@@ -571,7 +571,7 @@ static void pRenderTilePallete(sImage* self, sRect* target, Uint8 opacity) {
 }
 
 
-const struct sFolderNamespace* nFolder = &(struct sFolderNamespace){
+const struct sFolderNamespace* const nFolder = &(struct sFolderNamespace){
 
     .create = create,
     .getMixMusic = getMixMusic,

@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../Array/Array.h"
 #include "../App/App.h"
 #include <string.h>
@@ -232,7 +232,7 @@ static bool assertState(bool condition){
 
 
 
-const struct sUtilNamespace*  nUtil = &(struct sUtilNamespace){
+const struct sUtilNamespace* const nUtil = &(struct sUtilNamespace){
 	.createInt = createInt,
 	.createUint = createUint,
 	.createBool = createBool,
@@ -389,7 +389,7 @@ static sHandler getHandler(sComponent* comp, int type){
 };
 
 
-const struct sComponentNamespace* nComponent = &(struct sComponentNamespace) {
+const struct sComponentNamespace* const nComponent = &(struct sComponentNamespace) {
     .create = createComponent,
     .copy = copyComponent,
     .destroy = destroyComponent,

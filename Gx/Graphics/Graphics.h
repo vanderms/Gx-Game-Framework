@@ -1,6 +1,6 @@
 #ifndef GX_GRAPHICS_H
 #define GX_GRAPHICS_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 
 extern const struct sGraphicsNamespace {
 	sGraphics* (*create)(sScene* scene);
@@ -11,7 +11,7 @@ extern const struct sGraphicsNamespace {
 	void (*update)(sGraphics* self);
 	//...sElement
 	void (*renderElement)(sElement* self);
-}* nGraphics;
+}* const nGraphics;
 
 
 

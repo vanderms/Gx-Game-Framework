@@ -192,7 +192,7 @@ extern const struct sUtilNamespace {
 		const Uint32 SCENE;
 		const Uint32 CONTACT;
 	}* hash;
-}* nUtil;
+}* const nUtil;
 
 //...component namespace
 extern const struct sComponentNamespace {		
@@ -221,6 +221,6 @@ extern const struct sComponentNamespace {
 		const int ON_DESTROY;
 		const int ON_ELEM_REMOVAL;
 		const int TOTAL;
-}* nComponent;
+}* const nComponent;
 
 #endif // !UTILITIES_H

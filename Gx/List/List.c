@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../List/List.h"
 
 typedef struct ListNode {
@@ -217,7 +217,7 @@ static void clean(sList* self) {
 }
 
 
-const struct sListNamespace* nList = &(struct sListNamespace){
+const struct sListNamespace* const nList = &(struct sListNamespace){
 	//constructor and destructor
 	.create = create,
 	.destroy = destroy,

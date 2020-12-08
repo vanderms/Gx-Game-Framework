@@ -1,6 +1,6 @@
 #ifndef GX_MAP_H
 #define GX_MAP_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../Array/Array.h"
 
 
@@ -19,7 +19,7 @@ extern const struct sMapNamespace {
 	void (*remove)(sMap* self, const char* key);
 	void (*removeByIndex)(sMap* self, Uint32 index);
 	void (*clean)(sMap* self);
-}* nMap;
+}* const nMap;
 
 
 #endif // !GX_MAP_H

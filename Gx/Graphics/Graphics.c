@@ -184,7 +184,7 @@ static void renderElement(sElement* self) {
 	}
 }
 
-const struct sGraphicsNamespace* nGraphics = &(struct sGraphicsNamespace){
+const struct sGraphicsNamespace* const nGraphics = &(struct sGraphicsNamespace){
 	.create = create,
 	.destroy = destroy,
 	.insert = insert,

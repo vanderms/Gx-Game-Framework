@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../Scene/Scene.h"
 #include "../App/App.h"
 #include "../Element/Element.h"
@@ -452,7 +452,11 @@ static void pRemoveElem(sScene* self, sElement* elem) {
 }
 
 static void pOnLoopBegin(sScene* self) {	
+		
 	if(self->status == nUtil->status->RUNNING){
+		
+		nPhysics->update(self->physics);
+
 		for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_LOOP_BEGIN]); 
 			comp != NULL; comp = nList->next(self->listeners[nComponent->ON_LOOP_BEGIN])
 		){
@@ -497,10 +501,7 @@ static void pUpdate(sScene* self) {
 				.target = comp->target,
 				.type = nComponent->ON_UPDATE
 			});
-		}
-		
-		nPhysics->update(self->physics);	
-			
+		}			
 		nGraphics->update(self->graphics);		
 	}
 }
@@ -535,7 +536,8 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 				nUtil->assertState(comp->onKeyboard);
 				comp->onKeyboard(&(sEvent){
 					.target = comp->target,
-					.type = nComponent->ON_KEYBOARD
+					.type = nComponent->ON_KEYBOARD,
+					.sdle = e
 				});
 			}
 			break;
@@ -549,7 +551,8 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 				nUtil->assertState(comp->onMouse);
 				comp->onMouse(&(sEvent){
 					.target = comp->target,
-					.type = nComponent->ON_MOUSE
+					.type = nComponent->ON_MOUSE,
+					.sdle = e,
 				});
 			}
 			break;
@@ -564,7 +567,8 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 				nUtil->assertState(comp->onFinger);
 				comp->onFinger(&(sEvent){
 					.target = comp->target,
-					.type = nComponent->ON_FINGER
+					.type = nComponent->ON_FINGER,
+					.sdle = e,
 				});
 			}
 			break;
@@ -649,7 +653,7 @@ static void pOnContactEnd(sScene* self, sContact* contact) {
 }
 
 
-const struct sSceneNamespace* nScene = &(struct sSceneNamespace) {
+const struct sSceneNamespace* const nScene = &(struct sSceneNamespace) {
 	
 	.create = create,
 	.getPercLoaded = getPercLoaded,

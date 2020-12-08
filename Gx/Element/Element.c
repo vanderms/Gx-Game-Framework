@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "Element.h"
 #include "../Array/Array.h"
 #include "../Folder/Folder.h"
@@ -113,12 +113,13 @@ static void removeElement(sElement* self) {
 static void* getComponent(sElement* self, const char* name) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	if (!name) {
+	if (name) {
 		nUtil->assertImplementation(self->components != NULL);
 		sComponent* comp = nMap->get(self->components, name);
+		nUtil->assertImplementation(comp != NULL);
 		return comp->target;
 	}
-	return self->comp->target;
+	return (self->comp ? self->comp->target : self);	
 }
 
 static Uint32 pId(sElement* self) {
@@ -169,7 +170,7 @@ static void addComponent(sElement* self, sComponent* comp) {
 		self->components = nMap->create();
 	}
 	nMap->set(self->components, comp->name, copy, nComponent->destroy);
-	nScene->p->subscribeComponent(self->scene, comp);
+	nScene->p->subscribeComponent(self->scene, copy);
 }
 
 static bool hasClass(sElement* self, const char* type) {
@@ -275,7 +276,7 @@ static void pSetRenderable(sElement* self, struct sElemRenderable* renderable){
 	self->renderable = renderable;
 }
 
-const struct sElemNamespace* nElem = &(struct sElemNamespace){
+const struct sElemNamespace* const nElem = &(struct sElemNamespace){
 	.create = create,	
 	.remove = removeElement,
 	
@@ -293,6 +294,7 @@ const struct sElemNamespace* nElem = &(struct sElemNamespace){
 	.hasBody = hasBody,
 	.isRenderable = isRenderable,
 	.addComponent = addComponent,
+	.getComponent = getComponent,
 
 	.body = &nElemBody,
 	.style = &nElemRenderable,

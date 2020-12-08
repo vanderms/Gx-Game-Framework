@@ -1,6 +1,6 @@
 #ifndef GX_LIST_H
 #define GX_LIST_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 
 extern const struct sListNamespace {
 	
@@ -22,6 +22,6 @@ extern const struct sListNamespace {
 	bool (*remove)(sList* self, void* value);
 	bool (*removeByIndex)(sList* self, int index);
 	void (*clean)(sList* self);
-}* nList;
+}* const nList;
 
 #endif // !GX_LIST_H

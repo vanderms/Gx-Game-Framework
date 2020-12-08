@@ -1,6 +1,6 @@
 #ifndef GX_RENDERABLE_H
 #define GX_RENDERABLE_H
-#include "../../Utilities/Util.h"
+#include "../../Util/Util.h"
 
 
 extern const struct sElemRenderableNamespace {

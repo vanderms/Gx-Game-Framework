@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../Physics/Physics.h"
 #include "../Qtree/Qtree.h"
 #include "../Scene/Scene.h"
@@ -675,7 +675,7 @@ static inline bool contactIsEqual(sContact* lhs, sContact* rhs) {
 	);
 }
 
-const struct sPhysicsNamespace* nPhysics =  &(struct sPhysicsNamespace){
+const struct sPhysicsNamespace* const nPhysics =  &(struct sPhysicsNamespace){
 	//...
 	.create = create,
 	.destroy = destroy,
@@ -689,7 +689,7 @@ const struct sPhysicsNamespace* nPhysics =  &(struct sPhysicsNamespace){
 	.createWalls = createWalls,
 };
 
-const struct sContactNamespace* nContact = &(struct sContactNamespace) {		
+const struct sContactNamespace* const nContact = &(struct sContactNamespace) {		
 	.colliding  = colliding,
 	.collided = collided,
 	.isBetween = isBetween,

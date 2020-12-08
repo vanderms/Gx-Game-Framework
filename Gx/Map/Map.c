@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -265,7 +265,7 @@ static void  clean(sMap* self) {
 }
 
 
-const struct sMapNamespace* nMap = &(struct sMapNamespace) {
+const struct sMapNamespace* const nMap = &(struct sMapNamespace) {
 	//...
 	.create = create,
 	.destroy = destroy,

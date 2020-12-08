@@ -1,6 +1,6 @@
 #ifndef GX_SCENE_H
 #define GX_SCENE_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../App/App.h"
 
 extern const struct sSceneNamespace {
@@ -37,7 +37,7 @@ extern const struct sSceneNamespace {
 		void (*onContactBegin)(sScene* self, sContact* contact);
 		void (*onContactEnd)(sScene* self, sContact* contact);
 	}* p;	
-}* nScene;
+}* const nScene;
 
 #endif // !GX_SCENE_H
 

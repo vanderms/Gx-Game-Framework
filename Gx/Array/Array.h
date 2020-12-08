@@ -1,9 +1,9 @@
 #ifndef GX_ARRAY_H
 #define GX_ARRAY_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 
 
-typedef struct sArrayNamespace {
+extern const struct sArrayNamespace {
 	sArray* (*create)(void);
 	void (*destroy)(sArray* self);	
 	Uint32 (*size)(sArray* self);
@@ -18,10 +18,7 @@ typedef struct sArrayNamespace {
 	void (*reserve)(sArray* self, Uint32 capacity);
 	void (*clean)(sArray* self);
 	void (*sort)(sArray* self, sComp compare);	
-} sArrayNamespace;
-
-extern const sArrayNamespace* nArray;
-
+}* const nArray;
 
 #endif // !GX_ARRAY_H
 

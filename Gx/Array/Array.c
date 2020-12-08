@@ -1,4 +1,4 @@
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../Array/Array.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -135,11 +135,11 @@ static void clean(sArray* self) {
 
 
 /*
-...SORT ALGORITHM
+...SORT ALGORITHM:: WORST CASE O(n * log n) BEST CASE O(n)
 The main reason there is a sort algorith is that I couldn't use qsort without a global variable.
 However, this algorithm is better for arrays already in order or with some order, which is the case
 of renderables in Graphics.h.
-And this algorithm don't perform much worse, just a bit worse than mergesort, in random arrays.
+And this algorithm don't perform much worse, maybe just a bit worse than mergesort, in random arrays.
 */
 
 typedef struct sFragment { 
@@ -188,8 +188,7 @@ static inline void mergeFragments(sArray* self, sArray* fragments, sComp comp) {
         sFragment* sn = fragments->entries[second].value;
         Uint32 fsSize = fs->end - fs->start + 1;
         Uint32 snSize = sn->end - sn->start + 1;
-        Uint32 total = fsSize + snSize;
-       
+        Uint32 total = fsSize + snSize;       
        
         Uint32 fsCounter = 0, snCounter = 0;
             
@@ -270,7 +269,7 @@ static void sort(sArray* self, sComp comp) {
     nArray->destroy(fragments);
 }
 
-const sArrayNamespace* nArray = &(sArrayNamespace){
+const struct sArrayNamespace* const nArray = &(struct sArrayNamespace){
 	.create = create,
 	.destroy = destroy,
 	.size = getSize,

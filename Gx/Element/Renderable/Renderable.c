@@ -1,4 +1,4 @@
-#include "../../Utilities/Util.h"
+#include "../../Util/Util.h"
 #include "../Element.h"
 #include "../../Folder/Folder.h"
 #include "../../Scene/Scene.h"
@@ -701,6 +701,9 @@ static void onRender(sElement* self) {
 	if (renderable->shouldUpdateLabel) {
 		pUpdateLabel(renderable);
 	}
+	nElem->p->executeHandler(self, &(sEvent){
+		.type = nComponent->ON_RENDER
+	});
 }
 
 static sImage* pLabel(sElement* self) {

@@ -1,6 +1,6 @@
 #ifndef GX_BODY_H
 #define GX_BODY_H
-#include "../../Utilities/Util.h"
+#include "../../Util/Util.h"
 
 struct sElemBody;
 

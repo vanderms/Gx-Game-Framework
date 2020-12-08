@@ -1,6 +1,6 @@
 #ifndef GX_ELEM_H
 #define GX_ELEM_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include "../App/App.h"
 #include "Body/Body.h"
 #include "Renderable/Renderable.h"
@@ -30,6 +30,7 @@ extern const struct sElemNamespace {
 	bool (*hasBody)(sElement* self);
 	bool (*isRenderable)(sElement* self);	
 	void (*addComponent)(sElement* self, sComponent* comp);
+	void* (*getComponent)(sElement* self, const char* name);
 
 	const struct sElemBodyNamespace* body;
 	const struct sElemRenderableNamespace* style;	
@@ -57,6 +58,6 @@ extern const struct sElemNamespace {
 		void (*setRenderable)(sElement* self, struct sElemRenderable* renderable);
 		void (*updatePosition)(sElement* self, sVector vector);
 	}* p;
-} *nElem;
+} *const nElem;
 
 #endif // !GX_ELEM_H

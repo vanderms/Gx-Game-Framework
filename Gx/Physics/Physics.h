@@ -1,6 +1,6 @@
 #ifndef GX_PHYSICS_H
 #define GX_PHYSICS_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 
 extern const struct sPhysicsNamespace {
 	//...
@@ -14,7 +14,7 @@ extern const struct sPhysicsNamespace {
 	void (*updateElem)(sPhysics* self, sElement* element, sRect previousPos);
 	sVector (*moveByElem)(sPhysics* self, sElement* element);
 	void (*createWalls)(sPhysics* self);
-}* nPhysics;
+}* const nPhysics;
 
 extern const struct sContactNamespace {		
 	sElement* (*colliding)(sContact* contact);
@@ -39,7 +39,7 @@ extern const struct sContactNamespace {
 	const Uint32 VERTICAL;
 	const Uint32 ALLOWED;
 	const Uint32 ALL;
-}* nContact;
+}* const nContact;
 
 
 #endif // !GX_PHYSICS_H

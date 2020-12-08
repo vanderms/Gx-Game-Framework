@@ -1,6 +1,6 @@
 #ifndef GX_QUADTREE_H
 #define GX_QUADTREE_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 
 
 extern const struct sQtreeNamespace {

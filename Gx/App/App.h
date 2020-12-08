@@ -1,10 +1,10 @@
 #ifndef GX_APP_H
 #define GX_APP_H
-#include "../Utilities/Util.h"
+#include "../Util/Util.h"
 #include <SDL_ttf.h>
 
 
-typedef struct sAppNamespace {
+extern const struct sAppNamespace {
 	sScene* (*create)(const sIni* ini);	
 	void (*run)(void);
 	bool (*isCreated)(void);
@@ -40,9 +40,8 @@ typedef struct sAppNamespace {
 		void(*loadMixChunk)(sChunk* sound, const char* path);
 		void (*loadMixMusic)(sMusic* music, const char* path);
 	}* prv;
-} sAppNamespace;
+}* const nApp;
 
-extern const sAppNamespace* nApp;
 
 #endif // !GX_APP_H
 
