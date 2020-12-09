@@ -1,12 +1,12 @@
 #include "../Util/Util.h"
 #include "Element.h"
-#include "../Array/Array.h"
+#include "../Containers/Array/Array.h"
 #include "../Folder/Folder.h"
 #include "../Graphics/Graphics.h"
 #include "../Physics/Physics.h"
 #include "../Scene/Scene.h"
 #include <string.h>
-#include "../Map/Map.h"
+#include "../Containers/Map/Map.h"
 
 typedef struct sElement {
 	
@@ -45,7 +45,7 @@ static sElement* create(const sIni* ini){
 		if(!self->comp->target) {
 			self->comp->target = self;
 		}
-		nScene->p->subscribeComponent(self->scene, self->comp);		
+		nScene->p_->subscribeComponent(self->scene, self->comp);		
 	}	
 
 	
@@ -60,11 +60,11 @@ static sElement* create(const sIni* ini){
 		self->pos = NULL;
 	}
 			
-	self->body = nElem->body->p->create(self, ini);
-	self->renderable = nElem->style->p->create(self, ini);	
+	self->body = nElem->body->p_->create(self, ini);
+	self->renderable = nElem->style->p_->create(self, ini);	
 
 	//add element to scene then return
-	self->id = nScene->p->addElem(self->scene, self);
+	self->id = nScene->p_->addElem(self->scene, self);
 	return self;
 }
 
@@ -79,7 +79,7 @@ static void pDestroy(sElement* self) {
 						.type = nComponent->ON_DESTROY
 					});
 				}
-				nScene->p->unsubscribeComponent(self->scene, comp);
+				nScene->p_->unsubscribeComponent(self->scene, comp);
 			}
 			nMap->destroy(self->components);
 		}
@@ -91,11 +91,11 @@ static void pDestroy(sElement* self) {
 					.type = nComponent->ON_DESTROY, 
 				});
 			}		
-			nScene->p->unsubscribeComponent(self->scene, self->comp);
+			nScene->p_->unsubscribeComponent(self->scene, self->comp);
 		}
 		nComponent->destroy(self->comp);
-		nElem->body->p->destroy(self->body);
-		nElem->style->p->destroy(self->renderable);
+		nElem->body->p_->destroy(self->body);
+		nElem->style->p_->destroy(self->renderable);
 		nArray->destroy(self->classList);				
 		free(self->pos);
 		free(self->className);
@@ -107,7 +107,7 @@ static void pDestroy(sElement* self) {
 static void removeElement(sElement* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);	
-	nScene->p->removeElem(self->scene, self);
+	nScene->p_->removeElem(self->scene, self);
 }
 
 static void* getComponent(sElement* self, const char* name) {
@@ -170,7 +170,7 @@ static void addComponent(sElement* self, sComponent* comp) {
 		self->components = nMap->create();
 	}
 	nMap->set(self->components, comp->name, copy, nComponent->destroy);
-	nScene->p->subscribeComponent(self->scene, copy);
+	nScene->p_->subscribeComponent(self->scene, copy);
 }
 
 static bool hasClass(sElement* self, const char* type) {
@@ -214,8 +214,8 @@ static const sRect* posGetter(void* value){
 static void setPosition(sElement* self, sRect pos) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash(self->hash == nUtil->hash->ELEMENT);
-	sGraphics* graphics = nScene->p->getGraphics(self->scene);
-	sPhysics* physics = nScene->p->getPhysics(self->scene);
+	sGraphics* graphics = nScene->p_->getGraphics(self->scene);
+	sPhysics* physics = nScene->p_->getPhysics(self->scene);
 	if (self->renderable) nGraphics->remove(graphics, self);
 	if (self->body) nPhysics->remove(physics, self);
 	*self->pos = pos;
@@ -228,10 +228,10 @@ static void pUpdatePosition(sElement* self, sVector vector) {
 	self->pos->x += vector.x;
 	self->pos->y += vector.y;
 	if(self->renderable){
-		nGraphics->updateElement(nScene->p->getGraphics(self->scene), self, previousPos);
+		nGraphics->updateElement(nScene->p_->getGraphics(self->scene), self, previousPos);
 	}
 	if(self->body){
-		nPhysics->updateElem(nScene->p->getPhysics(self->scene), self, previousPos);
+		nPhysics->updateElem(nScene->p_->getPhysics(self->scene), self, previousPos);
 	}
 }
 
@@ -310,7 +310,7 @@ const struct sElemNamespace* const nElem = &(struct sElemNamespace){
 		.FORWARD = SDL_FLIP_NONE,
 		.BACKWARD = SDL_FLIP_HORIZONTAL,
 	},
-	.p = &(struct sElemPrivateNamespace){
+	.p_ = &(struct sElemPrivateNamespace){
 		.destroy = pDestroy,
 		.id = pId,
 		.posGetter = posGetter,

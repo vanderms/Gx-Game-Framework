@@ -12,6 +12,7 @@ extern const struct sAppNamespace {
 	SDL_Window* (*SDLWindow)(void);
 	SDL_Renderer* (*SDLRenderer)(void);	
 	sScene* (*getScene)(const char* id);
+	sFolder* (*getFolder)(const char* id);
 	sSize (*logicalSize)(void);
 	void (*loadScene)(sScene* scene);
 	void (*addFont)(const char* name, const char* path);
@@ -34,12 +35,12 @@ extern const struct sAppNamespace {
 	struct sAppPrivate {
 		void (*addScene)(sScene* scene);
 		void (*addFolder)(sFolder* handler);
-		sFolder* (*getFolder)(const char* id);
+		
 		const char*(*getFontPath)(const char* name);
 		void (*loadSDLSurface)(sImage* image, const char* path);
 		void(*loadMixChunk)(sChunk* sound, const char* path);
 		void (*loadMixMusic)(sMusic* music, const char* path);
-	}* prv;
+	}* p_;
 }* const nApp;
 
 

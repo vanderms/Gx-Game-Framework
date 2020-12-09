@@ -2,6 +2,7 @@
 #define GX_COMPONENTS_H
 
 #include "Button/Button.h"
+#include "Tilemap/Tilemap.h"
 
 
 #endif // !GX_COMPONENTS_H

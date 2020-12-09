@@ -7,10 +7,10 @@
 #include "SDL_image.h"
 #include "SDL_ttf.h"
 #include "SDL_mixer.h"
-#include "../Map/Map.h"
+#include "../Containers/Map/Map.h"
 #include "../Folder/Folder.h"
-#include "../Array/Array.h"
-#include "../List/List.h"
+#include "../Containers/Array/Array.h"
+#include "../Containers/List/List.h"
 
 #ifdef NDEBUG
     #define GX_DEV 1
@@ -208,7 +208,7 @@ static void destroy() {
         nList->destroy(self->aLoading);
         nList->destroy(self->aLoaded);
         nMap->destroy(self->scenes);
-        nScene->p->destroy(self->snMain);
+        nScene->p_->destroy(self->snMain);
         nArray->destroy(self->temporary);
         nMap->destroy(self->folders);
         nMap->destroy(self->colors);
@@ -241,7 +241,7 @@ static bool isRunning() {
 
 static void addScene(sScene* scene) {
     if(self->snMain != NULL){
-        nMap->set(self->scenes, nScene->name(scene), scene, nScene->p->destroy);
+        nMap->set(self->scenes, nScene->name(scene), scene, nScene->p_->destroy);
     }
 }
 
@@ -250,7 +250,7 @@ static sScene* getScene(const char* id) {
 }
 
 static void addFolder(sFolder* folder) {   
-   nMap->set(self->folders, nFolder->p->id(folder), folder, nFolder->p->destroy);
+   nMap->set(self->folders, nFolder->p_->id(folder), folder, nFolder->p_->destroy);
 }
 
 static sFolder* getFolder(const char* id) {
@@ -302,15 +302,15 @@ static void mainLoadAsset(Asset* asset) {
                 );
                 SDL_FreeSurface(surface);
                 if (!texture) nApp->runtimeError(SDL_GetError());
-                nFolder->p->setSDLTexture(asset->mod, texture, &size);
+                nFolder->p_->setSDLTexture(asset->mod, texture, &size);
                 break;
             }
             case SOUND: {
-                nFolder->p->setMixChunk(asset->mod, asset->resource);
+                nFolder->p_->setMixChunk(asset->mod, asset->resource);
                 break;
             }
             case MUSIC: {
-                nFolder->p->setMixMusic(asset->mod, asset->resource);
+                nFolder->p_->setMixMusic(asset->mod, asset->resource);
                 break;
             }
         }
@@ -361,28 +361,28 @@ static void run() {
 
         self->counter = SDL_GetTicks();
         self->snRunning = self->snActive;
-        if (activeIsReady && self->snActive) nScene->p->onLoopBegin(self->snActive);
+        if (activeIsReady && self->snActive) nScene->p_->onLoopBegin(self->snActive);
 
         self->snRunning = self->snMain;
-        nScene->p->onLoopBegin(self->snMain);
+        nScene->p_->onLoopBegin(self->snMain);
 
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) self->status = nUtil->status->UNLOADING;
 
             self->snRunning = self->snActive;
-            if (activeIsReady && self->snActive) nScene->p->onSDLEvent(self->snActive, &e);
+            if (activeIsReady && self->snActive) nScene->p_->onSDLEvent(self->snActive, &e);
 
             self->snRunning = self->snMain;
-            nScene->p->onSDLEvent(self->snMain, &e);
+            nScene->p_->onSDLEvent(self->snMain, &e);
         }
 
         //... update
         self->snRunning = self->snActive;
-        if (self->snActive) nScene->p->update(self->snActive);
+        if (self->snActive) nScene->p_->update(self->snActive);
 
         self->snRunning = self->snMain;
-        nScene->p->update(self->snMain);
+        nScene->p_->update(self->snMain);
 
 
         //...load assets
@@ -440,10 +440,10 @@ static void run() {
 
         //call loop end handlers
         self->snRunning = self->snActive;
-        if (activeIsReady && self->snActive) nScene->p->onLoopEnd(self->snActive);
+        if (activeIsReady && self->snActive) nScene->p_->onLoopEnd(self->snActive);
 
         self->snRunning = self->snMain;
-        nScene->p->onLoopEnd(self->snMain);
+        nScene->p_->onLoopEnd(self->snMain);
         nArray->clean(self->temporary);
 
          //clear window
@@ -463,12 +463,12 @@ static void loadScene(sScene* scene) {
     }
 
     self->snRunning = scene;
-    nScene->p->preLoad(scene);
+    nScene->p_->preLoad(scene);
 
     if (scene != self->snMain){
         if(self->snActive){
             self->snRunning = self->snActive;
-            nScene->p->unLoad(self->snActive);
+            nScene->p_->unLoad(self->snActive);
         }
         self->snActive = scene;
     }
@@ -631,6 +631,7 @@ const struct sAppNamespace* const nApp = &(struct sAppNamespace) {
 	.SDLWindow = SDLWindow,
     .SDLRenderer = SDLRenderer,
 	.getScene = getScene,
+    .getFolder = getFolder,
 	.logicalSize = logicalSize,
 	.loadScene = loadScene,
 	.addFont = addFont,
@@ -650,10 +651,9 @@ const struct sAppNamespace* const nApp = &(struct sAppNamespace) {
     .calcDest = calcDest,
     .calcLabelDest = calcLabelDest,
     .countCallsPerFrame = countCallsPerFrame,
-    .prv = &(struct sAppPrivate) {
+    .p_ = &(struct sAppPrivate) {
 		.addScene = addScene,
-		.addFolder = addFolder,
-		.getFolder = getFolder,
+		.addFolder = addFolder,		
 		.getFontPath = getFontPath,
 		.loadSDLSurface = loadSDLSurface,
 		.loadMixChunk = loadMixChunk,

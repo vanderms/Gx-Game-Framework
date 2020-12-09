@@ -11,7 +11,9 @@ extern const struct sFolderNamespace {
 
     Mix_Chunk* (*getMixChunk)(const char* path);
 
-    SDL_Texture* (*getSDLTexture)(const char* path);
+    sImage* (*getImage)(sFolder* self, const char* id);
+
+    sAnimation* (*getAnimation)(sFolder* self, const char* id);
 
     void (*loadImage)(const char* id, const char* path, sRect* src, double proportion);
 
@@ -19,46 +21,53 @@ extern const struct sFolderNamespace {
 
     void (*createTilesetFromImage)(const char* image, sSize size, sMatrix matrix);
 
-    void (*createTilemap)(const char* folderName, const char* name, const char* group, sSize size, sMatrix matrix, int* sequence);
-
-    sSize (*getImageSize)(const char* path);   
-
     void (*loadAnimation)(const char* id, const char* pathF, int start, int end, int interval, double proportion, bool continuous);
 
     void (*loadChunk)(const char* id, const char* path);
-    
+
     void (*loadMusic)(const char* id, const char* path);
 
+    const struct sImageNamespace {
+        const char* (*name)(sImage* self);
+        sFolder* (*folder)(sImage* self);
+        const sSize* (*size)(sImage* self);
+        SDL_Texture* (*SDLTexture)(sImage* self);
+        const sRect* (*src)(sImage* self);
+        double (*proportion)(sImage* self);
+        sImage* (*createText)(
+            const char* text, const char* font, int size, SDL_Color* color
+        );
+        void (*render)(sImage* self, 
+            sRect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity
+        );
+        void (*destroyText)(sImage* self);
+    }* const img;
+
+
+    const struct sAnimationNamespace {
+        const char* (*name)(sAnimation* self);
+        Uint32 (*interval)(sAnimation* self);
+        Uint32 (*quantity)(sAnimation* self);
+        bool (*isContinuous)(sAnimation* self);
+        sImage* (*getImage)(sAnimation* self, Uint32 index);
+    }* const anim;
+
+
+
     const struct sFolderPrivateNamespace {
-        
+
         void (*destroy)(sFolder* self);
         bool(*hasStatus)(sFolder* self, int status);
         char* (*id)(sFolder* self);
         int (*getPercLoaded)(sFolder* self);
         void (*incRefCounter)(sFolder* self);
         void (*decRefCounter)(sFolder* self);
-        
-        sImage* (*getImage)(sFolder* self, const char* id);
-        sAnimation* (*getAnimation)(sFolder* self, const char* id);
-       
+
         void (*setMixChunk)(sChunk* self, Mix_Chunk* chunk);
         void (*setMixMusic)(sMusic* self, Mix_Music* music);
-        void (*setSDLTexture)(sImage* self, void* resource, sSize* size);              
-    
-        void (*destroyImage)(sImage* self);
-        const char* (*getImageId)(sImage* self);            
-        sSize (*getImageSize)(sImage* self);
-        sImage* (*createText)(const char* text, const char* font, int size, SDL_Color* color);
-        void (*renderImage)(sImage* self, sRect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity);
-        void (*renderTilePallete)(sImage* self, sRect* target, Uint8 opacity);
+        void (*setSDLTexture)(sImage* self, void* resource, sSize* size);      
 
-        const char* (*getAnimId)(sAnimation* self);  
-        bool (*isAnimContinuous)(sAnimation* self);
-        Uint32 (*getAnimInterval)(sAnimation* self);
-        Uint32 (*getAnimQuantity)(sAnimation* self);
-        sImage* (*getAnimImage)(sAnimation* self, Uint32 index);
-
-    }* p;
+    }* p_;
 }* const nFolder;
 
 #endif // !GX_MODULE_H

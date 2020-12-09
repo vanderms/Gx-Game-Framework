@@ -1,5 +1,4 @@
-#include "../Util/Util.h"
-#include "../List/List.h"
+#include "List.h"
 
 typedef struct ListNode {
 	void* value;

@@ -1,6 +1,6 @@
 #ifndef GX_ARRAY_H
 #define GX_ARRAY_H
-#include "../Util/Util.h"
+#include "../../Util/Util.h"
 
 
 extern const struct sArrayNamespace {

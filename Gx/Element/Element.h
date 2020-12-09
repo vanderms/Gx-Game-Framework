@@ -57,7 +57,7 @@ extern const struct sElemNamespace {
 		void (*setBody)(sElement* self, struct sElemBody* body);
 		void (*setRenderable)(sElement* self, struct sElemRenderable* renderable);
 		void (*updatePosition)(sElement* self, sVector vector);
-	}* p;
+	}* p_;
 } *const nElem;
 
 #endif // !GX_ELEM_H

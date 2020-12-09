@@ -1,9 +1,20 @@
-#ifndef GX_XMACROS_H
-#define GX_XMACROS_H
+#ifndef GX_TILEMAP_H
+#define GX_TILEMAP_H
+#include "../../Gx.h"
 
 
+struct sTilemapNamespace {
+	void (*implement)(sElement* base, 
+		const char* path, sMatrix matrix, const int* sequence
+	);
+};
 
-//some useful macros for create int sequences
+extern const struct sTilemapNamespace* const nTilemap;
+
+//... some useful macros for creating sequecences
+
+#define xTilemap(rows, columns, ...) (sMatrix){rows, columns}, (int[rows * columns])__VA_ARGS__
+
 #define x1(...) __VA_ARGS__
 #define x2(...) __VA_ARGS__, __VA_ARGS__
 #define x3(...) __VA_ARGS__, __VA_ARGS__, __VA_ARGS__
@@ -54,24 +65,4 @@
 #define x48(...) x40(__VA_ARGS__), x5(__VA_ARGS__), __VA_ARGS__, __VA_ARGS__, __VA_ARGS__
 #define x49(...) x40(__VA_ARGS__), x5(__VA_ARGS__), __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, __VA_ARGS__
 #define x50(...) x40(__VA_ARGS__), x10(__VA_ARGS__)
-
-#define xrect32(x, y, w, h) (sRect){(int) ((x) * 32), (int) ((y) * 32), (int) ((w) * 32), (int) ((h) * 32)}
-#define xpoint32(x, y) (sPoint){(int) ((x) * 32), (int)((y) * 32)}
-#define xsize32(w, h) (sSize){(int) ((w) * 32), (int)((h) * 32)}
-
-#define xtilemap32(x, y, w, h, ...)\
-	position = &xrect32(x, y, w, h),\
-	.matrix = {h, w},\
-	.sequence = (int[w * h]) __VA_ARGS__
-
-
-#define xrect64(x, y, w, h) (sRect){(int) ((x) * 64), (int) ((y) * 64), (int) ((w) * 64), (int) ((h) * 64)}
-#define xpoint64(x, y) (sPoint){(int) ((x) * 64), (int)((y) * 64)}
-#define xsize64(w, h) (sSize){(int) ((w) * 64), (int)((h) * 64)}
-
-#define xtilemap64(x, y, w, h, ...)\
-	position = &xrect64(x, y, w, h),\
-	.matrix = {h, w},\
-	.sequence = (int[w * h]) __VA_ARGS__
-
-#endif // !GX_H
+#endif // !GX_TILEMAP_H

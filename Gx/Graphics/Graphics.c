@@ -1,11 +1,11 @@
 #include "../Graphics/Graphics.h"
 #include "../Scene/Scene.h"
-#include "../Array/Array.h"
-#include "../Qtree/Qtree.h"
+#include "../Containers/Array/Array.h"
+#include "../Containers/Qtree/Qtree.h"
 #include "../Element/Element.h"
 #include "../Folder/Folder.h"
-#include "../List/List.h"
-#include "../Map/Map.h"
+#include "../Containers/List/List.h"
+#include "../Containers/Map/Map.h"
 #include <time.h>
 
 typedef struct sGraphics {
@@ -39,7 +39,7 @@ static void destroy(sGraphics* self) {
 static void insert(sGraphics* self, sElement* element) {	
 	if (nElem->isRenderable(element)) {
 		if(nElem->style->hasRelativePosition(element)){
-			sQtreeElem* qtreeElem = nElem->style->p->getQtreeElem(element);
+			sQtreeElem* qtreeElem = nElem->style->p_->getQtreeElem(element);
 			nQtree->insert(self->rtree, qtreeElem);
 		}
 		else if(nElem->style->hasAbsolutePosition(element)){
@@ -50,7 +50,7 @@ static void insert(sGraphics* self, sElement* element) {
 
 static void updateElement(sGraphics* self, sElement* element, sRect previousPos) {	
 	if (nElem->style->hasRelativePosition(element)) {
-		sQtreeElem* qtreeElem = nElem->style->p->getQtreeElem(element);
+		sQtreeElem* qtreeElem = nElem->style->p_->getQtreeElem(element);
 		nQtree->update(self->rtree, qtreeElem, previousPos);
 	}
 }
@@ -58,7 +58,7 @@ static void updateElement(sGraphics* self, sElement* element, sRect previousPos)
 static void removeElement(sGraphics* self, sElement* element) {	
 	if (nElem->isRenderable(element)) {
 		if(nElem->style->hasRelativePosition(element)){
-			sQtreeElem* qtreeElem = nElem->style->p->getQtreeElem(element);
+			sQtreeElem* qtreeElem = nElem->style->p_->getQtreeElem(element);
 			nQtree->remove(self->rtree, qtreeElem);
 		}
 		else if(nElem->style->hasAbsolutePosition(element)){
@@ -68,7 +68,7 @@ static void removeElement(sGraphics* self, sElement* element) {
 }
 
 static void iFillRenderables(sElement* elem) {
-	sGraphics* self = nScene->p->getGraphics(nElem->scene(elem));
+	sGraphics* self = nScene->p_->getGraphics(nElem->scene(elem));
 	if (!nElem->style->isHidden(elem)) {
 			nArray->push(self->renderables, elem, NULL);
 	}	
@@ -136,7 +136,7 @@ static void renderElement(sElement* self) {
 	const SDL_Color* color = nElem->style->backgroundColor(self);
 
 	//...first call element onRender
-	nElem->style->p->onRender(self);
+	nElem->style->p_->onRender(self);
 
 	//...then render background color
 	if (color && color->a != 0) {
@@ -162,22 +162,22 @@ static void renderElement(sElement* self) {
 	//... image or animation
 	sImage* image = NULL;
 
-	if ((image =  nElem->style->p->getImageRef(self))) {
+	if ((image =  nElem->style->p_->getImageRef(self))) {
 		
-		nElem->style->p->calcImagePosOnCamera(self, &pos, image);
+		nElem->style->p_->calcImagePosOnCamera(self, &pos, image);
 		
-		nFolder->p->renderImage(image, &pos, nElem->style->angle(self), 
+		nFolder->img->render(image, &pos, nElem->style->angle(self), 
 			(SDL_RendererFlip) nElem->style->orientation(self), 
 			nElem->style->opacity(self)
 		);
 	}
 
 	//...finally, render label
-	if ((image = nElem->style->p->label(self))) {
+	if ((image = nElem->style->p_->label(self))) {
 		
-		nElem->style->p->calcImagePosOnCamera(self, &labelPos, image);
+		nElem->style->p_->calcImagePosOnCamera(self, &labelPos, image);
 		
-		nFolder->p->renderImage(image, &labelPos, 0.0, 
+		nFolder->img->render(image, &labelPos, 0.0, 
 			(SDL_RendererFlip)  nElem->orientation->FORWARD, 
 			nElem->style->opacity(self)
 		);

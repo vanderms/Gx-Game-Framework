@@ -75,7 +75,7 @@ extern const struct sElemBodyNamespace {
 
 		bool (*movFlag)(sElement* self);
 		void (*setMovFlag)(sElement* self, bool value);
-	}* p;
+	}* p_;
 } nElemBody;
 
 

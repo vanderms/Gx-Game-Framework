@@ -2,9 +2,9 @@
 #define GX_NAMESPACE_H
 
 #include "Util/Util.h"
-#include "Array/Array.h"
-#include "List/List.h"
-#include "Map/Map.h"
+#include "Containers/Array/Array.h"
+#include "Containers/List/List.h"
+#include "Containers/Map/Map.h"
 #include "App/App.h"
 #include "Folder/Folder.h"
 #include "Scene/Scene.h"

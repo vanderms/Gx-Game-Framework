@@ -1,5 +1,4 @@
-#include "../Util/Util.h"
-#include "../Array/Array.h"
+#include "Array.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>

@@ -36,7 +36,7 @@ extern const struct sSceneNamespace {
 		void (*onPreContact)(sScene* self, sContact* contact);
 		void (*onContactBegin)(sScene* self, sContact* contact);
 		void (*onContactEnd)(sScene* self, sContact* contact);
-	}* p;	
+	}* p_;	
 }* const nScene;
 
 #endif // !GX_SCENE_H

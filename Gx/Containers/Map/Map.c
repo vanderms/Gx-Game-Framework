@@ -1,10 +1,7 @@
-#include "../Util/Util.h"
+#include "Map.h"
 #include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
 #include "../List/List.h"
-#include "../Array/Array.h"
-#include "../Map/Map.h"
+
 #define SWAP(a, b) {void* temp = a; a = b; b = temp; }
 
 typedef struct GxInt { int value; }GxInt;

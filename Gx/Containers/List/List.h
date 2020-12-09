@@ -1,6 +1,6 @@
 #ifndef GX_LIST_H
 #define GX_LIST_H
-#include "../Util/Util.h"
+#include "../../Util/Util.h"
 
 extern const struct sListNamespace {
 	

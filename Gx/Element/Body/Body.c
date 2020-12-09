@@ -1,10 +1,10 @@
 #include "../Element.h"
 #include "../../Physics/Physics.h"
-#include "../../Array/Array.h"
-#include "../../List/List.h"
+#include "../../Containers/Array/Array.h"
+#include "../../Containers/List/List.h"
 #include "../../Graphics/Graphics.h"
 #include "../../Scene/Scene.h"
-#include "../../Qtree/Qtree.h"
+#include "../../Containers/Qtree/Qtree.h"
 #include <string.h>
 #include <limits.h>
 
@@ -57,7 +57,7 @@ static sElemBody* pCreate(sElement* elem, const sIni* ini) {
 
 	sElemBody* self = calloc(1, sizeof(sElemBody));
 	nUtil->assertAlloc(self);
-	nElem->p->setBody(elem, self);
+	nElem->p_->setBody(elem, self);
 	self->type = (ini->body == nElem->body->FIXED ? 
 		nElem->body->FIXED : nElem->body->DYNAMIC
 	);		
@@ -73,8 +73,8 @@ static sElemBody* pCreate(sElement* elem, const sIni* ini) {
 	self->maxgvel = self->type == nElem->body->DYNAMIC? -20 : 0;		
 	self->mcflag = false;
 	self->movflag = false;
-	self->dynamic = nQtree->createQtreeElem(elem, nElem->p->posGetter);
-	self->fixed = nQtree->createQtreeElem(elem, nElem->p->posGetter);
+	self->dynamic = nQtree->createQtreeElem(elem, nElem->p_->posGetter);
+	self->fixed = nQtree->createQtreeElem(elem, nElem->p_->posGetter);
 	self->contacts = nList->create();
 	self->temp = nArray->create();
 	self->groundFlag = 0;
@@ -92,52 +92,52 @@ static void pDestroy(sElemBody* self) {
 }
 
 static bool isDynamic(sElement* self) {
-	sElemBody* body = nElem->p->body(self);	
+	sElemBody* body = nElem->p_->body(self);	
 	return body->type == nElem->body->DYNAMIC;
 }
 
 static bool isFixed(sElement* self) {
-	sElemBody* body = nElem->p->body(self);	
+	sElemBody* body = nElem->p_->body(self);	
 	return body->type == nElem->body->FIXED;
 }
 
 static bool isOnGround(sElement* self) {
-	sElemBody* body = nElem->p->body(self);	
+	sElemBody* body = nElem->p_->body(self);	
 	return body->groundFlag;
 }
 
 static Uint32 cmask(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->cmask;
 }
 
 static void setCmask(sElement* self, Uint32 mask) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->cmask = mask;
 }
 
 static int preference(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->preference;
 }
 
 static void setPreference(sElement* self, int value) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->preference = value;
 }
 
 static bool hasFriction(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->friction;
 }
 
 static void setFriction(sElement* self, bool value) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->friction = value;
 }
 
 static sVector velocity(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	const GxVelocity* svel = &body->velocity;
 	sVector vel = {
 		.x = svel->x > 0 ? (int) (svel->x + 0.5) : (int)(svel->x - 0.5),
@@ -148,35 +148,35 @@ static sVector velocity(sElement* self) {
 
 
 static void setVelocity(sElement* self, sVector velocity){
-	sElemBody* body = nElem->p->body(self);	
+	sElemBody* body = nElem->p_->body(self);	
 	body->velocity.x = velocity.x;
 	body->velocity.y = velocity.y;
 }
 
 static int vely(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->velocity.y > 0 ?
 		(int) (body->velocity.y + 0.5) : (int) (body->velocity.y - 0.5);
 }
 
 static void setVely(sElement* self, int y) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->velocity.y = y;
 }
 
 static int velx(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->velocity.x > 0 ?
 		(int) (body->velocity.x + 0.5) : (int) (body->velocity.x - 0.5);
 }
 
 static void setVelx(sElement* self, int x) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->velocity.x = x;
 }
 
 static void accelerate(sElement* self, double x, double y) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->velocity.x += x;
 	body->velocity.y += y;
 }
@@ -187,38 +187,38 @@ static bool isMoving(sElement* self) {
 }
 
 static double elasticity(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->elasticity;
 }
 
 static void setElasticity(sElement* self, double elasticity) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->elasticity = elasticity;
 }
 
 static double restitution(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->restitution;
 }
 
 static void setRestitution(sElement* self, double restitution) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->restitution = restitution;
 }
 
 static int maxgvel(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->maxgvel;
 }
 
 static void setMaxgvel(sElement* self, int value) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->maxgvel = value;
 	if (body->maxgvel > 0) body->maxgvel *= -1;
 }
 
 static sArray* getContacts(sElement* self, int direction) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 
 	nArray->clean(body->temp);
 
@@ -233,12 +233,12 @@ static sArray* getContacts(sElement* self, int direction) {
 }
 
 static sList* pGetContactList(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->contacts;
 }
 
 static void pRemoveContact(sElement* self, sContact* contact) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 
 	//first remove contact
 	nList->remove(body->contacts, contact);
@@ -251,7 +251,7 @@ static void pRemoveContact(sElement* self, sContact* contact) {
 
 
 static void pAddContact(sElement* self, sContact* contact) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 
 	//fist add contact
 	nList->push(body->contacts, contact, NULL);
@@ -263,37 +263,37 @@ static void pAddContact(sElement* self, sContact* contact) {
 }
 
 static sQtreeElem* pGetQtreeElemFixed(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->fixed;
 }
 
 static sQtreeElem* pGetQtreeElemDynamic(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->dynamic;
 }
 
 static bool pMcFlag(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->mcflag;
 }
 
 static void pSetMcFlag(sElement* self, bool value) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->mcflag = value;
 }
 
 static bool pMovFlag(sElement* self) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	return body->movflag;
 }
 
 static void pSetMovFlag(sElement* self, bool value) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->movflag = value;
 }
 
 static sVector move(sElement* self, sVector vector, bool force) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	if (vector.x == 0 && vector.y == 0) {
 		return vector;
 	}	
@@ -305,7 +305,7 @@ static sVector move(sElement* self, sVector vector, bool force) {
 	body->velocity.x = vector.x;
 	body->velocity.y = vector.y;
 	body->maxgvel = 0;	
-	vector = nPhysics->moveByElem(nScene->p->getPhysics(scene), self);
+	vector = nPhysics->moveByElem(nScene->p_->getPhysics(scene), self);
 	body->cmask = mask;
 	body->velocity = velocity;
 	body->maxgvel = gvel;		
@@ -318,12 +318,12 @@ static void moveTo(sElement* self, sPoint pos, bool force) {
 }
 
 static void pApplyHozElasticity(sElement* self, double res) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->velocity.x *= -(body->elasticity * res);
 }
 
 static void pApplyVetElasticity(sElement* self, double res) {
-	sElemBody* body = nElem->p->body(self);
+	sElemBody* body = nElem->p_->body(self);
 	body->velocity.y *= -(body->elasticity * res);
 }
 
@@ -378,7 +378,7 @@ const struct sElemBodyNamespace nElemBody = {
 	.CMASK_DYNAMIC = 1 << 0,
 	.CMASK_FIXED  = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7),
 
-	.p = &(struct sElemBodyPrivateNamespace) {
+	.p_ = &(struct sElemBodyPrivateNamespace) {
 		.create = pCreate,
 		.destroy = pDestroy,	
 

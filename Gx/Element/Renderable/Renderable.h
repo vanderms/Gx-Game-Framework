@@ -67,7 +67,7 @@ extern const struct sElemRenderableNamespace {
 		sImage* (*getImageRef)(sElement* self);
 		sImage* (*label)(sElement* self);
 
-	}* p;
+	}* p_;
 } nElemRenderable;
 
 

@@ -1,5 +1,4 @@
-#include "../Util/Util.h"
-#include "../Qtree/Qtree.h"
+#include "Qtree.h"
 #include "../List/List.h"
 #include "../Array/Array.h"
 #include <stdint.h>

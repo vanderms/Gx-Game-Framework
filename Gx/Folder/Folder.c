@@ -1,5 +1,5 @@
 #include "../Folder/Folder.h"
-#include "../Map/Map.h"
+#include "../Containers/Map/Map.h"
 #include "../Util/Util.h"
 #include "../Scene/Scene.h"
 #include "../Element/Element.h"
@@ -31,14 +31,12 @@ static sFolder* rFolder = NULL;
 typedef enum ImageType {
 	Texture,
 	Text,
-	Palette,
-	Opaque,
-	Blank,
+	Opaque,	
 } ImageType;
 
 typedef struct sImage {
 
-    char* id;
+    char* name;
     sFolder* folder;
 	ImageType type;
     sSize size;
@@ -49,17 +47,13 @@ typedef struct sImage {
     double proportion;
 
     //... opaque
-    sImage* source;
-
-     //... palette
-    sArray* children;
-    sMatrix matrix;
+    sImage* source; 
 
 } sImage;
 
 
 typedef struct sAnimation {
-    char* id;
+    char* name;
     sArray* images;
     Uint32 interval;
     Uint32 quantity;
@@ -79,7 +73,8 @@ typedef struct sMusic {
     Mix_Music* music;
 } sMusic;
 
-
+//
+static void pDestroyImage(sImage* self);
 
 //...
 static void create(const char* id, void(*loader)(void)) {
@@ -93,7 +88,7 @@ static void create(const char* id, void(*loader)(void)) {
     self->assets = nMap->create();
     self->loader = loader;
     self->refCounter = 0;
-    nApp->prv->addFolder(self);
+    nApp->p_->addFolder(self);
 }
 
 static void pDestroy(sFolder* self) {
@@ -114,14 +109,14 @@ static bool pHasStatus(sFolder* self, int status) {
     return self->status == status;
 }
 
-static sImage* pGetImage(sFolder* self, const char* id) {
+static sImage* getImage(sFolder* self, const char* id) {
     return nMap->get(self->assets, id);
 }
 
 static Mix_Music* getMixMusic(const char* path) {
 	sArray* tokens = nApp->tokenize(path, "/");
     nUtil->assertArgument(nArray->size(tokens) == 2);
-    sFolder* folder = nApp->prv->getFolder(nArray->at(tokens, 0));
+    sFolder* folder = nApp->getFolder(nArray->at(tokens, 0));
     nUtil->assertArgument(folder);
     sMusic* asset = nMap->get(folder->assets, nArray->at(tokens, 1));
     nUtil->assertArgument(asset);
@@ -131,24 +126,14 @@ static Mix_Music* getMixMusic(const char* path) {
 static Mix_Chunk* getMixChunk(const char* path) {
 	sArray* tokens = nApp->tokenize(path, "/");
     nUtil->assertArgument(nArray->size(tokens) == 2);
-    sFolder* folder = nApp->prv->getFolder(nArray->at(tokens, 0));
+    sFolder* folder = nApp->getFolder(nArray->at(tokens, 0));
     nUtil->assertArgument(folder);
     sChunk* asset = nMap->get(folder->assets, nArray->at(tokens, 1));
     nUtil->assertArgument(asset);
     return asset->chunk;
 }
 
-static SDL_Texture* getSDLTexture(const char* path) {
-	sArray* tokens = nApp->tokenize(path, "/");
-    nUtil->assertArgument(nArray->size(tokens) == 2);
-    sFolder* folder = nApp->prv->getFolder(nArray->at(tokens, 0));
-    nUtil->assertArgument(folder);
-    sImage* asset = nMap->get(folder->assets, nArray->at(tokens, 1));
-    nUtil->assertArgument(asset);
-    return asset->resource;
-}
-
-static sAnimation* pGetAnimation(sFolder* self, const char* id) {
+static sAnimation* getAnimation(sFolder* self, const char* id) {
      return nMap->get(self->assets, id);
 }
 
@@ -192,13 +177,13 @@ static void pDecRefCounter(sFolder* self) {
     }
 }
 
-static sImage* iCreateImage(sFolder* folder, const char* id, ImageType type) {
+static sImage* iCreateImage(sFolder* folder, const char* name, ImageType type) {
     sImage* self = calloc(1, sizeof(sImage));
     nUtil->assertAlloc(self);
-    self->id = nUtil->createString(id);
+    self->name = nUtil->createString(name);
     self->folder = folder;
     self->type = type;
-    nMap->set(folder->assets, id, self, nFolder->p->destroyImage);
+    nMap->set(folder->assets, name, self, pDestroyImage);
     return self;
 }
 
@@ -206,20 +191,19 @@ static void pDestroyImage(sImage* self) {
     if (self) {
         if (self->resource){
             SDL_DestroyTexture(self->resource);
-        }
-        nArray->destroy(self->children);
+        }       
         free(self->src);
-        free(self->id);
+        free(self->name);
         free(self);
     }
 }
 
-static sImage* pCreateText(const char* text, const char* fontName, int size, SDL_Color* color){
+static sImage* createText(const char* text, const char* fontName, int size, SDL_Color* color){
 
     sImage* self = calloc(1, sizeof(sImage));
     nUtil->assertAlloc(self);
     self->type = Text;
-    const char* fontPath = nApp->prv->getFontPath(fontName);
+    const char* fontPath = nApp->p_->getFontPath(fontName);
    
     sSize wsize = {0, 0};
     SDL_GetRendererOutputSize(nApp->SDLRenderer(), &wsize.w, &wsize.h);
@@ -241,6 +225,11 @@ static sImage* pCreateText(const char* text, const char* fontName, int size, SDL
     return self;
 }
 
+static void destroyText(sImage* self) { 
+    nUtil->assertArgument(self && self->type == Text);
+    pDestroyImage(self);
+}
+
 static void loadImage(const char* id, const char* path, sRect* src, double proportion) {
 
     sFolder* self = rFolder;
@@ -251,7 +240,7 @@ static void loadImage(const char* id, const char* path, sRect* src, double propo
     img->resource = NULL;
 
     self->totalAssets++;
-    nApp->prv->loadSDLSurface(img, path);
+    nApp->p_->loadSDLSurface(img, path);
 
     if (src) {
         img->src = malloc(sizeof(sRect));
@@ -280,7 +269,7 @@ static void createTilesetFromImage(const char* image, sSize size, sMatrix matrix
 	char folderId[32], imageId[32];
     nUtil->splitAssetPath(image, folderId, imageId);
 
-    sFolder* folder = nApp->prv->getFolder(folderId);
+    sFolder* folder = nApp->getFolder(folderId);
     nUtil->assertArgument(folder);
     sImage* source = nMap->get(folder->assets, imageId);
     nUtil->assertArgument(source);
@@ -290,7 +279,7 @@ static void createTilesetFromImage(const char* image, sSize size, sMatrix matrix
 	for (int i = 0; i < matrix.nr; i++) {
 		for (int j = 0; j < matrix.nc; j++) {
             char bId[64];
-            snprintf(bId, 64, "%s|%d", source->id, ++counter);
+            snprintf(bId, 64, "%s|%d", source->name, ++counter);
             sImage* self = iCreateImage(folder, bId, Opaque);
             self->src = malloc(sizeof(sRect));
             nUtil->assertAlloc(self->src);
@@ -301,62 +290,34 @@ static void createTilesetFromImage(const char* image, sSize size, sMatrix matrix
 	}
 }
 
-static void createTilemap(const char* folderName, const char* name, const char* group,
-    sSize size, sMatrix matrix, int* sequence
-){
-    sFolder* folder = nApp->prv->getFolder(folderName);
-    nUtil->assertArgument(folder);
-    nUtil->assertArgument(folder->status != nUtil->status->NONE);    
-    sImage* self = iCreateImage(folder, name, Palette);
-    nUtil->assertAlloc(self);    
-    self->size = size;
-    self->matrix = matrix;   
-    self->children = nArray->create();
-
-    //for jumps in the composed image
-    static sImage sBlank = {.type = Blank};
-
-    for (int i = 0; i < matrix.nr * matrix.nc; i++) {
-        sImage* image = NULL;
-        const char* stringImage = NULL;
-        char child[64] = {'\0'};
-
-        if (sequence) {
-            if (sequence[i] == -1) {
-                image = &sBlank;
-            }
-            else {
-                snprintf(child, 64, "%s|%d", group, sequence[i]);
-                stringImage = child;
-            }
-        }
-        else {
-            stringImage = group;
-        }
-        image = image ? image : nMap->get(folder->assets, stringImage);
-        nUtil->assertResourceNotFound(image);
-        nArray->push(self->children, image, NULL);
-    }   
+static sFolder* getImageFolder(sImage* self) {
+    nUtil->assertArgument(self);
+    return self->folder;
 }
 
-static sSize pGetImageSize(sImage* self) {
-    return self->size;
+static const sSize* pGetImageSize(sImage* self) {
+    nUtil->assertArgument(self);
+    return &self->size;
 }
 
-static sSize getImageSize(const char* path) {
-	nUtil->assertArgument(path);
-    char folderId[32];
-    char imageId[32];
-    nUtil->splitAssetPath(path, folderId, imageId);
-    sFolder* folder = nApp->prv->getFolder(folderId);
-    nUtil->assertArgument(folder);
-    sImage* image = nFolder->p->getImage(folder, imageId);
-    nUtil->assertArgument(image);
-    return image->size;
+static const sRect* getImageSrc(sImage* self) {
+     nUtil->assertArgument(self);
+    return self->src;
 }
 
-static const char* pGetImageId(sImage* self) {
-	return self->id;
+static const char* getImageName(sImage* self) {
+    nUtil->assertArgument(self);
+    return self->name;
+}
+
+static SDL_Texture* getImageSDLTexture(sImage* self) {
+    nUtil->assertArgument(self);
+	return self->resource;
+}
+
+static double getImageProportion(sImage* self) {
+     nUtil->assertArgument(self);
+     return self->proportion;
 }
 
 static void pSetSDLTexture(sImage* self, void* resource, sSize* size) {
@@ -377,12 +338,12 @@ static void pSetSDLTexture(sImage* self, void* resource, sSize* size) {
 static void iDestroyAnimation(sAnimation* self) {
     if (self) {
         nArray->destroy(self->images);
-        free(self->id);
+        free(self->name);
         free(self);
     }
 }
 
-static void loadAnimation(const char* id, const char* pathF,
+static void loadAnimation(const char* name, const char* pathF,
     int start, int end, int interval, double proportion, bool continuous)
 {
     nUtil->assertArgument(start >= 0);
@@ -390,7 +351,7 @@ static void loadAnimation(const char* id, const char* pathF,
     sFolder* folder = rFolder;
     sAnimation* self = malloc(sizeof(sAnimation));
     nUtil->assertAlloc(self);
-    self->id = nUtil->createString(id);
+    self->name = nUtil->createString(name);
     self->images = nArray->create();
 	self->interval = interval;
     self->continuous = continuous;
@@ -399,13 +360,17 @@ static void loadAnimation(const char* id, const char* pathF,
     for (int i = start; i <= end; i++) {
         char bId[64];
         char bPath[256];
-        snprintf(bId, 64, "%s|%d", id, i);
+        snprintf(bId, 64, "%s|%d", name, i);
         snprintf(bPath, 256, pathF, i);
         nFolder->loadImage(bId, bPath, NULL, proportion);
         nArray->push(self->images, nMap->get(folder->assets, bId), NULL);
 	}
     if (!folder->assets) folder->assets = nMap->create();
-    nMap->set(folder->assets, self->id, self, (sDtor) iDestroyAnimation);
+    nMap->set(folder->assets, self->name, self, (sDtor) iDestroyAnimation);
+}
+
+static const char* getAnimName(sAnimation* self) {
+    return self->name;
 }
 
 static bool pIsAnimContinuous(sAnimation* self){
@@ -424,9 +389,6 @@ static sImage* pGetAnimImage(sAnimation* self, Uint32 index) {
     return nArray->at(self->images, index);
 }
 
-static const char* pGetAnimId(sAnimation* self) {
-    return self->id;
-}
 
 static void iDestroyChunk(sChunk* self) {
     if (self) {
@@ -442,7 +404,7 @@ static void loadChunk(const char* id, const char* path) {
     self->id = nUtil->createString(id);
     self->folder = rFolder;
     self->chunk = NULL;
-    nApp->prv->loadMixChunk(self, path);
+    nApp->p_->loadMixChunk(self, path);
     rFolder->totalAssets++;
     if (!rFolder->assets) rFolder->assets = nMap->create();
     nMap->set(rFolder->assets, self->id, self, iDestroyChunk);
@@ -466,7 +428,7 @@ static void loadMusic(const char* id, const char* path) {
     self->id = nUtil->createString(id);
     self->folder = rFolder;
     self->music = NULL;
-    nApp->prv->loadMixMusic(self, path);
+    nApp->p_->loadMixMusic(self, path);
     rFolder->totalAssets++;
     if (!rFolder->assets) rFolder->assets = nMap->create();
     nMap->set(rFolder->assets, self->id, self, (sDtor) iDestroyMusic);
@@ -512,105 +474,53 @@ static void pRenderImage(sImage* self, sRect* target,
                 SDL_SetTextureAlphaMod(resource, 255);
             }
         }
-	}
-	else if (self->type == Palette) {
-		nFolder->p->renderTilePallete(self, target, opacity);
-	}
+	}	
 }
-
-static void pRenderTilePallete(sImage* self, sRect* target, Uint8 opacity) {
-	
-    if (!nFolder->p->hasStatus(self->folder, nUtil->status->READY)){ return; }
-
-    int w = (self->size.w / self->matrix.nc);
-    int h = (self->size.h / self->matrix.nr);
-
-    int rowStart = 0;
-    int rowEnd = self->matrix.nr;
-    int columnStart = 0;
-    int columnEnd =  self->matrix.nc;
-
-    sSize windowSize = nApp->logicalSize();
-
-    //... calc renderable area of the matrix
-    if (target->x < 0) {
-        columnStart = -target->x / w;
-    }
-    if (target->x + target->w > windowSize.w) {
-        columnEnd -= (target->x + target->w - windowSize.w) / w;
-    }
-    if (target->y < 0) {
-        rowStart = -target->y / h;
-    }
-    if (target->y + target->h > windowSize.h) {
-        rowEnd -= (target->y + target->h - windowSize.h) / h;
-    }
-
-    //...
-    for (int rows = rowStart; rows < rowEnd; rows++) {
-
-       int y = target->y + rows * h;
-
-        for (int columns = columnStart; columns < columnEnd; columns++) {
-
-            int index = rows * self->matrix.nc + columns;
-            sImage* child = nArray->at(self->children, index);
-            if(child->type == Blank){ continue; }
-            int x = (target->x + columns * w);
-
-            //calc child pos
-            sRect pos = {
-                .x  = x - ((child->size.w - w) / 2), //...xcenter texture
-                .y = y - ((child->size.h - h) / 2), //... ycenter texture
-                .w = child->size.w,
-                .h = child->size.h
-            };           
-            nFolder->p->renderImage(child, &pos, 0.0, SDL_FLIP_NONE, opacity);
-        }
-    }
-}
-
 
 const struct sFolderNamespace* const nFolder = &(struct sFolderNamespace){
 
     .create = create,
     .getMixMusic = getMixMusic,
     .getMixChunk = getMixChunk,
-    .getSDLTexture = getSDLTexture,
+    .getImage = getImage,
+    .getAnimation = getAnimation,
     .loadImage = loadImage,
     .loadTileset = loadTileset,
-    .createTilesetFromImage = createTilesetFromImage,
-    .createTilemap = createTilemap,
-    .getImageSize = getImageSize,
+    .createTilesetFromImage = createTilesetFromImage,    
     .loadAnimation = loadAnimation,
     .loadChunk = loadChunk,
     .loadMusic = loadMusic,    
 
-    .p = &(struct sFolderPrivateNamespace){
+    .img = &(const struct sImageNamespace) {
+        .name = getImageName,
+        .folder = getImageFolder,
+        .size = pGetImageSize,
+        .SDLTexture = getImageSDLTexture,
+        .src = getImageSrc,
+        .proportion = getImageProportion,
+        .createText = createText,
+        .render = pRenderImage,
+        .destroyText = destroyText,
+    },
+
+    .anim = &(const struct sAnimationNamespace) {
+        .name = getAnimName,
+        .interval = pGetAnimInterval,
+        .quantity = pGetAnimQuantity,
+        .isContinuous = pIsAnimContinuous,
+        .getImage = pGetAnimImage,
+    },
+
+    .p_ = &(struct sFolderPrivateNamespace){
        .destroy = pDestroy,
        .hasStatus = pHasStatus,
        .id = pId,
        .getPercLoaded = pGetPercLoaded,
        .incRefCounter = pIncRefCounter,
-       .decRefCounter = pDecRefCounter,
-       .getImage = pGetImage,
-       .getAnimation = pGetAnimation,
+       .decRefCounter = pDecRefCounter,          
        
        .setMixChunk = pSetMixChunk,
        .setMixMusic = pSetMixMusic,
-       .setSDLTexture = pSetSDLTexture,
-       
-       .destroyImage = pDestroyImage,
-       .getImageId = pGetImageId,
-       .getImageSize = pGetImageSize,
-       .createText = pCreateText,
-       .renderImage = pRenderImage,
-       .renderTilePallete = pRenderTilePallete,
-       
-       .getAnimId = pGetAnimId,
-       .isAnimContinuous = pIsAnimContinuous,
-       .getAnimInterval = pGetAnimInterval,
-       .getAnimQuantity = pGetAnimQuantity,
-       .getAnimImage = pGetAnimImage,
+       .setSDLTexture = pSetSDLTexture,                                  
     },    
 };

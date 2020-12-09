@@ -1,11 +1,11 @@
 #include "../Util/Util.h"
 #include "../Physics/Physics.h"
-#include "../Qtree/Qtree.h"
+#include "../Containers/Qtree/Qtree.h"
 #include "../Scene/Scene.h"
 #include "../Element/Element.h"
-#include "../Map/Map.h"
-#include "../Array/Array.h"
-#include "../List/List.h"
+#include "../Containers/Map/Map.h"
+#include "../Containers/Array/Array.h"
+#include "../Containers/List/List.h"
 #include <string.h>
 #include "../App/App.h"
 
@@ -121,9 +121,9 @@ static void destroyContact(sContact* self) {
 	if (self) {
 		sScene* scene = nElem->scene(self->colliding);
 		if (self->effective && !nScene->hasStatus(scene, nUtil->status->UNLOADING)) {			
-			nElem->body->p->removeContact(self->colliding, self);
-			nElem->body->p->removeContact(self->collided, self);
-			nArray->removeByValue(nScene->p->getPhysics(scene)->contacts, self);
+			nElem->body->p_->removeContact(self->colliding, self);
+			nElem->body->p_->removeContact(self->collided, self);
+			nArray->removeByValue(nScene->p_->getPhysics(scene)->contacts, self);
 		}
 		free(self);
 	}
@@ -158,21 +158,21 @@ static void update(sPhysics* self) {
 
 static void insert(sPhysics* self, sElement* element) {
 	if (!nElem->hasBody(element)) { return; }
-	sQtreeElem* fixed = nElem->body->p->getQtreeElemFixed(element);
+	sQtreeElem* fixed = nElem->body->p_->getQtreeElemFixed(element);
 	nQtree->insert(self->fixed, fixed);
 	if (nElem->body->isDynamic(element)) {
-		sQtreeElem* dynamic = nElem->body->p->getQtreeElemDynamic(element);
+		sQtreeElem* dynamic = nElem->body->p_->getQtreeElemDynamic(element);
 		nQtree->insert(self->dynamic, dynamic);
 	}
 }
 
 static void removeElem(sPhysics* self, sElement* element) {
 	if (!nElem->hasBody(element)) return;
-	sQtreeElem* fixed = nElem->body->p->getQtreeElemFixed(element);
+	sQtreeElem* fixed = nElem->body->p_->getQtreeElemFixed(element);
 	nQtree->remove(self->fixed, fixed);
 	
 	if (nElem->body->isDynamic(element)) {
-		sQtreeElem* dynamic = nElem->body->p->getQtreeElemDynamic(element);
+		sQtreeElem* dynamic = nElem->body->p_->getQtreeElemDynamic(element);
 		nQtree->remove(self->dynamic, dynamic);
 	}
 
@@ -191,10 +191,10 @@ static void removeElem(sPhysics* self, sElement* element) {
 static void updateElem(sPhysics* self, sElement* element, sRect previousPos) {	
 	if(nElem->hasBody(element)){
 		if (nElem->body->isDynamic(element)) {
-			sQtreeElem* dynamic = nElem->body->p->getQtreeElemDynamic(element);
+			sQtreeElem* dynamic = nElem->body->p_->getQtreeElemDynamic(element);
 			nQtree->update(self->dynamic, dynamic, previousPos);
 		}	
-		sQtreeElem* fixed = nElem->body->p->getQtreeElemFixed(element);
+		sQtreeElem* fixed = nElem->body->p_->getQtreeElemFixed(element);
 		nQtree->update(self->fixed, fixed, previousPos);
 	}	
 }
@@ -206,10 +206,10 @@ static sVector moveByElem(sPhysics* self, sElement* element) {
 
 static void physicsMoveElement_(sElement* element) {
 
-	nUtil->assertState(!nElem->body->p->mcFlag(element));
-	sPhysics* physics = nScene->p->getPhysics(nElem->scene(element));			
+	nUtil->assertState(!nElem->body->p_->mcFlag(element));
+	sPhysics* physics = nScene->p_->getPhysics(nElem->scene(element));			
 	physicsApplyGravity(physics, element);
-	bool cantmove = nElem->body->p->movFlag(element) || !nElem->body->isMoving(element);		
+	bool cantmove = nElem->body->p_->movFlag(element) || !nElem->body->isMoving(element);		
 	if (cantmove) {
 		sVector* vector = malloc(sizeof(sVector));
 		nUtil->assertAlloc(vector);
@@ -217,7 +217,7 @@ static void physicsMoveElement_(sElement* element) {
 		nArray->push(physics->mvstack, vector, free);		
 		return;
 	}	
-	nElem->body->p->setMovFlag(element, true);	
+	nElem->body->p_->setMovFlag(element, true);	
 	physics->depth++;
 	nArray->push(physics->cntend, element, NULL);
 				
@@ -242,7 +242,7 @@ static void physicsMoveElement_(sElement* element) {
 	nArray->destroy(temp);
 	
 	nArray->remove(physics->emdstack, nArray->size(physics->emdstack) - 1);
-	nElem->body->p->setMovFlag(element, false);	
+	nElem->body->p_->setMovFlag(element, false);	
 	physics->depth--;
 	if (physics->depth == 0) {
 		for (Uint32 i = 0; i < nArray->size(physics->cntend); i++){
@@ -279,7 +279,7 @@ static void physicsApplyFriction(sPhysics* self, sElement* element, sVector move
 static void physicsCheckCollision(sElement* other) {	
 	
 	//create alias	
-	sPhysics* physics = nScene->p->getPhysics(nElem->scene(other));
+	sPhysics* physics = nScene->p_->getPhysics(nElem->scene(other));
 	EmData* emdata = nArray->last(physics->emdstack);
 	sElement* self = emdata->self;	
 
@@ -332,7 +332,7 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 
 	//if there is no contact, just move the element
 	if (!emdata->contacts) {			
-		nElem->p->updatePosition(emdata->self, move);
+		nElem->p_->updatePosition(emdata->self, move);
 		physicsApplyFriction(self, emdata->self, move);
 		return move;
 	}
@@ -341,7 +341,7 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 
 	for (Uint32 i = 0; i < nArray->size(emdata->contacts); i++){
 		sContact* contact = nArray->at(emdata->contacts, i);
-		nScene->p->onPreContact(self->scene, contact);
+		nScene->p_->onPreContact(self->scene, contact);
 		if (contact->prevented) { continue; }
 
 		int spref = nElem->body->preference(contact->colliding);
@@ -400,7 +400,7 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 	}
 
 	//move entity to new position	
-	nElem->p->updatePosition(emdata->self, move);
+	nElem->p_->updatePosition(emdata->self, move);
 	physicsApplyFriction(self, emdata->self, move);
 
 	//now check effective collisions and add to self collision array
@@ -439,17 +439,17 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 		
 	if (changeVelocity) {		
 		if (horizontalCollision) {
-			nElem->body->p->applyHozElasticity(emdata->self, xres);			
+			nElem->body->p_->applyHozElasticity(emdata->self, xres);			
 		}
 		if (verticalCollision) {
-			nElem->body->p->applyVetElasticity(emdata->self, yres);
+			nElem->body->p_->applyVetElasticity(emdata->self, yres);
 		}		
 	}
 
 		//notify collision callback handler
 	while (previousSize < nArray->size(self->contacts)) {
 		sContact* contact = nArray->at(self->contacts, previousSize);
-		nScene->p->onContactBegin(self->scene, contact);
+		nScene->p_->onContactBegin(self->scene, contact);
 		previousSize++;
 	}
 	return move;
@@ -468,8 +468,8 @@ static bool physicsAddContact(sPhysics* self, sContact* contact) {
 	}
 
 	if (!contains) {		
-		nElem->body->p->addContact(contact->colliding, contact);
-		nElem->body->p->addContact(contact->collided, contact);		
+		nElem->body->p_->addContact(contact->colliding, contact);
+		nElem->body->p_->addContact(contact->collided, contact);		
 		contact->effective = true;
 		nArray->push(self->contacts, contact, NULL);			
 		return true;
@@ -482,7 +482,7 @@ static bool physicsAddContact(sPhysics* self, sContact* contact) {
 static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 		
 	sArray* contactsToRemove = nArray->create();
-	sList* allContacts = nElem->body->p->getContactList(element);
+	sList* allContacts = nElem->body->p_->getContactList(element);
 	
 	for (sContact* contact = nList->begin(allContacts); contact != NULL;
 		contact = nList->next(allContacts))
@@ -525,7 +525,7 @@ static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 	
 	for (Uint32 i = 0; i < nArray->size(contactsToRemove); i++){
 		sContact* contact = nArray->at(contactsToRemove, i);		
-		nScene->p->onContactEnd(self->scene, contact);		
+		nScene->p_->onContactEnd(self->scene, contact);		
 	}
 	
 	//... sArray destructor delete contacts //-> and sContact sDtor remove it from arrays.
@@ -533,7 +533,7 @@ static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 }
 
 static void physicsCheckGround(sElement* other) {
-	sPhysics* physics = nScene->p->getPhysics(nElem->scene(other));
+	sPhysics* physics = nScene->p_->getPhysics(nElem->scene(other));
 	EmData* emdata = nArray->last(physics->emdstack);
 	sElement* self = emdata->self;
 	
@@ -544,9 +544,9 @@ static void physicsCheckGround(sElement* other) {
 	bool ytouching =  (s->y == o->y + o->h);
 	if (samecolumn && ytouching) {
 		sContact* contact = createContact(self, other, 0, nContact->DOWN);
-		nScene->p->onPreContact(physics->scene, contact);
+		nScene->p_->onPreContact(physics->scene, contact);
 		if (physicsAddContact(physics, contact)) {
-			nScene->p->onContactBegin(physics->scene, contact);
+			nScene->p_->onContactBegin(physics->scene, contact);
 		}
 	}
 }

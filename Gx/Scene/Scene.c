@@ -2,8 +2,8 @@
 #include "../Scene/Scene.h"
 #include "../App/App.h"
 #include "../Element/Element.h"
-#include "../Map/Map.h"
-#include "../List/List.h"
+#include "../Containers/Map/Map.h"
+#include "../Containers/List/List.h"
 #include "../Graphics/Graphics.h"
 #include "../Physics/Physics.h"
 #include "../Folder/Folder.h"
@@ -81,14 +81,14 @@ static sScene* create(const sIni* ini) {
 		self->folders = nUtil->split(ini->folders, "|");
 		for (Uint32 i = 0; i < nArray->size(self->folders); i++) {
 			const char* folderId = nArray->at(self->folders, i);
-			sFolder* folder = nApp->prv->getFolder(folderId);
+			sFolder* folder = nApp->getFolder(folderId);
 			nUtil->assertArgument(folder);
 			nArray->insert(self->folders, i, folder, NULL);
 		}
 	}	
 	//...
 	
-	nApp->prv->addScene(self);
+	nApp->p_->addScene(self);
 	
 	return self;
 }
@@ -124,7 +124,7 @@ static void pDestroy(sScene* self) {
 		if(self->folders){
 			for (Uint32 i = 0; i < nArray->size(self->folders); i++) {
 				sFolder* folder = nArray->at(self->folders, i);
-				nFolder->p->decRefCounter(folder);
+				nFolder->p_->decRefCounter(folder);
 			}
 			nArray->destroy(self->folders);		
 		}
@@ -192,7 +192,7 @@ static sElement* getElem(sScene* self, Uint32 id) {
         Uint32 m = l + (r - l) / 2; 		
 		       
 		sElement* elem = nArray->at(self->elements, m);
-		Uint32 elemID = nElem->p->id(elem);
+		Uint32 elemID = nElem->p_->id(elem);
         if (elemID == id){
             return elem; 
         }
@@ -236,7 +236,7 @@ static Uint32 getPercLoaded(sScene* self) {
 	Uint32 total = 0;
 	for (Uint32 i = 0; i < nArray->size(self->folders); i++){	
 		sFolder* folder = nArray->at(self->folders, i);
-		total += nFolder->p->getPercLoaded(folder);
+		total += nFolder->p_->getPercLoaded(folder);
 	}
 	
 	return total / nArray->size(self->folders);
@@ -256,7 +256,7 @@ static void setTimeout(sScene* self, int interval, sHandler callback, void* targ
 
 static Uint32 addElem(sScene* self, sElement* elem) {	
 	nUtil->assertState(self->status == nUtil->status->LOADED || self->status == nUtil->status->RUNNING);	
-	nArray->push(self->elements, elem, (sDtor) nElem->p->destroy);	
+	nArray->push(self->elements, elem, (sDtor) nElem->p_->destroy);	
 	nGraphics->insert(self->graphics, elem);
 	nPhysics->insert(self->physics, elem);	
 	Uint32 id = self->elemCounter++;
@@ -272,7 +272,7 @@ static void addComponent(sScene* self, sComponent* comp) {
 		self->components = nMap->create();
 	}
 	nMap->set(self->components, comp->name, copy, nComponent->destroy);
-	nScene->p->subscribeComponent(self, comp);
+	nScene->p_->subscribeComponent(self, comp);
 }
 
 
@@ -359,13 +359,13 @@ static void pPreLoad(sScene* self) {
 	}
 	
 	if(self->comp) {
-		nScene->p->subscribeComponent(self, self->comp);
+		nScene->p_->subscribeComponent(self, self->comp);
 	}
 
 	//load folders
 	if(self->folders){
 		for (Uint32 i = 0; i < nArray->size(self->folders); i++) {		
-			nFolder->p->incRefCounter(nArray->at(self->folders, i));
+			nFolder->p_->incRefCounter(nArray->at(self->folders, i));
 		}
 	}
 }
@@ -422,7 +422,7 @@ static void pUnLoad(sScene* self) {
 	if(self->folders){
 		for (Uint32 i = 0; i< nArray->size(self->folders); i++){
 			sFolder* folder = nArray->at(self->folders, i);			
-			nFolder->p->decRefCounter(folder);
+			nFolder->p_->decRefCounter(folder);
 		}	
 	}
 	
@@ -589,19 +589,19 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 static void pOnPreContact(sScene* self, sContact* contact) {
 	sElement* elemSelf = nContact->colliding(contact);
 	sElement* elemOther = nContact->collided(contact);
-	nElem->body->p->setMcFlag(elemSelf, true);
-	nElem->body->p->setMcFlag(elemOther, true);
+	nElem->body->p_->setMcFlag(elemSelf, true);
+	nElem->body->p_->setMcFlag(elemOther, true);
 	
 
-	nElem->body->p->setMcFlag(elemSelf, false);
-	nElem->body->p->setMcFlag(elemOther, false);
+	nElem->body->p_->setMcFlag(elemSelf, false);
+	nElem->body->p_->setMcFlag(elemOther, false);
 }
 
 static void pOnContactBegin(sScene* self, sContact* contact) {
 	sElement* elemSelf = nContact->colliding(contact);
 	sElement* elemOther = nContact->collided(contact);
-	nElem->body->p->setMcFlag(elemSelf, true);
-	nElem->body->p->setMcFlag(elemOther, true);
+	nElem->body->p_->setMcFlag(elemSelf, true);
+	nElem->body->p_->setMcFlag(elemOther, true);
 	
 	if (self->comp && self->comp->onPreContact) {
 		self->comp->onPreContact(&(sEvent){
@@ -610,25 +610,25 @@ static void pOnContactBegin(sScene* self, sContact* contact) {
 			.contact = contact,
 		});
 	}
-	nElem->p->executeHandler(elemSelf, &(sEvent){
+	nElem->p_->executeHandler(elemSelf, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_PRE_CONTACT,
 			.contact = contact,
 	});
-	nElem->p->executeHandler(elemOther, &(sEvent){
+	nElem->p_->executeHandler(elemOther, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_PRE_CONTACT,
 			.contact = contact,
 	});
-	nElem->body->p->setMcFlag(elemSelf, false);
-	nElem->body->p->setMcFlag(elemOther, false);
+	nElem->body->p_->setMcFlag(elemSelf, false);
+	nElem->body->p_->setMcFlag(elemOther, false);
 }
 
 static void pOnContactEnd(sScene* self, sContact* contact) {
 	sElement* elemSelf = nContact->colliding(contact);
 	sElement* elemOther = nContact->collided(contact);
-	nElem->body->p->setMcFlag(elemSelf, true);
-	nElem->body->p->setMcFlag(elemOther, true);
+	nElem->body->p_->setMcFlag(elemSelf, true);
+	nElem->body->p_->setMcFlag(elemOther, true);
 	
 	if (self->comp && self->comp->onContactEnd) {
 		self->comp->onContactEnd(&(sEvent){
@@ -637,19 +637,19 @@ static void pOnContactEnd(sScene* self, sContact* contact) {
 			.contact = contact,
 		});
 	}
-	nElem->p->executeHandler(elemSelf, &(sEvent){
+	nElem->p_->executeHandler(elemSelf, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_CONTACT_END,
 			.contact = contact,
 	});
-	nElem->p->executeHandler(elemOther, &(sEvent){
+	nElem->p_->executeHandler(elemOther, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_CONTACT_END,
 			.contact = contact,
 	});
 
-	nElem->body->p->setMcFlag(elemSelf, false);
-	nElem->body->p->setMcFlag(elemOther, false);
+	nElem->body->p_->setMcFlag(elemSelf, false);
+	nElem->body->p_->setMcFlag(elemOther, false);
 }
 
 
@@ -670,7 +670,7 @@ const struct sSceneNamespace* const nScene = &(struct sSceneNamespace) {
 	.addComponent = addComponent,
 	
 
-	.p = &(struct sScenePrivateNamespace) {
+	.p_ = &(struct sScenePrivateNamespace) {
 		.destroy = pDestroy,
 		
 		.getPhysics = pGetPhysics,
