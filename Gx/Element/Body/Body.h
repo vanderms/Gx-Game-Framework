@@ -2,81 +2,85 @@
 #define GX_BODY_H
 #include "../../Util/Util.h"
 
-struct sElemBody;
+enum sElemBodyConstants {
+	nElem_BODY_NONE = 1,
+	nElem_BODY_FIXED = 2,
+	nElem_BODY_DYNAMIC = 3,
+};
 
-extern const struct sElemBodyNamespace {
+extern const Uint32 nElem_CMASK_NONE;
+extern const Uint32 nElem_CMASK_ALL;
+extern const Uint32 nElem_CMASK_CAMERA;
+extern const Uint32 nElem_CMASK_DYNAMIC;
+extern const Uint32 nElem_CMASK_FIXED;
 
-	bool (*isDynamic)(sElement* self);
-	bool (*isFixed)(sElement* self);
 
-	bool (*isOnGround)(sElement* self);
-	Uint32 (*cmask)(sElement* self);
-	void (*setCmask)(sElement* self, Uint32 mask);
+bool nElemIsBodyDynamic(sElement* self);
+bool nElemIsBodyFixed(sElement* self);
 
-	int (*preference)(sElement* self);
-	void (*setPreference)(sElement* self, int value);
+bool nElemIsOnGround(sElement* self);
+Uint32 nElemCmask(sElement* self);
+void nElemSetCmask(sElement* self, Uint32 mask);
 
-	bool (*hasFriction)(sElement* self);
-	void (*setFriction)(sElement* self, bool value);
+int nElemPreference(sElement* self);
+void nElemSetPreference(sElement* self, int value);
 
-	sVector (*velocity)(sElement* self);
-	void (*setVelocity)(sElement* self, sVector velocity);
+bool nElemHasFriction(sElement* self);
+void nElemSetFriction(sElement* self, bool value);
 
-	int (*vely)(sElement* self);
-	void (*setVely)(sElement* self, int vel);
+sVector nElemVelocity(sElement* self);
+void nElemSetVelocity(sElement* self, sVector velocity);
 
-	int (*velx)(sElement* self);
-	void (*setVelx)(sElement* self, int vel);
+int nElemVely(sElement* self);
+void nElemSetVely(sElement* self, int vel);
 
-	void (*accelerate)(sElement* self, double x, double y);
+int nElemVelx(sElement* self);
+void nElemSetVelx(sElement* self, int vel);
 
-	bool (*isMoving)(sElement* self);
+void nElemAccelerate(sElement* self, double x, double y);
 
-	double (*elasticity)(sElement* self);
-	void (*setElasticity)(sElement* self, double elasticity);
+bool nElemIsMoving(sElement* self);
 
-	double (*restitution)(sElement* self);
-	void (*setRestitution)(sElement* self, double restitution);
+double nElemElasticity(sElement* self);
 
-	int (*maxgvel)(sElement* self);
-	void (*setMaxgvel)(sElement* self, int value);
+	//88888 LAST.......LAST... LAST....
 
-	sArray* (*getContacts)(sElement* self, int types);
+void nElemSetElasticity(sElement* self, double elasticity);
 
-	sVector (*move)(sElement* self, sVector vector, bool force);
-	void (*moveTo)(sElement* self, sPoint pos, bool force);
+double nElemRestitution(sElement* self);
+void nElemSetRestitution(sElement* self, double restitution);
 
-	const int NONE;
-	const int FIXED;
-	const int DYNAMIC;	
-	const Uint32 CMASK_NONE;
-	const Uint32 CMASK_ALL;
-	const Uint32 CMASK_CAMERA;
-	const Uint32 CMASK_DYNAMIC;
-	const Uint32 CMASK_FIXED;
+int nElemMaxgvel(sElement* self);
+void nElemSetMaxgvel(sElement* self, int value);
 
-	struct sElemBodyPrivateNamespace {
-		struct sElemBody* (*create)(sElement* elem, const sIni* ini);
-		void (*destroy)(struct sElemBody* self);	
+sArray* nElemGetContacts(sElement* self, int types);
 
-		void (*applyHozElasticity)(sElement* self, double res);
-		void (*applyVetElasticity)(sElement* self, double res);
+sVector nElemMove(sElement* self, sVector vector, bool force);
+void nElemMoveTo(sElement* self, sPoint pos, bool force);
 
-		sList* (*getContactList)(sElement* self);
 
-		void (*addContact)(sElement * self, sContact * contact);
-		void (*removeContact)(sElement * self, sContact * contact);
 
-		sQtreeElem* (*getQtreeElemFixed)(sElement* self);
-		sQtreeElem* (*getQtreeElemDynamic)(sElement* self);
+struct sElemBody* nElemCreateBody_(sElement* elem, const sIni* ini);
+void nElemDestroyBody_(struct sElemBody* self);	
 
-		bool (*mcFlag)(sElement* self);
-		void (*setMcFlag)(sElement* self, bool value);
+void nElemApplyHozElasticity_(sElement* self, double res);
+void nElemApplyVetElasticity_(sElement* self, double res);
 
-		bool (*movFlag)(sElement* self);
-		void (*setMovFlag)(sElement* self, bool value);
-	}* p_;
-} nElemBody;
+sList* nElemGetContactList_(sElement* self);
+
+void nElemAddContact_(sElement * self, sContact * contact);
+void nElemRemoveContact_(sElement * self, sContact * contact);
+
+sQtreeElem* nElemGetQtreeElemFixed_(sElement* self);
+sQtreeElem* nElemGetQtreeElemDynamic_(sElement* self);
+
+bool nElemMcFlag_(sElement* self);
+void nElemSetMcFlag_(sElement* self, bool value);
+
+bool nElemMovFlag_(sElement* self);
+void nElemSetMovFlag_(sElement* self, bool value);
+
+
 
 
 

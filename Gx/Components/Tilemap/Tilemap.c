@@ -19,22 +19,22 @@ typedef struct sTilemap {
 static void updateImages(sTilemap* self){
     
     if (self->sequence) {
-        for (Uint32 i = 0; i < nArray->size(self->sequence); i++) {
-            int index = *(int*) nArray->at(self->sequence, i);
+        for (Uint32 i = 0; i < nArraySize(self->sequence); i++) {
+            int index = *(int*) nArrayAt(self->sequence, i);
             sImage* image = NULL;
             if(index != -1){
-                const char* imageName = nApp->sf("%s|%d", self->group, index);
-                image = nFolder->getImage(self->folder, imageName); 
+                const char* imageName = sf("%s|%d", self->group, index);
+                image = nFolderGetImage(self->folder, imageName); 
                 nUtil->assertResourceNotFound(image);
             }
-            nArray->insert(self->images, i,  image, NULL);
+            nArrayInsert(self->images, i,  image, NULL);
         }
     }
     else {
-        sImage* image = nFolder->getImage(self->folder, self->group);
+        sImage* image = nFolderGetImage(self->folder, self->group);
         nUtil->assertResourceNotFound(image);
         for (Uint32 i = 0; i < (Uint32) self->matrix.nr * self->matrix.nc; i++) {
-            nArray->insert(self->images, i, image, NULL);
+            nArrayInsert(self->images, i, image, NULL);
         }
     }
 }
@@ -42,9 +42,9 @@ static void updateImages(sTilemap* self){
 static void onRender(sEvent* e) {
 
     sTilemap* self = e->target;
-    const sRect* elemPos = nElem->position(self->base);
-    sRect target = nElem->style->calcPosOnCamera(self->base);
-    int opacity = nElem->style->opacity(self->base);
+    const sRect* elemPos = nElemPosition(self->base);
+    sRect target = nElemCalcPosOnCamera(self->base);
+    int opacity = nElemOpacity(self->base);
    
     int w = (elemPos->w / self->matrix.nc);
     int h = (elemPos->h / self->matrix.nr);
@@ -54,7 +54,7 @@ static void onRender(sEvent* e) {
     int columnStart = 0;
     int columnEnd =  self->matrix.nc;
 
-    sSize windowSize = nApp->logicalSize();
+    sSize windowSize = nAppLogicalSize();
 
     //... calc renderable area of the matrix
     if (target.x < 0) {
@@ -78,12 +78,12 @@ static void onRender(sEvent* e) {
         for (int columns = columnStart; columns < columnEnd; columns++) {
 
             int index = rows * self->matrix.nc + columns;
-            sImage* image = nArray->at(self->images, index);
+            sImage* image = nArrayAt(self->images, index);
             if(!image){ 
                 continue; 
             }
             int x = (target.x + columns * w);
-            const sSize* imageSize = nFolder->img->size(image);
+            const sSize* imageSize = nImageSize(image);
             //calc child pos
             sRect pos = {
                 .x  = x - ((imageSize->w - w) / 2), //...xcenter texture
@@ -91,15 +91,15 @@ static void onRender(sEvent* e) {
                 .w = imageSize->w,
                 .h = imageSize->h
             };           
-            nFolder->img->render(image, &pos, 0.0, SDL_FLIP_NONE, opacity);
+            nImageRender(image, &pos, 0.0, SDL_FLIP_NONE, opacity);
         }
     }
 }
 
 static void onDestroy(sEvent* e) {
     sTilemap* self = e->target;
-    nArray->destroy(self->images);
-    nArray->destroy(self->sequence);
+    nArrayDestroy(self->images);
+    nArrayDestroy(self->sequence);
     free(self->group);
     free(self);
 }
@@ -107,31 +107,31 @@ static void onDestroy(sEvent* e) {
 static void implement(sElement* base, const char* path, sMatrix matrix, const int* sequence) {
 	
 	nUtil->assertArgument(base && path);
-	nUtil->assertArgument(nElem->position(base) && nElem->isRenderable(base));
+	nUtil->assertArgument(nElemPosition(base) && nElemIsRenderable(base));
 	nUtil->assertArgument(matrix.nr && matrix.nc);
 			
 	sTilemap* self = nUtil->assertAlloc(calloc(1, sizeof(sTilemap)));	
 	self->base = base;
 	self->matrix = matrix;
     
-    sArray* tokens = nApp->tokenize(path, "/");
-    nUtil->assertArgument(nArray->size(tokens) == 2);
-    self->folder = nApp->getFolder(nArray->at(tokens, 0));
+    sArray* tokens = nAppTokenize(path, "/");
+    nUtil->assertArgument(nArraySize(tokens) == 2);
+    self->folder = nAppGetFolder(nArrayAt(tokens, 0));
     nUtil->assertArgument(self->folder);
-    self->group = nUtil->createString(nArray->at(tokens, 1));    
+    self->group = nUtil->createString(nArrayAt(tokens, 1));    
    
-    self->images = nArray->create();
+    self->images = nArrayCreate();
 	
     if (sequence) {
-         self->sequence = nArray->create();
+         self->sequence = nArrayCreate();
          for (Uint32 i = 0; i < (Uint32) matrix.nr * matrix.nc; i++) {
-            nArray->push(self->sequence, nUtil->createInt(sequence[i]), free);
+            nArrayPush(self->sequence, nUtil->createInt(sequence[i]), free);
         }
     }
     else self->sequence = NULL;
     updateImages(self);	
 
-    nElem->addComponent(self->base, &(sComponent){
+    nElemAddComponent(self->base, &(sComponent){
         .name = "nTilemap",
         .target = self,        
         .onDestroy = onDestroy,

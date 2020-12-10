@@ -44,7 +44,7 @@ static inline int calcHash(const char* str, Uint32 max) {
  *  *** CONSTRUCTOR AND DESTRUCTOR ***
  *************************************************************************************************************/
 
-static sMap* create() {
+sMap* nMapCreate() {
 	sMap* self = malloc(sizeof(sMap));
 	nUtil->assertAlloc(self);
 	self->size = 0;
@@ -59,17 +59,17 @@ static sMap* create() {
 	nUtil->assertAlloc(self->keys);
 	
 	for (Uint32 i = 0; i < self->capacity; i++) {
-		self->table[i] = nList->create();
+		self->table[i] = nListCreate();
 	}
 	//then return
 	return self;
 }
 
 
-static void destroy(sMap* self) {
+void nMapDestroy(sMap* self) {
 	if (self) {
 		for (Uint32 i = 0; i < self->capacity; i++) {
-			nList->destroy(self->table[i]);
+			nListDestroy(self->table[i]);
 			if(i >= self->size) continue;
 			free(self->keys[i]);
 			if(self->entries[i].dtor){
@@ -89,19 +89,19 @@ static void destroy(sMap* self) {
  *  *** MAP METHODS ***
  *************************************************************************************************************/
 
-static Uint32 size(sMap* self) {
+Uint32 nMapSize(sMap* self) {
 	return self->size;
 }
 
-static Uint32 capacity(sMap* self) {
+Uint32 nMapCapacity(sMap* self) {
 	return self->capacity;
 }
 
-static void* get(sMap* self, const char* key) {	
+void* nMapGet(sMap* self, const char* key) {	
 	
 	sList* bucket = self->table[calcHash(key, self->capacity)];
-	for (char* k = nList->begin(bucket); k != NULL; k = nList->next(bucket)) {
-		GxInt* reference = nList->next(bucket);
+	for (char* k = nListBegin(bucket); k != NULL; k = nListNext(bucket)) {
+		GxInt* reference = nListNext(bucket);
 		if (strcmp(k, key) == 0) {
 			return self->entries[reference->value].value;
 		}
@@ -109,24 +109,24 @@ static void* get(sMap* self, const char* key) {
 	return NULL;
 }
 
-static void* at(sMap* self, Uint32 index) {
+void* nMapAt(sMap* self, Uint32 index) {
 	nUtil->assertOutOfRange(index < self->size);
 	return self->entries[index].value;
 }
 
-static void set(sMap* self, const char* key, void* value, sDtor dtor) {
+void nMapSet(sMap* self, const char* key, void* value, sDtor dtor) {
 	
 	if (self->size >= self->capacity){
-		nMap->rehash(self, self->capacity * 2);
+		nMapRehash(self, self->capacity * 2);
 	}	
 
 	bool contains = false;
 	sList* bucket = self->table[calcHash(key, self->capacity)];
 	
-	for (char* lsKey = nList->begin(bucket); lsKey != NULL; 
-		lsKey = nList->next(bucket))
+	for (char* lsKey = nListBegin(bucket); lsKey != NULL; 
+		lsKey = nListNext(bucket))
 	{		
-		GxInt* index = nList->next(bucket);
+		GxInt* index = nListNext(bucket);
 		if (strcmp(lsKey, key) == 0) {
 			Entry* entry = &self->entries[index->value];
 			if(entry->dtor) entry->dtor(entry->value);
@@ -141,8 +141,8 @@ static void set(sMap* self, const char* key, void* value, sDtor dtor) {
 		//fill bucket
 		char* k = nUtil->createString(key);
 		GxInt* index = createInt(self->size);
-		nList->push(bucket, k, NULL);
-		nList->push(bucket, index, NULL);
+		nListPush(bucket, k, NULL);
+		nListPush(bucket, index, NULL);
 
 		//fill entries and keys
 		self->entries[self->size].value = value;
@@ -156,7 +156,7 @@ static void set(sMap* self, const char* key, void* value, sDtor dtor) {
 }
 
 
-static void rehash(sMap* self, Uint32 capacity) {
+void nMapRehash(sMap* self, Uint32 capacity) {
 
 	if (self->capacity >= capacity) return;
 
@@ -165,18 +165,18 @@ static void rehash(sMap* self, Uint32 capacity) {
 	nUtil->assertAlloc(table);
 	
 	for (Uint32 i = 0; i < capacity; i++) {
-		table[i] = nList->create();
+		table[i] = nListCreate();
 	}
 
 	for (Uint32 i = 0; i < self->capacity; i++) {
 
 		sList* source = self->table[i];		
 		
-		for (char* key = nList->begin(source); key != NULL; key = nList->next(source)) {
-			int* index = nList->next(source);
+		for (char* key = nListBegin(source); key != NULL; key = nListNext(source)) {
+			int* index = nListNext(source);
 			sList* bucket = table[calcHash(key, capacity)];
-			nList->push(bucket, key, NULL);
-			nList->push(bucket, index, NULL);
+			nListPush(bucket, key, NULL);
+			nListPush(bucket, index, NULL);
 		}		
 	}
 	
@@ -189,25 +189,25 @@ static void rehash(sMap* self, Uint32 capacity) {
 	
 	//destroy previous table
 	for (Uint32 i = 0; i < self->capacity; i++) {
-		nList->destroy(table[i]);
+		nListDestroy(table[i]);
 	}
 	free(table);
 	//set new capacity
 	self->capacity = capacity;		
 }
 
-static void removeByKey(sMap* self, const char* key) {
+void nMapRemove(sMap* self, const char* key) {
 	
 	GxInt* index = NULL;
 	bool contains = false;
 	sList* bucket = self->table[calcHash(key, self->capacity)];
 	
-	for (char* k = nList->begin(bucket); k != NULL; k = nList->next(bucket)){		
-		index = nList->next(bucket);
+	for (char* k = nListBegin(bucket); k != NULL; k = nListNext(bucket)){		
+		index = nListNext(bucket);
 		if (strcmp(k, key) == 0) {	
 			contains = true;			
-			nList->remove(bucket, k);
-			nList->remove(bucket, index);
+			nListRemove(bucket, k);
+			nListRemove(bucket, index);
 			break;
 		}	
 	}
@@ -234,16 +234,16 @@ static void removeByKey(sMap* self, const char* key) {
 	}
 }
 
-static void removeByIndex(sMap* self, Uint32 index) {
+void nMapRemoveByIndex(sMap* self, Uint32 index) {
 	nUtil->assertOutOfRange(index < self->size);
 	char* key = self->keys[index];
-	nMap->remove(self, key);
+	nMapRemove(self, key);
 }
 
-static void  clean(sMap* self) {
+void nMapClean(sMap* self) {
 	
 	//first create a empty map
-	sMap* empty = nMap->create();	
+	sMap* empty = nMapCreate();	
 		
 	//then, swap table and keys
 	SWAP(self->table, empty->table)
@@ -258,22 +258,5 @@ static void  clean(sMap* self) {
 	self->size = 0;
 
 	//finally destroy empty
-	nMap->destroy(empty);
+	nMapDestroy(empty);
 }
-
-
-const struct sMapNamespace* const nMap = &(struct sMapNamespace) {
-	//...
-	.create = create,
-	.destroy = destroy,
-	//...
-	.size = size,
-	.capacity = capacity,
-	.get = get,
-	.at = at,
-	.set = set,
-	.rehash = rehash,
-	.remove =  removeByKey,
-	.removeByIndex = removeByIndex,
-	.clean = clean
-};

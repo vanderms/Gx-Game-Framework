@@ -42,79 +42,68 @@
 			<Add directory="Libs/SDL2_mixer-2.0.4/i686-w64-mingw32/lib" />
 			<Add directory="Libs/SDL2_ttf-2.0.15/i686-w64-mingw32/lib" />
 		</Linker>
-		<Unit filename="Gx/App/GxApp.c">
+		<Unit filename="Gx/App/App.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/App/GxApp.h" />
-		<Unit filename="Gx/Array/GxArray.c">
+		<Unit filename="Gx/App/App.h" />
+		<Unit filename="Gx/Components/Button/Button.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Array/GxArray.h" />
-		<Unit filename="Gx/Button/GxButton.c">
+		<Unit filename="Gx/Components/Button/Button.h" />
+		<Unit filename="Gx/Components/Components.h" />
+		<Unit filename="Gx/Components/Tilemap/Tilemap.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Button/GxButton.h" />
-		<Unit filename="Gx/Element/GxElement.c">
+		<Unit filename="Gx/Components/Tilemap/Tilemap.h" />
+		<Unit filename="Gx/Containers/Array/Array.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Element/GxElement.h" />
-		<Unit filename="Gx/Event/GxEvent.c">
+		<Unit filename="Gx/Containers/Array/Array.h" />
+		<Unit filename="Gx/Containers/List/List.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Event/GxEvent.h" />
-		<Unit filename="Gx/Folder/GxFolder.c">
+		<Unit filename="Gx/Containers/List/List.h" />
+		<Unit filename="Gx/Containers/Map/Map.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Folder/GxFolder.h" />
-		<Unit filename="Gx/Graphics/GxGraphics.c">
+		<Unit filename="Gx/Containers/Map/Map.h" />
+		<Unit filename="Gx/Containers/Qtree/Qtree.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Graphics/GxGraphics.h" />
+		<Unit filename="Gx/Containers/Qtree/Qtree.h" />
+		<Unit filename="Gx/Element/Body/Body.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Element/Body/Body.h" />
+		<Unit filename="Gx/Element/Element.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Element/Element.h" />
+		<Unit filename="Gx/Element/Renderable/Renderable.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Element/Renderable/Renderable.h" />
+		<Unit filename="Gx/Folder/Folder.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Folder/Folder.h" />
+		<Unit filename="Gx/Graphics/Graphics.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Graphics/Graphics.h" />
 		<Unit filename="Gx/Gx.h" />
-		<Unit filename="Gx/Ini/GxIni.h" />
-		<Unit filename="Gx/List/GxList.c">
+		<Unit filename="Gx/Physics/Physics.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/List/GxList.h" />
-		<Unit filename="Gx/Map/GxMap.c">
+		<Unit filename="Gx/Physics/Physics.h" />
+		<Unit filename="Gx/Scene/Scene.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Map/GxMap.h" />
-		<Unit filename="Gx/Namespace/GxNamespace.c">
+		<Unit filename="Gx/Scene/Scene.h" />
+		<Unit filename="Gx/Util/Util.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Gx/Namespace/GxNamespace.h" />
-		<Unit filename="Gx/Physics/GxPhysics.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Gx/Physics/GxPhysics.h" />
-		<Unit filename="Gx/Private/GxPrivate.h" />
-		<Unit filename="Gx/Public/GxPublic.h" />
-		<Unit filename="Gx/Quadtree/GxQuadtree.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Gx/Quadtree/GxQuadtree.h" />
-		<Unit filename="Gx/Renderable/GxRenderable.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Gx/Renderable/GxRenderable.h" />
-		<Unit filename="Gx/RigidBody/GxRigidBody.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Gx/RigidBody/GxRigidBody.h" />
-		<Unit filename="Gx/Scene/GxScene.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Gx/Scene/GxScene.h" />
-		<Unit filename="Gx/Tilemap/GxTilemap.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Gx/Tilemap/GxTilemap.h" />
-		<Unit filename="Gx/Utilities/GxUtil.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Gx/Utilities/GxUtil.h" />
-		<Unit filename="Gx/XMacros/GxXMacros.h" />
+		<Unit filename="Gx/Util/Util.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>

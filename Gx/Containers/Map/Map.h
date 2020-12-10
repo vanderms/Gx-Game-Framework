@@ -1,25 +1,20 @@
 #ifndef GX_MAP_H
 #define GX_MAP_H
 #include "../../Util/Util.h"
-#include "../Array/Array.h"
 
+//...
+sMap* nMapCreate(void);
+void nMapDestroy(sMap* self);
 
-extern const struct sMapNamespace {
-	//...
-	sMap* (*create)(void);
-	void (*destroy)(sMap* self);
-
-	//...
-	Uint32 (*size)(sMap* self);
-	Uint32 (*capacity)(sMap* self);
-	void* (*get)(sMap* self, const char* key);
-	void* (*at)(sMap* self, Uint32 index);
-	void (*set)(sMap* self, const char* key, void* value, sDtor dtor);
-	void (*rehash)(sMap* self, Uint32 capacity);
-	void (*remove)(sMap* self, const char* key);
-	void (*removeByIndex)(sMap* self, Uint32 index);
-	void (*clean)(sMap* self);
-}* const nMap;
-
+//...
+Uint32 nMapSize(sMap* self);
+Uint32 nMapCapacity(sMap* self);
+void* nMapGet(sMap* self, const char* key);
+void* nMapAt(sMap* self, Uint32 index);
+void nMapSet(sMap* self, const char* key, void* value, sDtor dtor);
+void nMapRehash(sMap* self, Uint32 capacity);
+void nMapRemove(sMap* self, const char* key);
+void nMapRemoveByIndex(sMap* self, Uint32 index);
+void nMapClean(sMap* self);
 
 #endif // !GX_MAP_H

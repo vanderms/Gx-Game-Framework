@@ -37,42 +37,58 @@ typedef struct sContact {
 } sContact;
 
 
+const Uint32 nContact_RIGHT = 1 << 0;
+const Uint32 nContact_LEFT = 1 << 1;
+const Uint32 nContact_HORIZONTAL = 1 << 0 | 1 << 1;
+const Uint32 nContact_UP = 1 << 2;
+const Uint32 nContact_DOWN = 1 << 3;
+const Uint32 nContact_VERTICAL = 1 << 2 | 1 << 3;
+const Uint32 nContact_ALLOWED = 1 << 4;
+const Uint32 nContact_ALL = 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4;
+
 //... Prototypes
 static inline void destroyContact(sContact* self);
 static void physicsCheckGround(sElement * other);
+static sVector physicsProcessMovementData(sPhysics * self);
+static void physicsApplyGravity(sPhysics * self, sElement * elem);
+static void physicsCheckContactEnd(sPhysics* self, sElement* element);
+static void physicsMoveElement_(sElement* element);
+static bool physicsAddContact(sPhysics* self, sContact* contact);
+static void physicsCheckCollision(sElement* other);
+static bool contactIsEqual(sContact* lhs, sContact* rhs);
 
 //... Constructor and destructor
-static sPhysics* create(sScene* scene) {
+sPhysics* nPhysicsCreate_(sScene* scene) {
 	sPhysics* self = malloc(sizeof(sPhysics));
 	nUtil->assertAlloc(self);
 	self->scene = scene;	
-	self->contacts = nArray->create();
+	self->contacts = nArrayCreate();
 	sSize size = nScene->size(scene);
 	int len = size.w > size.h ? size.w + 2 : size.h + 2;		
-	self->dynamic =nQtree->create(NULL, (sRect) { -1, -1, len, len });
-	self->fixed =nQtree->create(NULL, (sRect) { -1, -1, len, len });	
+	self->dynamic =nQtreeCreate(NULL, (sRect) { -1, -1, len, len });
+	self->fixed =nQtreeCreate(NULL, (sRect) { -1, -1, len, len });	
 
 	//buffers
 	self->walls = NULL;
-	self->emdstack = nArray->create();
-	self->mvstack = nArray->create();
-	self->cntend = nArray->create();
+	self->emdstack = nArrayCreate();
+	self->mvstack = nArrayCreate();
+	self->cntend = nArrayCreate();
 	self->depth = 0;
 	return self;
 }
 
-static void destroy(sPhysics* self) {		
+void nPhysicsDestroy_(sPhysics* self) {		
 	if (self) {		
-		for (Uint32 i = 0; i < nArray->size(self->contacts); i++){
-			sContact* contact = nArray->at(self->contacts, i);			
+		for (Uint32 i = 0; i < nArraySize(self->contacts); i++){
+			sContact* contact = nArrayAt(self->contacts, i);			
 			destroyContact(contact);
 		}
-		nArray->destroy(self->contacts);
-		nArray->destroy(self->emdstack);
-		nArray->destroy(self->mvstack);
-		nArray->destroy(self->cntend);
-		nQtree->destroy(self->dynamic);
-		nQtree->destroy(self->fixed);
+		nArrayDestroy(self->contacts);
+		nArrayDestroy(self->emdstack);
+		nArrayDestroy(self->mvstack);
+		nArrayDestroy(self->cntend);
+		nQtreeDestroy(self->dynamic);
+		nQtreeDestroy(self->fixed);
 		free(self);
 	}
 }
@@ -89,9 +105,9 @@ static EmData* createEmData(sElement* elem) {
 	EmData* self = malloc(sizeof(EmData));
 	nUtil->assertAlloc(self);
 	self->self = elem;
-	self->requestedPos = self->previousPos = *nElem->position(elem);	
-	self->requestedPos.x = self->previousPos.x + nElem->body->velx(elem);
-	self->requestedPos.y = self->previousPos.y + nElem->body->vely(elem);
+	self->requestedPos = self->previousPos = *nElemPosition(elem);	
+	self->requestedPos.x = self->previousPos.x + nElemVelx(elem);
+	self->requestedPos.y = self->previousPos.y + nElemVely(elem);
 	SDL_UnionRect(&self->previousPos, &self->requestedPos, &self->trajetory);
 	self->contacts = NULL;
 	return self;
@@ -99,7 +115,7 @@ static EmData* createEmData(sElement* elem) {
 
 static void destroyEmData(EmData* self) {
 	if (self) {
-		nArray->destroy(self->contacts);
+		nArrayDestroy(self->contacts);
 		free(self);
 	}
 }
@@ -119,159 +135,152 @@ static sContact* createContact(sElement* self, sElement* other, int amove, Uint3
 
 static void destroyContact(sContact* self) {
 	if (self) {
-		sScene* scene = nElem->scene(self->colliding);
+		sScene* scene = nElemScene(self->colliding);
 		if (self->effective && !nScene->hasStatus(scene, nUtil->status->UNLOADING)) {			
-			nElem->body->p_->removeContact(self->colliding, self);
-			nElem->body->p_->removeContact(self->collided, self);
-			nArray->removeByValue(nScene->p_->getPhysics(scene)->contacts, self);
+			nElemRemoveContact_(self->colliding, self);
+			nElemRemoveContact_(self->collided, self);
+			nArrayRemoveByValue(nScene->p_->getPhysics(scene)->contacts, self);
 		}
 		free(self);
 	}
 }
 
-//... PHYSIC STATIC METHODS PROTOTYPES
-static sVector physicsProcessMovementData(sPhysics * self);
-static void physicsApplyGravity(sPhysics * self, sElement * elem);
-static void physicsCheckContactEnd(sPhysics* self, sElement* element);
-static void physicsMoveElement_(sElement* element);
-static bool physicsAddContact(sPhysics* self, sContact* contact);
-static void physicsCheckCollision(sElement* other);
-static bool contactIsEqual(sContact* lhs, sContact* rhs);
 
-//... METHODS
-static void update(sPhysics* self) {
+
+//... 
+void nPhysicsUpdate_(sPhysics* self) {
 	
-	sRect area = *nElem->position(nScene->getCamera(self->scene));
+	sRect area = *nElemPosition(nScene->getCamera(self->scene));
 	area.x -= 64;
 	area.y -= 64;
 	area.w += 128;
 	area.h += 128;
 	
-	sArray* temp = nArray->create();
-	nQtree->getAllElementsInArea(self->dynamic, &area, temp, true);
-	for (Uint32 i = 0; i < nArray->size(temp); i++) {
-		physicsMoveElement_(nQtree->getElem(nArray->at(temp, i)));
+	sArray* temp = nArrayCreate();
+	nQtreeGetElementsInArea(self->dynamic, &area, temp, true);
+	for (Uint32 i = 0; i < nArraySize(temp); i++) {
+		physicsMoveElement_(nQtreeGetElem(nArrayAt(temp, i)));
 	}
-	nArray->destroy(temp);	
-	nArray->clean(self->mvstack);
+	nArrayDestroy(temp);	
+	nArrayClean(self->mvstack);
 }
 
-static void insert(sPhysics* self, sElement* element) {
-	if (!nElem->hasBody(element)) { return; }
-	sQtreeElem* fixed = nElem->body->p_->getQtreeElemFixed(element);
-	nQtree->insert(self->fixed, fixed);
-	if (nElem->body->isDynamic(element)) {
-		sQtreeElem* dynamic = nElem->body->p_->getQtreeElemDynamic(element);
-		nQtree->insert(self->dynamic, dynamic);
+void nPhysicsInsert_(sPhysics* self, sElement* element) {
+	if (!nElemHasBody(element)) { return; }
+	sQtreeElem* fixed = nElemGetQtreeElemFixed_(element);
+	nQtreeInsert(self->fixed, fixed);
+	if (nElemIsBodyDynamic(element)) {
+		sQtreeElem* dynamic = nElemGetQtreeElemDynamic_(element);
+		nQtreeInsert(self->dynamic, dynamic);
 	}
 }
 
-static void removeElem(sPhysics* self, sElement* element) {
-	if (!nElem->hasBody(element)) return;
-	sQtreeElem* fixed = nElem->body->p_->getQtreeElemFixed(element);
-	nQtree->remove(self->fixed, fixed);
+void nPhysicsRemoveElem_(sPhysics* self, sElement* element) {
+	if (!nElemHasBody(element)) return;
+	sQtreeElem* fixed = nElemGetQtreeElemFixed_(element);
+	nQtreeRemove(self->fixed, fixed);
 	
-	if (nElem->body->isDynamic(element)) {
-		sQtreeElem* dynamic = nElem->body->p_->getQtreeElemDynamic(element);
-		nQtree->remove(self->dynamic, dynamic);
+	if (nElemIsBodyDynamic(element)) {
+		sQtreeElem* dynamic = nElemGetQtreeElemDynamic_(element);
+		nQtreeRemove(self->dynamic, dynamic);
 	}
 
-	sArray* contacts = nArray->create();
+	sArray* contacts = nArrayCreate();
 	
-	for (Uint32 i = 0; i < nArray->size(self->contacts); i++){
-		sContact* contact = nArray->at(self->contacts, i);
+	for (Uint32 i = 0; i < nArraySize(self->contacts); i++){
+		sContact* contact = nArrayAt(self->contacts, i);
 		if (contact->colliding == element || contact->collided == element) {			
-			nArray->push(contacts, contact, destroyContact);
+			nArrayPush(contacts, contact, destroyContact);
 		}
 	}
 	//the contacts are destroyed with the array
-	nArray->destroy(contacts);
+	nArrayDestroy(contacts);
 }
 
-static void updateElem(sPhysics* self, sElement* element, sRect previousPos) {	
-	if(nElem->hasBody(element)){
-		if (nElem->body->isDynamic(element)) {
-			sQtreeElem* dynamic = nElem->body->p_->getQtreeElemDynamic(element);
-			nQtree->update(self->dynamic, dynamic, previousPos);
+void nPhysicsUpdateElem_(sPhysics* self, sElement* element, sRect previousPos) {	
+	if(nElemHasBody(element)){
+		if (nElemIsBodyDynamic(element)) {
+			sQtreeElem* dynamic = nElemGetQtreeElemDynamic_(element);
+			nQtreeUpdate(self->dynamic, dynamic, previousPos);
 		}	
-		sQtreeElem* fixed = nElem->body->p_->getQtreeElemFixed(element);
-		nQtree->update(self->fixed, fixed, previousPos);
+		sQtreeElem* fixed = nElemGetQtreeElemFixed_(element);
+		nQtreeUpdate(self->fixed, fixed, previousPos);
 	}	
 }
 
-static sVector moveByElem(sPhysics* self, sElement* element) {
+sVector nPhysicsMoveByElem_(sPhysics* self, sElement* element) {
 	physicsMoveElement_(element);
-	return *(sVector*) nArray->last(self->mvstack); 
+	return *(sVector*) nArrayLast(self->mvstack); 
 }
 
 static void physicsMoveElement_(sElement* element) {
 
-	nUtil->assertState(!nElem->body->p_->mcFlag(element));
-	sPhysics* physics = nScene->p_->getPhysics(nElem->scene(element));			
+	nUtil->assertState(!nElemMcFlag_(element));
+	sPhysics* physics = nScene->p_->getPhysics(nElemScene(element));			
 	physicsApplyGravity(physics, element);
-	bool cantmove = nElem->body->p_->movFlag(element) || !nElem->body->isMoving(element);		
+	bool cantmove = nElemMovFlag_(element) || !nElemIsMoving(element);		
 	if (cantmove) {
 		sVector* vector = malloc(sizeof(sVector));
 		nUtil->assertAlloc(vector);
 		*vector = (sVector){ 0, 0 };
-		nArray->push(physics->mvstack, vector, free);		
+		nArrayPush(physics->mvstack, vector, free);		
 		return;
 	}	
-	nElem->body->p_->setMovFlag(element, true);	
+	nElemSetMovFlag_(element, true);	
 	physics->depth++;
-	nArray->push(physics->cntend, element, NULL);
+	nArrayPush(physics->cntend, element, NULL);
 				
 	EmData* emdata = createEmData(element);
-	nArray->push(physics->emdstack, emdata, (sDtor) destroyEmData);
-	sArray* temp = nArray->create();
-	nQtree->getAllElementsInArea(physics->fixed, &emdata->trajetory, temp, true);
-	for (Uint32 i = 0; i < nArray->size(temp); i++) {		
-		physicsCheckCollision(nQtree->getElem(nArray->at(temp, i)));
+	nArrayPush(physics->emdstack, emdata, (sDtor) destroyEmData);
+	sArray* temp = nArrayCreate();
+	nQtreeGetElementsInArea(physics->fixed, &emdata->trajetory, temp, true);
+	for (Uint32 i = 0; i < nArraySize(temp); i++) {		
+		physicsCheckCollision(nQtreeGetElem(nArrayAt(temp, i)));
 	}	
 	sVector* vec = nUtil->assertAlloc(malloc(sizeof(sVector)));		
 	*vec = physicsProcessMovementData(physics);
-	nArray->push(physics->mvstack, vec, free);
+	nArrayPush(physics->mvstack, vec, free);
 
 	if (nScene->hasGravity(physics->scene) &&
-		nElem->body->maxgvel(element)
+		nElemMaxgvel(element)
 	){				
-		for (Uint32 i = 0; i < nArray->size(temp); i++) {
-			physicsCheckGround(nQtree->getElem(nArray->at(temp, i)));
+		for (Uint32 i = 0; i < nArraySize(temp); i++) {
+			physicsCheckGround(nQtreeGetElem(nArrayAt(temp, i)));
 		}
 	}
-	nArray->destroy(temp);
+	nArrayDestroy(temp);
 	
-	nArray->remove(physics->emdstack, nArray->size(physics->emdstack) - 1);
-	nElem->body->p_->setMovFlag(element, false);	
+	nArrayRemove(physics->emdstack, nArraySize(physics->emdstack) - 1);
+	nElemSetMovFlag_(element, false);	
 	physics->depth--;
 	if (physics->depth == 0) {
-		for (Uint32 i = 0; i < nArray->size(physics->cntend); i++){
-			sElement* elem = nArray->at(physics->cntend, i);
+		for (Uint32 i = 0; i < nArraySize(physics->cntend); i++){
+			sElement* elem = nArrayAt(physics->cntend, i);
 			physicsCheckContactEnd(physics, elem);			
 		}
-		nArray->clean(physics->cntend);
+		nArrayClean(physics->cntend);
 	}
 }
 
 static void physicsApplyGravity(sPhysics* self, sElement* elem) {	
 
-	int maxgvel = nElem->body->maxgvel(elem);
+	int maxgvel = nElemMaxgvel(elem);
 	int gravity = nScene->gravity(self->scene);
-	int vely = nElem->body->vely(elem);
-	if (gravity && (maxgvel < vely) && !nElem->body->isOnGround(elem)) {
+	int vely = nElemVely(elem);
+	if (gravity && (maxgvel < vely) && !nElemIsOnGround(elem)) {
 		double acceleration = gravity / 60.0;
-		nElem->body->accelerate(elem, 0, acceleration);
+		nElemAccelerate(elem, 0, acceleration);
 	}	
 }
 
 static void physicsApplyFriction(sPhysics* self, sElement* element, sVector move) {	
-	if (nScene->hasGravity(self->scene) && nElem->body->hasFriction(element)) {
+	if (nScene->hasGravity(self->scene) && nElemHasFriction(element)) {
 		move = (sVector) { move.x, move.y < 0 ? move.y : 0 };
-		sArray* up = nElem->body->getContacts(element, nContact->UP);
-		for (Uint32 i = 0; i < nArray->size(up); i++){
-		sContact* contact = nArray->at(up, i); 
+		sArray* up = nElemGetContacts(element, nContact_UP);
+		for (Uint32 i = 0; i < nArraySize(up); i++){
+		sContact* contact = nArrayAt(up, i); 
 			sElement* other = contact->colliding == element ? contact->collided : contact->colliding;
-			nElem->body->move(other, move, false);
+			nElemMove(other, move, false);
 		}
 	}
 }
@@ -279,31 +288,31 @@ static void physicsApplyFriction(sPhysics* self, sElement* element, sVector move
 static void physicsCheckCollision(sElement* other) {	
 	
 	//create alias	
-	sPhysics* physics = nScene->p_->getPhysics(nElem->scene(other));
-	EmData* emdata = nArray->last(physics->emdstack);
+	sPhysics* physics = nScene->p_->getPhysics(nElemScene(other));
+	EmData* emdata = nArrayLast(physics->emdstack);
 	sElement* self = emdata->self;	
 
 	if (self == other) return;
-	if (!(nElem->body->cmask(self) & nElem->body->cmask(other))) return;
+	if (!(nElemCmask(self) & nElemCmask(other))) return;
 
 	//create alias
-	sVector v = nElem->body->velocity(self);
-	const sRect* s = nElem->position(self);
-	const sRect* o = nElem->position(other);		
+	sVector v = nElemVelocity(self);
+	const sRect* s = nElemPosition(self);
+	const sRect* o = nElemPosition(other);		
 
-	if (!emdata->contacts) emdata->contacts = nArray->create();
+	if (!emdata->contacts) emdata->contacts = nArrayCreate();
 
 	//check horizontal axis
 	if (v.x > 0) {
 		int amove = o->x - (s->x + s->w);
 		if (amove >= 0 && amove < v.x) {
-			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->RIGHT), NULL);
+			nArrayPush(emdata->contacts, createContact(self, other, amove, nContact_RIGHT), NULL);
 		}
 	}
 	else if (v.x < 0) {
 		int amove = (o->x + o->w) - s->x;
 		if (amove <= 0 && amove > v.x) {
-			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->LEFT), NULL);
+			nArrayPush(emdata->contacts, createContact(self, other, amove, nContact_LEFT), NULL);
 		}		
 	}
 
@@ -311,13 +320,13 @@ static void physicsCheckCollision(sElement* other) {
 	if (v.y > 0) {
 		int amove = o->y - (s->y + s->h);
 		if (amove >= 0 && amove < v.y) {
-			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->UP), NULL);
+			nArrayPush(emdata->contacts, createContact(self, other, amove, nContact_UP), NULL);
 		}
 	}
 	else if (v.y < 0) {
 		int amove = (o->y + o->h) - s->y;
 		if (amove <= 0 && amove > v.y) {
-			nArray->push(emdata->contacts, createContact(self, other, amove, nContact->DOWN), NULL);
+			nArrayPush(emdata->contacts, createContact(self, other, amove, nContact_DOWN), NULL);
 		}		
 	}	
 }
@@ -325,35 +334,35 @@ static void physicsCheckCollision(sElement* other) {
 static sVector physicsProcessMovementData(sPhysics* self) {	
 
 	//get emdata
-	EmData* emdata = nArray->last(self->emdstack);
+	EmData* emdata = nArrayLast(self->emdstack);
 
 	//gets self velocity
-	sVector move = nElem->body->velocity(emdata->self);
+	sVector move = nElemVelocity(emdata->self);
 
 	//if there is no contact, just move the element
 	if (!emdata->contacts) {			
-		nElem->p_->updatePosition(emdata->self, move);
+		nElemUpdatePosition_(emdata->self, move);
 		physicsApplyFriction(self, emdata->self, move);
 		return move;
 	}
 	
 	bool horizontalCollision = false, verticalCollision = false;
 
-	for (Uint32 i = 0; i < nArray->size(emdata->contacts); i++){
-		sContact* contact = nArray->at(emdata->contacts, i);
+	for (Uint32 i = 0; i < nArraySize(emdata->contacts); i++){
+		sContact* contact = nArrayAt(emdata->contacts, i);
 		nScene->p_->onPreContact(self->scene, contact);
 		if (contact->prevented) { continue; }
 
-		int spref = nElem->body->preference(contact->colliding);
-		int opref = nElem->body->preference(contact->collided);
-		sRect spos = *nElem->position(contact->colliding);
-		sRect opos = *nElem->position(contact->collided);
+		int spref = nElemPreference(contact->colliding);
+		int opref = nElemPreference(contact->collided);
+		sRect spos = *nElemPosition(contact->colliding);
+		sRect opos = *nElemPosition(contact->collided);
 		
-		if (contact->direction == nContact->RIGHT && move.x >= contact->amove) {			
+		if (contact->direction == nContact_RIGHT && move.x >= contact->amove) {			
 			if (spref > opref) {
-				nElem->body->setPreference(contact->collided, spref);
-				nElem->body->move(contact->collided, (sVector) { (spos.x + move.x + spos.w) - opos.x, 0 }, false);				
-				nElem->body->setPreference(contact->collided, opref);
+				nElemSetPreference(contact->collided, spref);
+				nElemMove(contact->collided, (sVector) { (spos.x + move.x + spos.w) - opos.x, 0 }, false);				
+				nElemSetPreference(contact->collided, opref);
 				contact->amove = (opos.x - (spos.x + spos.w));
 			}			
 			if(move.x >= contact->amove) {
@@ -361,11 +370,11 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 				horizontalCollision = true;
 			}
 		}
-		else if (contact->direction == nContact->LEFT && move.x <= contact->amove) {
+		else if (contact->direction == nContact_LEFT && move.x <= contact->amove) {
 			if (spref > opref) {
-				nElem->body->setPreference(contact->collided, spref);
-				nElem->body->move(contact->collided, (sVector) {(spos.x + move.x) - (opos.x + opos.w), 0 }, false);				
-				nElem->body->setPreference(contact->collided, opref);
+				nElemSetPreference(contact->collided, spref);
+				nElemMove(contact->collided, (sVector) {(spos.x + move.x) - (opos.x + opos.w), 0 }, false);				
+				nElemSetPreference(contact->collided, opref);
 				contact->amove = ((opos.x + opos.w) - spos.x);
 			}			
 			if(move.x <= contact->amove){
@@ -373,11 +382,11 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 				horizontalCollision = true;
 			}
 		}
-		else if (contact->direction == nContact->UP && move.y >= contact->amove) {
+		else if (contact->direction == nContact_UP && move.y >= contact->amove) {
 			if (spref > opref) {				
-				nElem->body->setPreference(contact->collided, spref);
-				nElem->body->move(contact->collided, (sVector) { 0, (spos.y + move.y + spos.h) - opos.y}, false);				
-				nElem->body->setPreference(contact->collided, opref);
+				nElemSetPreference(contact->collided, spref);
+				nElemMove(contact->collided, (sVector) { 0, (spos.y + move.y + spos.h) - opos.y}, false);				
+				nElemSetPreference(contact->collided, opref);
 				contact->amove = opos.y - (spos.y + spos.h);			
 			}			
 			if(move.y >= contact->amove){
@@ -385,11 +394,11 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 				verticalCollision = true;
 			}
 		}
-		else if (contact->direction == nContact->DOWN && move.y <= contact->amove) {
+		else if (contact->direction == nContact_DOWN && move.y <= contact->amove) {
 			if (spref > opref) {	
-				nElem->body->setPreference(contact->collided, spref);
-				nElem->body->move(contact->collided, (sVector) {0, (spos.y + move.y) - (opos.y + opos.h)}, false);				
-				nElem->body->setPreference(contact->collided, opref);
+				nElemSetPreference(contact->collided, spref);
+				nElemMove(contact->collided, (sVector) {0, (spos.y + move.y) - (opos.y + opos.h)}, false);				
+				nElemSetPreference(contact->collided, opref);
 				contact->amove = (opos.y + opos.h) - spos.y;
 			}			
 			if(move.y <= contact->amove){
@@ -400,21 +409,21 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 	}
 
 	//move entity to new position	
-	nElem->p_->updatePosition(emdata->self, move);
+	nElemUpdatePosition_(emdata->self, move);
 	physicsApplyFriction(self, emdata->self, move);
 
 	//now check effective collisions and add to self collision array
-	Uint32 previousSize = nArray->size(self->contacts);
+	Uint32 previousSize = nArraySize(self->contacts);
 
 	double xres = 0.0, yres = 0.0; //restitution in direction x and y
 	bool changeVelocity = false;
 
-	for (Uint32 i = 0; i < nArray->size(emdata->contacts); i++){
-		sContact* contact = nArray->at(emdata->contacts, i); 		
-		int spref = nElem->body->preference(contact->colliding);
-		int opref = nElem->body->preference(contact->collided);
-		sRect spos = *nElem->position(contact->colliding);
-		sRect opos = *nElem->position(contact->collided);
+	for (Uint32 i = 0; i < nArraySize(emdata->contacts); i++){
+		sContact* contact = nArrayAt(emdata->contacts, i); 		
+		int spref = nElemPreference(contact->colliding);
+		int opref = nElemPreference(contact->collided);
+		sRect spos = *nElemPosition(contact->colliding);
+		sRect opos = *nElemPosition(contact->collided);
 
 		if (opref >= spref) changeVelocity = true;
 
@@ -422,14 +431,14 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 			SDL_HasIntersection(&spos, &opos)) {			
 			physicsAddContact(self, contact);			
 		}
-		else if ((contact->direction == nContact->RIGHT || contact->direction == nContact->LEFT) && (move.x == contact->amove)) {
-			if (xres < nElem->body->restitution(contact->collided))
-				xres = nElem->body->restitution(contact->collided);
+		else if ((contact->direction == nContact_RIGHT || contact->direction == nContact_LEFT) && (move.x == contact->amove)) {
+			if (xres < nElemRestitution(contact->collided))
+				xres = nElemRestitution(contact->collided);
 			physicsAddContact(self, contact);	
 		}
-		else if ((contact->direction == nContact->UP || contact->direction == nContact->DOWN) && (move.y == contact->amove)) {
-			if (yres < nElem->body->restitution(contact->collided))
-				yres = nElem->body->restitution(contact->collided);
+		else if ((contact->direction == nContact_UP || contact->direction == nContact_DOWN) && (move.y == contact->amove)) {
+			if (yres < nElemRestitution(contact->collided))
+				yres = nElemRestitution(contact->collided);
 			physicsAddContact(self, contact);
 		}
 		else {
@@ -439,16 +448,16 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 		
 	if (changeVelocity) {		
 		if (horizontalCollision) {
-			nElem->body->p_->applyHozElasticity(emdata->self, xres);			
+			nElemApplyHozElasticity_(emdata->self, xres);			
 		}
 		if (verticalCollision) {
-			nElem->body->p_->applyVetElasticity(emdata->self, yres);
+			nElemApplyVetElasticity_(emdata->self, yres);
 		}		
 	}
 
 		//notify collision callback handler
-	while (previousSize < nArray->size(self->contacts)) {
-		sContact* contact = nArray->at(self->contacts, previousSize);
+	while (previousSize < nArraySize(self->contacts)) {
+		sContact* contact = nArrayAt(self->contacts, previousSize);
 		nScene->p_->onContactBegin(self->scene, contact);
 		previousSize++;
 	}
@@ -459,8 +468,8 @@ static bool physicsAddContact(sPhysics* self, sContact* contact) {
 	
 	bool contains = false;
 
-	for (Uint32 i = 0; i < nArray->size(self->contacts); i++){
-		sContact* buffer = nArray->at(self->contacts, i);		
+	for (Uint32 i = 0; i < nArraySize(self->contacts); i++){
+		sContact* buffer = nArrayAt(self->contacts, i);		
 		if (contactIsEqual(contact, buffer)) {
 			contains = true;
 			break;
@@ -468,10 +477,10 @@ static bool physicsAddContact(sPhysics* self, sContact* contact) {
 	}
 
 	if (!contains) {		
-		nElem->body->p_->addContact(contact->colliding, contact);
-		nElem->body->p_->addContact(contact->collided, contact);		
+		nElemAddContact_(contact->colliding, contact);
+		nElemAddContact_(contact->collided, contact);		
 		contact->effective = true;
-		nArray->push(self->contacts, contact, NULL);			
+		nArrayPush(self->contacts, contact, NULL);			
 		return true;
 	}
 
@@ -481,29 +490,29 @@ static bool physicsAddContact(sPhysics* self, sContact* contact) {
 
 static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 		
-	sArray* contactsToRemove = nArray->create();
-	sList* allContacts = nElem->body->p_->getContactList(element);
+	sArray* contactsToRemove = nArrayCreate();
+	sList* allContacts = nElemGetContactList_(element);
 	
-	for (sContact* contact = nList->begin(allContacts); contact != NULL;
-		contact = nList->next(allContacts))
+	for (sContact* contact = nListBegin(allContacts); contact != NULL;
+		contact = nListNext(allContacts))
 	{	
-		sRect spos = *nElem->position(contact->colliding);
-		sRect opos = *nElem->position(contact->collided);
+		sRect spos = *nElemPosition(contact->colliding);
+		sRect opos = *nElemPosition(contact->collided);
 				
 		if (contact->prevented){			
 			if (!SDL_HasIntersection(&spos, &opos)) {
-				nArray->push(contactsToRemove, contact, (sDtor) destroyContact);
+				nArrayPush(contactsToRemove, contact, (sDtor) destroyContact);
 			}
 		}
-		else if((bool) (contact->direction == nContact->RIGHT || contact->direction == nContact->LEFT)){
+		else if((bool) (contact->direction == nContact_RIGHT || contact->direction == nContact_LEFT)){
 			bool notInTheSameRow = (spos.y >= opos.y + opos.h || spos.y + spos.h <= opos.y);
-			bool touchingOnXAxis = (contact->direction ==  nContact->RIGHT) ?
+			bool touchingOnXAxis = (contact->direction ==  nContact_RIGHT) ?
 				spos.x + spos.w == opos.x : spos.x == opos.x + opos.w;
 			if (notInTheSameRow || !touchingOnXAxis) {
-				nArray->push(contactsToRemove, contact, (sDtor) destroyContact);
+				nArrayPush(contactsToRemove, contact, (sDtor) destroyContact);
 			}			
 		}
-		else if((bool) (contact->direction == nContact->UP || contact->direction == nContact->DOWN)){
+		else if((bool) (contact->direction == nContact_UP || contact->direction == nContact_DOWN)){
 			/*
 			Obs(22/10/2020): This code is from the time the library was written in C++.
 			And now, much time later, I have no idea what this code did and why it is now commented.
@@ -515,35 +524,35 @@ static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 			}
 			*/
 			bool notInTheSameColumn = (spos.x >= opos.x + opos.w || spos.x + spos.w <= opos.x);
-			bool touchingOnYAxis = (contact->direction == nContact->UP) ?
+			bool touchingOnYAxis = (contact->direction == nContact_UP) ?
 				spos.y + spos.h == opos.y : spos.y == opos.y + opos.h;
 			if (notInTheSameColumn || !touchingOnYAxis) {
-				nArray->push(contactsToRemove, contact, (sDtor) destroyContact);
+				nArrayPush(contactsToRemove, contact, (sDtor) destroyContact);
 			}
 		}
 	}
 	
-	for (Uint32 i = 0; i < nArray->size(contactsToRemove); i++){
-		sContact* contact = nArray->at(contactsToRemove, i);		
+	for (Uint32 i = 0; i < nArraySize(contactsToRemove); i++){
+		sContact* contact = nArrayAt(contactsToRemove, i);		
 		nScene->p_->onContactEnd(self->scene, contact);		
 	}
 	
 	//... sArray destructor delete contacts //-> and sContact sDtor remove it from arrays.
-	nArray->destroy(contactsToRemove);
+	nArrayDestroy(contactsToRemove);
 }
 
 static void physicsCheckGround(sElement* other) {
-	sPhysics* physics = nScene->p_->getPhysics(nElem->scene(other));
-	EmData* emdata = nArray->last(physics->emdstack);
+	sPhysics* physics = nScene->p_->getPhysics(nElemScene(other));
+	EmData* emdata = nArrayLast(physics->emdstack);
 	sElement* self = emdata->self;
 	
-	const sRect* s = nElem->position(self);
-	const sRect* o = nElem->position(other);
+	const sRect* s = nElemPosition(self);
+	const sRect* o = nElemPosition(other);
 
 	bool samecolumn =  !(s->x >= o->x + o->w || s->x + s->w <= o->x);
 	bool ytouching =  (s->y == o->y + o->h);
 	if (samecolumn && ytouching) {
-		sContact* contact = createContact(self, other, 0, nContact->DOWN);
+		sContact* contact = createContact(self, other, 0, nContact_DOWN);
 		nScene->p_->onPreContact(physics->scene, contact);
 		if (physicsAddContact(physics, contact)) {
 			nScene->p_->onContactBegin(physics->scene, contact);
@@ -551,42 +560,42 @@ static void physicsCheckGround(sElement* other) {
 	}
 }
 
-static void createWalls(sPhysics* self) {
+void nPhysicsCreateWalls_(sPhysics* self) {
 	
 	sSize size = nScene->size(self->scene);
 	sIni ini = {
 		.className = "__WALL__",				
-		.display = nElem->display->NONE,
-		.body = nElem->body->FIXED,		
+		.display = nElem_DISPLAY_NONE,
+		.body = nElem_BODY_FIXED,		
 	};
 	
 	ini.position = &(sRect) { -1, -1, size.w + 2, 1 };
-	nElem->body->setCmask(nElem->create(&ini), nElem->body->CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
 
 	ini.position = &(sRect) {size.w, -1, 1, size.h + 2 };
-	nElem->body->setCmask(nElem->create(&ini), nElem->body->CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
 
 	ini.position = &(sRect) { -1, size.h, size.w + 2, 1 };
-	nElem->body->setCmask(nElem->create(&ini), nElem->body->CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
 
 	ini.position = &(sRect) { -1, -1, 1, size.h + 2  };
-	nElem->body->setCmask(nElem->create(&ini), nElem->body->CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
 }
 
 
-static sElement* colliding(sContact* contact) {
+sElement* nContactColliding(sContact* contact) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	return contact->colliding;
 }
 
-static sElement* collided(sContact* contact) {
+sElement* nContactCollided(sContact* contact) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	return contact->collided;
 }
 
-static bool isBetween(sContact* contact, sElement* self, sElement* other) {
+bool nContactIsBetween(sContact* contact, sElement* self, sElement* other) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	bool s = self ? contact->colliding == self : true;
@@ -594,76 +603,79 @@ static bool isBetween(sContact* contact, sElement* self, sElement* other) {
 	return s && o;
 }
 
-static bool hasElem(sContact* contact, sElement* element) {
+bool nContactHasElem(sContact* contact, sElement* element) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	return (contact->colliding == element || contact->collided == element);
 }
 
 
-static sElement* getOpposite(sContact* contact, sElement* self) {
+sElement* nContactGetOpposite(sContact* contact, sElement* self) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	nUtil->assertArgument(contact->colliding == self || contact->collided == self);
 	return (contact->colliding == self ? contact->collided : contact->colliding);
 }
 
-static bool hasDirection(sContact* contact, Uint32 direction) {
+bool nContactHasDirection(sContact* contact, Uint32 direction) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	return contact->direction & direction;
 }
 
-static Uint32 direction(sContact* contact) {
+Uint32 nContactDirection(sContact* contact) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	return contact->direction;
 }
 
-static bool wasAllowed(sContact* contact) {
+bool nContactHasRelativeDirection(sContact* contact, sElement* elem, Uint32 direction) {
+	nUtil->assertNullPointer(contact);
+	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	Uint32 relativeDirection = nContactRelativeDirection(contact, elem);
+	return direction & relativeDirection;
+}
+
+Uint32 nContactRelativeDirection(sContact* contact, sElement* elem) {
+	
+	nUtil->assertNullPointer(contact);
+	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	
+	if (elem == contact->colliding) {
+		return contact->direction;
+	}
+	if (contact->direction == nContact_UP) {
+		return nContact_DOWN;
+	}
+	if (contact->direction == nContact_RIGHT) {
+		return nContact_LEFT;
+	}
+	if (contact->direction == nContact_DOWN) {
+		return nContact_UP;
+	}
+	if (contact->direction == nContact_LEFT) {
+		return nContact_RIGHT;
+	}
+	return 0;
+}
+
+bool nContactWasAllowed(sContact* contact) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	return contact->prevented;
 }
 
-static void allowCollision(sContact* contact) {
+void nContactAllowCollision(sContact* contact) {
 	nUtil->assertNullPointer(contact);
 	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
 	contact->prevented = true;
 }
 
-static bool isFromRight(sContact* contact, sElement* self) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
-	return (contact->colliding == self && contact->direction == nContact->RIGHT) ||
-		(contact->collided == self && contact->direction == nContact->LEFT);
-}
 
-static bool isFromLeft(sContact* contact, sElement* self) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
-	return (contact->colliding == self && contact->direction == nContact->LEFT) ||
-		(contact->collided == self && contact->direction == nContact->RIGHT);
-}
+static void nContactOneWayPlatformCbk(sEvent* e) {
 
-static bool isFromBelow(sContact* contact, sElement* self) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
-	return (contact->colliding == self && contact->direction == nContact->DOWN) ||
-		(contact->collided == self && contact->direction == nContact->UP);
-}
-
-static bool isFromAbove(sContact* contact, sElement* self) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
-	return (contact->colliding == self && contact->direction == nContact->UP) ||
-		(contact->collided == self && contact->direction == nContact->DOWN);
-}
-
-static void oneWayPlatformCbk(sEvent* e) {
-
-	if(!nContact->hasDirection(e->contact, nContact->DOWN)){
-		nContact->allowCollision(e->contact);
+	if(!nContactHasDirection(e->contact, nContact_DOWN)){
+		nContactAllowCollision(e->contact);
 	}
 }
 
@@ -675,41 +687,5 @@ static inline bool contactIsEqual(sContact* lhs, sContact* rhs) {
 	);
 }
 
-const struct sPhysicsNamespace* const nPhysics =  &(struct sPhysicsNamespace){
-	//...
-	.create = create,
-	.destroy = destroy,
 
-	//...
-	.update = update,
-	.insert = insert,
-	.remove = removeElem,
-	.updateElem = updateElem,
-	.moveByElem = moveByElem,
-	.createWalls = createWalls,
-};
 
-const struct sContactNamespace* const nContact = &(struct sContactNamespace) {		
-	.colliding  = colliding,
-	.collided = collided,
-	.isBetween = isBetween,
-	.hasElem = hasElem,
-	.hasDirection = hasDirection,	
-	.direction = direction,
-	.getOpposite = getOpposite,
-	.wasAllowed = wasAllowed,
-	.allowCollision = allowCollision,
-	.isFromRight = isFromRight,
-	.isFromLeft = isFromLeft,
-	.isFromBelow = isFromBelow,
-	.isFromAbove = isFromAbove,
-	.oneWayPlatformCbk = oneWayPlatformCbk,
-	.RIGHT = 1 << 0,
-	.LEFT = 1 << 1,
-	.HORIZONTAL = 1 << 0 | 1 << 1,
-	.UP = 1 << 2,
-	.DOWN = 1 << 3,
-	.VERTICAL = 1 << 2 | 1 << 3,
-	.ALLOWED = 1 << 4,
-	.ALL = 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4,
-};

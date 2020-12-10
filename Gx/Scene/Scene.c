@@ -3,6 +3,7 @@
 #include "../App/App.h"
 #include "../Element/Element.h"
 #include "../Containers/Map/Map.h"
+#include "../Containers/Array/Array.h"
 #include "../Containers/List/List.h"
 #include "../Graphics/Graphics.h"
 #include "../Physics/Physics.h"
@@ -42,7 +43,7 @@ typedef struct Timer {
 //constructor and destructor
 static sScene* create(const sIni* ini) {
 	
-	nUtil->assertState(nApp->isCreated());
+	nUtil->assertState(nAppIsCreated());
 
 	sScene* self = calloc(1, sizeof(sScene));	
 	nUtil->assertAlloc(self);
@@ -59,7 +60,7 @@ static sScene* create(const sIni* ini) {
 		self->name = nUtil->createString(buffer);
 	}
 	
-	sSize windowSize = nApp->logicalSize();
+	sSize windowSize = nAppLogicalSize();
 	self->size.w = ini->size.w > windowSize.w ? ini->size.w : windowSize.w;
 	self->size.h = ini->size.h > windowSize.h ? ini->size.h : windowSize.h;
 	self->status = nUtil->status->NONE;
@@ -79,16 +80,16 @@ static sScene* create(const sIni* ini) {
 	//set folders
 	if (ini->folders) {
 		self->folders = nUtil->split(ini->folders, "|");
-		for (Uint32 i = 0; i < nArray->size(self->folders); i++) {
-			const char* folderId = nArray->at(self->folders, i);
-			sFolder* folder = nApp->getFolder(folderId);
+		for (Uint32 i = 0; i < nArraySize(self->folders); i++) {
+			const char* folderId = nArrayAt(self->folders, i);
+			sFolder* folder = nAppGetFolder(folderId);
 			nUtil->assertArgument(folder);
-			nArray->insert(self->folders, i, folder, NULL);
+			nArrayInsert(self->folders, i, folder, NULL);
 		}
 	}	
 	//...
 	
-	nApp->p_->addScene(self);
+	nAppAddScene_(self);
 	
 	return self;
 }
@@ -99,8 +100,8 @@ static void pDestroy(sScene* self) {
 		self->status = nUtil->status->UNLOADING;
 		
 		if (self->components) {
-			for (Uint32 i = 0; i < nMap->size(self->components); i++) {
-				sComponent* comp = nMap->at(self->components, i);
+			for (Uint32 i = 0; i < nMapSize(self->components); i++) {
+				sComponent* comp = nMapAt(self->components, i);
 				if (comp->onDestroy) {
 					comp->onDestroy(&(sEvent) {
 						.target = comp->target,
@@ -109,7 +110,7 @@ static void pDestroy(sScene* self) {
 				}
 			}			
 		}
-		nMap->destroy(self->components);
+		nMapDestroy(self->components);
 		if(self->comp && self->comp->onDestroy){
 			self->comp->onDestroy(&(sEvent){
 				.target = self->comp->target, 
@@ -117,20 +118,20 @@ static void pDestroy(sScene* self) {
 			});
 		}
 		nComponent->destroy(self->comp);
-		nGraphics->destroy(self->graphics);
-		nPhysics->destroy(self->physics);
-		nArray->destroy(self->elements);		
+		nGraphicsDestroy_(self->graphics);
+		nPhysicsDestroy_(self->physics);
+		nArrayDestroy(self->elements);		
 		
 		if(self->folders){
-			for (Uint32 i = 0; i < nArray->size(self->folders); i++) {
-				sFolder* folder = nArray->at(self->folders, i);
-				nFolder->p_->decRefCounter(folder);
+			for (Uint32 i = 0; i < nArraySize(self->folders); i++) {
+				sFolder* folder = nArrayAt(self->folders, i);
+				nFolderDecRefCounter_(folder);
 			}
-			nArray->destroy(self->folders);		
+			nArrayDestroy(self->folders);		
 		}
 		//events
 		for (int i = 0; i < nComponent->TOTAL; i++) {
-			nList->destroy(self->listeners[i]);		
+			nListDestroy(self->listeners[i]);		
 		}
 		free(self->listeners);		
 		free(self->name);
@@ -182,17 +183,17 @@ static int status(sScene* self) {
 static sElement* getElem(sScene* self, Uint32 id) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
-	if (id > nArray->size(self->elements)) {
+	if (id > nArraySize(self->elements)) {
 		return NULL;
 	}
 	Uint32 l = 0;
-	Uint32 r = nArray->size(self->elements);
+	Uint32 r = nArraySize(self->elements);
 	
 	while (l <= r) { 
         Uint32 m = l + (r - l) / 2; 		
 		       
-		sElement* elem = nArray->at(self->elements, m);
-		Uint32 elemID = nElem->p_->id(elem);
+		sElement* elem = nArrayAt(self->elements, m);
+		Uint32 elemID = nElemPId_(elem);
         if (elemID == id){
             return elem; 
         }
@@ -229,17 +230,17 @@ static Uint32 getPercLoaded(sScene* self) {
 	nUtil->assertNullPointer(self);
 	nUtil->assertHash((*(Uint32*) self) == nUtil->hash->SCENE);
 	
-	if (!self->folders || !nArray->size(self->folders)) {
+	if (!self->folders || !nArraySize(self->folders)) {
 		return 100;
 	}
 
 	Uint32 total = 0;
-	for (Uint32 i = 0; i < nArray->size(self->folders); i++){	
-		sFolder* folder = nArray->at(self->folders, i);
-		total += nFolder->p_->getPercLoaded(folder);
+	for (Uint32 i = 0; i < nArraySize(self->folders); i++){	
+		sFolder* folder = nArrayAt(self->folders, i);
+		total += nFolderGetPercLoaded(folder);
 	}
 	
-	return total / nArray->size(self->folders);
+	return total / nArraySize(self->folders);
 }
 
 
@@ -251,14 +252,14 @@ static void setTimeout(sScene* self, int interval, sHandler callback, void* targ
 	timer->callback = callback;
 	timer->counter = interval;
 	timer->target = target;	
-	nList->push(self->listeners[nComponent->ON_TIMEOUT], timer, free);
+	nListPush(self->listeners[nComponent->ON_TIMEOUT], timer, free);
 }
 
 static Uint32 addElem(sScene* self, sElement* elem) {	
 	nUtil->assertState(self->status == nUtil->status->LOADED || self->status == nUtil->status->RUNNING);	
-	nArray->push(self->elements, elem, (sDtor) nElem->p_->destroy);	
-	nGraphics->insert(self->graphics, elem);
-	nPhysics->insert(self->physics, elem);	
+	nArrayPush(self->elements, elem, (sDtor) nElemDestroy_);	
+	nGraphicsInsert_(self->graphics, elem);
+	nPhysicsInsert_(self->physics, elem);	
 	Uint32 id = self->elemCounter++;
 	return id;
 }
@@ -269,9 +270,9 @@ static void addComponent(sScene* self, sComponent* comp) {
 	nUtil->assertArgument(comp->name && !nComponent->isComponentEmpty(comp));
 	sComponent* copy = nComponent->copy(comp);
 	if (!self->components) {
-		self->components = nMap->create();
+		self->components = nMapCreate();
 	}
-	nMap->set(self->components, comp->name, copy, nComponent->destroy);
+	nMapSet(self->components, comp->name, copy, nComponent->destroy);
 	nScene->p_->subscribeComponent(self, comp);
 }
 
@@ -279,31 +280,31 @@ static void addComponent(sScene* self, sComponent* comp) {
 static void pSubscribeComponent(sScene* self, sComponent* comp) {	
 	
 	if(comp->onLoad){
-		nList->push(self->listeners[nComponent->ON_LOAD], comp, NULL);						
+		nListPush(self->listeners[nComponent->ON_LOAD], comp, NULL);						
 	}
 	if (comp->onLoopBegin) {
-		nList->push(self->listeners[nComponent->ON_LOOP_BEGIN], comp, NULL);
+		nListPush(self->listeners[nComponent->ON_LOOP_BEGIN], comp, NULL);
 	}
 	if(comp->onUpdate){
-		nList->push(self->listeners[nComponent->ON_UPDATE], comp, NULL);			
+		nListPush(self->listeners[nComponent->ON_UPDATE], comp, NULL);			
 	}
 	if(comp->onLoopEnd){
-		nList->push(self->listeners[nComponent->ON_LOOP_END], comp, NULL);			
+		nListPush(self->listeners[nComponent->ON_LOOP_END], comp, NULL);			
 	}
 	if(comp->onUnload){
-		nList->push(self->listeners[nComponent->ON_UNLOAD], comp, NULL);		
+		nListPush(self->listeners[nComponent->ON_UNLOAD], comp, NULL);		
 	}	
 	if(comp->onKeyboard){
-		nList->push(self->listeners[nComponent->ON_KEYBOARD], comp, NULL);				
+		nListPush(self->listeners[nComponent->ON_KEYBOARD], comp, NULL);				
 	}
 	if(comp->onMouse){
-		nList->push(self->listeners[nComponent->ON_MOUSE], comp, NULL);			
+		nListPush(self->listeners[nComponent->ON_MOUSE], comp, NULL);			
 	}
 	if(comp->onFinger){
-		nList->push(self->listeners[nComponent->ON_FINGER], comp, NULL);				
+		nListPush(self->listeners[nComponent->ON_FINGER], comp, NULL);				
 	}
 	if(comp->onSDLDefault){
-		nList->push(self->listeners[nComponent->ON_SDL_DEFAULT], comp, NULL);				
+		nListPush(self->listeners[nComponent->ON_SDL_DEFAULT], comp, NULL);				
 	}
 }
 
@@ -314,31 +315,31 @@ static void pUnsubscribeComponent(sScene* self, sComponent* comp) {
 	}
 
 	if(comp->onLoad){
-		nList->remove(self->listeners[nComponent->ON_LOAD], comp);						
+		nListRemove(self->listeners[nComponent->ON_LOAD], comp);						
 	}
 	if (comp->onLoopBegin) {
-		nList->remove(self->listeners[nComponent->ON_LOOP_BEGIN], comp);
+		nListRemove(self->listeners[nComponent->ON_LOOP_BEGIN], comp);
 	}
 	if(comp->onUpdate){
-		nList->remove(self->listeners[nComponent->ON_UPDATE], comp);			
+		nListRemove(self->listeners[nComponent->ON_UPDATE], comp);			
 	}
 	if(comp->onLoopEnd){
-		nList->remove(self->listeners[nComponent->ON_LOOP_END], comp);			
+		nListRemove(self->listeners[nComponent->ON_LOOP_END], comp);			
 	}
 	if(comp->onUnload){
-		nList->remove(self->listeners[nComponent->ON_UNLOAD], comp);		
+		nListRemove(self->listeners[nComponent->ON_UNLOAD], comp);		
 	}	
 	if(comp->onKeyboard){
-		nList->remove(self->listeners[nComponent->ON_KEYBOARD], comp);				
+		nListRemove(self->listeners[nComponent->ON_KEYBOARD], comp);				
 	}
 	if(comp->onMouse){
-		nList->remove(self->listeners[nComponent->ON_MOUSE], comp);			
+		nListRemove(self->listeners[nComponent->ON_MOUSE], comp);			
 	}
 	if(comp->onFinger){
-		nList->remove(self->listeners[nComponent->ON_FINGER], comp);				
+		nListRemove(self->listeners[nComponent->ON_FINGER], comp);				
 	}
 	if(comp->onSDLDefault){
-		nList->remove(self->listeners[nComponent->ON_SDL_DEFAULT], comp);				
+		nListRemove(self->listeners[nComponent->ON_SDL_DEFAULT], comp);				
 	}
 }
 
@@ -350,12 +351,12 @@ static void pPreLoad(sScene* self) {
 	self->elemCounter = 0;
 
 	//initialize containers and folders
-	self->graphics = nGraphics->create(self);
-	self->physics = nPhysics->create(self);
-	self->elements = nArray->create();			
+	self->graphics = nGraphicsCreate_(self);
+	self->physics = nPhysicsCreate_(self);
+	self->elements = nArrayCreate();		
 	
 	for (int i = 0; i < nComponent->TOTAL; i++) {
-		self->listeners[i] = nList->create();
+		self->listeners[i] = nListCreate();
 	}
 	
 	if(self->comp) {
@@ -364,8 +365,8 @@ static void pPreLoad(sScene* self) {
 
 	//load folders
 	if(self->folders){
-		for (Uint32 i = 0; i < nArray->size(self->folders); i++) {		
-			nFolder->p_->incRefCounter(nArray->at(self->folders, i));
+		for (Uint32 i = 0; i < nArraySize(self->folders); i++) {		
+			nFolderIncRefCounter_(nArrayAt(self->folders, i));
 		}
 	}
 }
@@ -373,20 +374,20 @@ static void pPreLoad(sScene* self) {
 static void pLoad(sScene* self) {		
 	
 	//create physic walls and camera
-	nPhysics->createWalls(self->physics);
-	sSize size = nApp->logicalSize();
-	self->camera = nElem->create(&(sIni) {
-		.display = nElem->display->NONE,
-		.body = nElem->body->FIXED,
+	nPhysicsCreateWalls_(self->physics);
+	sSize size = nAppLogicalSize();
+	self->camera = nElemCreate(&(sIni) {
+		.display = nElem_DISPLAY_NONE,
+		.body = nElem_BODY_FIXED,
 		.className = "__CAMERA__",		
-		.position = &(sRect){ 0, 0, size.w, size.h },				
+		.position = &(sRect){ 0, 0, size.w, size.h },			
 	});
 
-	nElem->body->setCmask(self->camera, nElem->body->CMASK_CAMERA);
+	nElemSetCmask(self->camera, nElem_CMASK_CAMERA);
 	
 	//execute onload callbacks 
-	for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_LOAD]); 
-		comp != NULL; comp = nList->next(self->listeners[nComponent->ON_LOAD])
+	for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_LOAD]); 
+		comp != NULL; comp = nListNext(self->listeners[nComponent->ON_LOAD])
 	){
 		nUtil->assertState(comp->onLoad);
 		comp->onLoad(&(sEvent){
@@ -404,8 +405,8 @@ static void pUnLoad(sScene* self) {
 	self->status = nUtil->status->UNLOADING;	
 	
 	//execute unload callbacks	
-	for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_UNLOAD]); 
-		comp != NULL; comp = nList->next(self->listeners[nComponent->ON_UNLOAD])
+	for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_UNLOAD]); 
+		comp != NULL; comp = nListNext(self->listeners[nComponent->ON_UNLOAD])
 	){
 		nUtil->assertState(comp->onUnload);
 		comp->onUnload(&(sEvent){
@@ -415,20 +416,20 @@ static void pUnLoad(sScene* self) {
 	}
 	
 	//destroy elements
-	nArray->destroy(self->elements);
-	nGraphics->destroy(self->graphics);
-	nPhysics->destroy(self->physics);	
+	nArrayDestroy(self->elements);
+	nGraphicsDestroy_(self->graphics);
+	nPhysicsDestroy_(self->physics);	
 	
 	if(self->folders){
-		for (Uint32 i = 0; i< nArray->size(self->folders); i++){
-			sFolder* folder = nArray->at(self->folders, i);			
-			nFolder->p_->decRefCounter(folder);
+		for (Uint32 i = 0; i< nArraySize(self->folders); i++){
+			sFolder* folder = nArrayAt(self->folders, i);			
+			nFolderDecRefCounter_(folder);
 		}	
 	}
 	
 	//destroy self->listeners lists
 	for (int i = 0; i < nComponent->TOTAL; i++) {
-		nList->destroy(self->listeners[i]);
+		nListDestroy(self->listeners[i]);
 		self->listeners[i] = NULL;
 	}
 			
@@ -442,23 +443,23 @@ static void pUnLoad(sScene* self) {
 }
 
 static void pRemoveElem(sScene* self, sElement* elem) {	
-	if (nElem->hasBody(elem)){
-		nPhysics->remove(self->physics, elem);
+	if (nElemHasBody(elem)){
+		nPhysicsRemoveElem_(self->physics, elem);
 	}
-	if (nElem->isRenderable(elem)){
-		nGraphics->remove(self->graphics, elem);
+	if (nElemIsRenderable(elem)){
+		nGraphicsRemoveElement_(self->graphics, elem);
 	}
-	nArray->removeByValue(self->elements, elem);	
+	nArrayRemoveByValue(self->elements, elem);	
 }
 
 static void pOnLoopBegin(sScene* self) {	
 		
 	if(self->status == nUtil->status->RUNNING){
 		
-		nPhysics->update(self->physics);
+		nPhysicsUpdate_(self->physics);
 
-		for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_LOOP_BEGIN]); 
-			comp != NULL; comp = nList->next(self->listeners[nComponent->ON_LOOP_BEGIN])
+		for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_LOOP_BEGIN]); 
+			comp != NULL; comp = nListNext(self->listeners[nComponent->ON_LOOP_BEGIN])
 		){
 			nUtil->assertState(comp->onLoopBegin);
 			comp->onLoopBegin(&(sEvent){
@@ -480,21 +481,21 @@ static void pUpdate(sScene* self) {
 
 	if(self->status == nUtil->status->RUNNING){
 
-		for (Timer* timer = nList->begin(self->listeners[nComponent->ON_TIMEOUT]); timer != NULL;
-			timer = nList->next(self->listeners[nComponent->ON_TIMEOUT])
+		for (Timer* timer = nListBegin(self->listeners[nComponent->ON_TIMEOUT]); timer != NULL;
+			timer = nListNext(self->listeners[nComponent->ON_TIMEOUT])
 		){						
 			if (--timer->counter <= 0) {
 				timer->callback(&(sEvent){
 					.target = timer->target,
 					.type = nComponent->ON_TIMEOUT
 				});	
-				nList->remove(self->listeners[nComponent->ON_TIMEOUT], timer);
+				nListRemove(self->listeners[nComponent->ON_TIMEOUT], timer);
 			}
 		}
 	
 		//execute update callbacks, then update physics
-		for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_UPDATE]); 
-			comp != NULL; comp = nList->next(self->listeners[nComponent->ON_UPDATE])
+		for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_UPDATE]); 
+			comp != NULL; comp = nListNext(self->listeners[nComponent->ON_UPDATE])
 		){
 			nUtil->assertState(comp->onUpdate);
 			comp->onUpdate(&(sEvent){
@@ -502,14 +503,14 @@ static void pUpdate(sScene* self) {
 				.type = nComponent->ON_UPDATE
 			});
 		}			
-		nGraphics->update(self->graphics);		
+		nGraphicsUpdate_(self->graphics);		
 	}
 }
 
 static void pOnLoopEnd(sScene* self) {
 	if(self->status == nUtil->status->RUNNING){
-		for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_LOOP_END]); 
-			comp != NULL; comp = nList->next(self->listeners[nComponent->ON_LOOP_END])
+		for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_LOOP_END]); 
+			comp != NULL; comp = nListNext(self->listeners[nComponent->ON_LOOP_END])
 		){
 			nUtil->assertState(comp->onLoopEnd);
 			comp->onLoopEnd(&(sEvent){
@@ -530,8 +531,8 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 		case SDL_KEYUP:
 		case SDL_TEXTEDITING:
 		case SDL_TEXTINPUT:			
-			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_KEYBOARD]); 
-				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_KEYBOARD])
+			for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_KEYBOARD]); 
+				comp != NULL; comp = nListNext(self->listeners[nComponent->ON_KEYBOARD])
 			){
 				nUtil->assertState(comp->onKeyboard);
 				comp->onKeyboard(&(sEvent){
@@ -545,8 +546,8 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEWHEEL:			
-			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_MOUSE]); 
-				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_MOUSE])
+			for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_MOUSE]); 
+				comp != NULL; comp = nListNext(self->listeners[nComponent->ON_MOUSE])
 			){
 				nUtil->assertState(comp->onMouse);
 				comp->onMouse(&(sEvent){
@@ -561,8 +562,8 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 		case SDL_FINGERUP:
 		case SDL_MULTIGESTURE:
 		case SDL_DOLLARGESTURE:			
-			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_FINGER]); 
-				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_FINGER])
+			for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_FINGER]); 
+				comp != NULL; comp = nListNext(self->listeners[nComponent->ON_FINGER])
 			){
 				nUtil->assertState(comp->onFinger);
 				comp->onFinger(&(sEvent){
@@ -573,8 +574,8 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 			}
 			break;
 		default:		
-			for (sComponent* comp = nList->begin(self->listeners[nComponent->ON_SDL_DEFAULT]); 
-				comp != NULL; comp = nList->next(self->listeners[nComponent->ON_SDL_DEFAULT])
+			for (sComponent* comp = nListBegin(self->listeners[nComponent->ON_SDL_DEFAULT]); 
+				comp != NULL; comp = nListNext(self->listeners[nComponent->ON_SDL_DEFAULT])
 			){
 				nUtil->assertState(comp->onSDLDefault);
 				comp->onSDLDefault(&(sEvent){
@@ -587,21 +588,21 @@ static void pOnSDLEvent(sScene* self, SDL_Event* e) {
 }
 
 static void pOnPreContact(sScene* self, sContact* contact) {
-	sElement* elemSelf = nContact->colliding(contact);
-	sElement* elemOther = nContact->collided(contact);
-	nElem->body->p_->setMcFlag(elemSelf, true);
-	nElem->body->p_->setMcFlag(elemOther, true);
+	sElement* elemSelf = nContactColliding(contact);
+	sElement* elemOther = nContactCollided(contact);
+	nElemSetMcFlag_(elemSelf, true);
+	nElemSetMcFlag_(elemOther, true);
 	
 
-	nElem->body->p_->setMcFlag(elemSelf, false);
-	nElem->body->p_->setMcFlag(elemOther, false);
+	nElemSetMcFlag_(elemSelf, false);
+	nElemSetMcFlag_(elemOther, false);
 }
 
 static void pOnContactBegin(sScene* self, sContact* contact) {
-	sElement* elemSelf = nContact->colliding(contact);
-	sElement* elemOther = nContact->collided(contact);
-	nElem->body->p_->setMcFlag(elemSelf, true);
-	nElem->body->p_->setMcFlag(elemOther, true);
+	sElement* elemSelf = nContactColliding(contact);
+	sElement* elemOther = nContactCollided(contact);
+	nElemSetMcFlag_(elemSelf, true);
+	nElemSetMcFlag_(elemOther, true);
 	
 	if (self->comp && self->comp->onPreContact) {
 		self->comp->onPreContact(&(sEvent){
@@ -610,25 +611,25 @@ static void pOnContactBegin(sScene* self, sContact* contact) {
 			.contact = contact,
 		});
 	}
-	nElem->p_->executeHandler(elemSelf, &(sEvent){
+	nElemExecuteHandler_(elemSelf, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_PRE_CONTACT,
 			.contact = contact,
 	});
-	nElem->p_->executeHandler(elemOther, &(sEvent){
+	nElemExecuteHandler_(elemOther, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_PRE_CONTACT,
 			.contact = contact,
 	});
-	nElem->body->p_->setMcFlag(elemSelf, false);
-	nElem->body->p_->setMcFlag(elemOther, false);
+	nElemSetMcFlag_(elemSelf, false);
+	nElemSetMcFlag_(elemOther, false);
 }
 
 static void pOnContactEnd(sScene* self, sContact* contact) {
-	sElement* elemSelf = nContact->colliding(contact);
-	sElement* elemOther = nContact->collided(contact);
-	nElem->body->p_->setMcFlag(elemSelf, true);
-	nElem->body->p_->setMcFlag(elemOther, true);
+	sElement* elemSelf = nContactColliding(contact);
+	sElement* elemOther = nContactCollided(contact);
+	nElemSetMcFlag_(elemSelf, true);
+	nElemSetMcFlag_(elemOther, true);
 	
 	if (self->comp && self->comp->onContactEnd) {
 		self->comp->onContactEnd(&(sEvent){
@@ -637,19 +638,19 @@ static void pOnContactEnd(sScene* self, sContact* contact) {
 			.contact = contact,
 		});
 	}
-	nElem->p_->executeHandler(elemSelf, &(sEvent){
+	nElemExecuteHandler_(elemSelf, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_CONTACT_END,
 			.contact = contact,
 	});
-	nElem->p_->executeHandler(elemOther, &(sEvent){
+	nElemExecuteHandler_(elemOther, &(sEvent){
 			.target = self->comp->target,
 			.type = nComponent->ON_CONTACT_END,
 			.contact = contact,
 	});
 
-	nElem->body->p_->setMcFlag(elemSelf, false);
-	nElem->body->p_->setMcFlag(elemOther, false);
+	nElemSetMcFlag_(elemSelf, false);
+	nElemSetMcFlag_(elemOther, false);
 }
 
 

@@ -3,71 +3,71 @@
 #include "../Util/Util.h"
 
 
-extern const struct sFolderNamespace {
+void nFolderCreate(const char* name, void(*loader)(void));
 
-    void (*create)(const char* id, void(*loader)(void));
+bool nFolderHasStatus(sFolder* self, int status);
 
-    Mix_Music* (*getMixMusic)(const char* path);
+char* nFolderName(sFolder* self);
 
-    Mix_Chunk* (*getMixChunk)(const char* path);
+int nFolderGetPercLoaded(sFolder* self);
 
-    sImage* (*getImage)(sFolder* self, const char* id);
+Mix_Music* nFolderGetMixMusic(const char* path);
 
-    sAnimation* (*getAnimation)(sFolder* self, const char* id);
+Mix_Chunk* nFolderGetMixChunk(const char* path);
 
-    void (*loadImage)(const char* id, const char* path, sRect* src, double proportion);
+sImage* nFolderGetImage(sFolder* self, const char* id);
 
-    void (*loadTileset)(const char* id, const char* pathF, int start, int end, double proportion);
+sAnimation* nFolderGetAnimation(sFolder* self, const char* id);
 
-    void (*createTilesetFromImage)(const char* image, sSize size, sMatrix matrix);
+void nFolderLoadImage(const char* id, const char* path, sRect* src, double proportion);
 
-    void (*loadAnimation)(const char* id, const char* pathF, int start, int end, int interval, double proportion, bool continuous);
+void nFolderLoadTileset(const char* id, const char* pathF, int start, int end, double proportion);
 
-    void (*loadChunk)(const char* id, const char* path);
+void nFolderCreateTilesetFromImage(const char* image, sSize size, sMatrix matrix);
 
-    void (*loadMusic)(const char* id, const char* path);
+void nFolderLoadAnimation(const char* id, const char* pathF, int start, int end, int interval, double proportion, bool continuous);
 
-    const struct sImageNamespace {
-        const char* (*name)(sImage* self);
-        sFolder* (*folder)(sImage* self);
-        const sSize* (*size)(sImage* self);
-        SDL_Texture* (*SDLTexture)(sImage* self);
-        const sRect* (*src)(sImage* self);
-        double (*proportion)(sImage* self);
-        sImage* (*createText)(
-            const char* text, const char* font, int size, SDL_Color* color
-        );
-        void (*render)(sImage* self, 
-            sRect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity
-        );
-        void (*destroyText)(sImage* self);
-    }* const img;
+void nFolderLoadChunk(const char* id, const char* path);
 
+void nFolderLoadMusic(const char* id, const char* path);
 
-    const struct sAnimationNamespace {
-        const char* (*name)(sAnimation* self);
-        Uint32 (*interval)(sAnimation* self);
-        Uint32 (*quantity)(sAnimation* self);
-        bool (*isContinuous)(sAnimation* self);
-        sImage* (*getImage)(sAnimation* self, Uint32 index);
-    }* const anim;
+void nFolderDestroy_(sFolder* self);
+
+void nFolderIncRefCounter_(sFolder* self);
+void nFolderDecRefCounter_(sFolder* self);
+
+void nFolderSetMixChunk_(sChunk* self, Mix_Chunk* chunk);
+void nFolderSetMixMusic_(sMusic* self, Mix_Music* music);
+void nFolderSetSDLTexture_(sImage* self, void* resource, sSize* size);      
+
+   
 
 
+const char* nImageName(sImage* self);
+sFolder* nImageFolder(sImage* self);
+const sSize* nImageSize(sImage* self);
+SDL_Texture* nImageSDLTexture(sImage* self);
+const sRect* nImageSrc(sImage* self);
+double nImageProportion(sImage* self);
+sImage* nImageCreateText(
+    const char* text, const char* font, int size, SDL_Color* color
+);
+void nImageRender(sImage* self, 
+    sRect* target, double angle, SDL_RendererFlip orientation, Uint8 opacity
+);
+void nImageDestroyText(sImage* self);
 
-    const struct sFolderPrivateNamespace {
+const char* nAnimName(sAnimation* self);
 
-        void (*destroy)(sFolder* self);
-        bool(*hasStatus)(sFolder* self, int status);
-        char* (*id)(sFolder* self);
-        int (*getPercLoaded)(sFolder* self);
-        void (*incRefCounter)(sFolder* self);
-        void (*decRefCounter)(sFolder* self);
+Uint32 nAnimInterval(sAnimation* self);
 
-        void (*setMixChunk)(sChunk* self, Mix_Chunk* chunk);
-        void (*setMixMusic)(sMusic* self, Mix_Music* music);
-        void (*setSDLTexture)(sImage* self, void* resource, sSize* size);      
+Uint32 nAnimQuantity(sAnimation* self);
 
-    }* p_;
-}* const nFolder;
+bool nAnimIsContinuous(sAnimation* self);
+
+sImage* nAnimGetImage(sAnimation* self, Uint32 index);
+
+
+
 
 #endif // !GX_MODULE_H

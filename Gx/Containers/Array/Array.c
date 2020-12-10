@@ -18,7 +18,7 @@ typedef struct sArray {
 } sArray;
 
 //constructor and destructors
-static sArray* create(void){
+sArray* nArrayCreate(void){
 	//create self
 	sArray* self = malloc(sizeof(sArray));	
 	//create attributes    
@@ -28,12 +28,9 @@ static sArray* create(void){
     self->size = 0;  
     return self;
 }
-//...prototypes
-static void reserve(sArray* self, Uint32 capacity);
-static int64_t indexOf(sArray* self, void* value);
 
 //...methods
-static void destroy(sArray* self) {
+void nArrayDestroy(sArray* self) {
     if (self) {
         for (Uint32 i = 0; i < self->size; i++)
             if (self->entries[i].dtor) self->entries[i].dtor(self->entries[i].value);
@@ -43,25 +40,25 @@ static void destroy(sArray* self) {
 }
 
 //accessors and mutators
-static Uint32 getSize(sArray* self){
+Uint32 nArraySize(sArray* self){
 	return self->size;
 }
 
-static Uint32 getCapacity(sArray* self){
+Uint32 nArrayCapacity(sArray* self){
 	return self->capacity;
 }
 
 //methods
-static void* at(sArray* self, Uint32 index) {    
+void* nArrayAt(sArray* self, Uint32 index) {    
    nUtil->assertOutOfRange(index < self->size);
     return self->entries[index].value;
 }
 
-static void* getLast(sArray* self) {
+void* nArrayLast(sArray* self) {
 	return self->entries[self->size - 1].value;
 }
 
-static void insert(sArray* self, Uint32 index, void* value, sDtor dtor) {
+void nArrayInsert(sArray* self, Uint32 index, void* value, sDtor dtor) {
     
     if (index >= self->size) {
         index = self->size++;
@@ -71,18 +68,18 @@ static void insert(sArray* self, Uint32 index, void* value, sDtor dtor) {
     }
 
     if (index >= self->capacity) {
-        reserve(self, 2 * self->capacity);
+        nArrayReserve(self, 2 * self->capacity);
     }
     self->entries[index].value = value;
     self->entries[index].dtor = dtor;
 }
 
-static void push(sArray* self, void* value, sDtor dtor){
-    insert(self, self->size, value, dtor);
+void nArrayPush(sArray* self, void* value, sDtor dtor){
+    nArrayInsert(self, self->size, value, dtor);
 }
 
 
-static void removeByIndex(sArray* self, Uint32 index) {       
+void nArrayRemove(sArray* self, Uint32 index) {       
    nUtil->assertOutOfRange(index < self->size);
     if (self->entries[index].dtor) {
         self->entries[index].dtor(self->entries[index].value);
@@ -93,18 +90,18 @@ static void removeByIndex(sArray* self, Uint32 index) {
     self->size--;
 }
 
-static int removeByValue(sArray* self, void* value) {   
-    int64_t index = indexOf(self, value);
+int nArrayRemoveByValue(sArray* self, void* value) {   
+    int64_t index = nArrayIndexOf(self, value);
     if (index != -1) {
-        removeByIndex(self, (Uint32) index);
+        nArrayRemove(self, (Uint32) index);
         return 1;
     } else return 0;
 }
 
-static int64_t indexOf(sArray* self, void* value) {   
+int64_t nArrayIndexOf(sArray* self, void* value) {   
     int64_t index = -1;
     for (Uint32 i = 0; i < self->size; i++) {
-        if (value == nArray->at(self, i)) {
+        if (value == nArrayAt(self, i)) {
             index = i;
             break;
         }
@@ -112,14 +109,14 @@ static int64_t indexOf(sArray* self, void* value) {
     return index;
 }
 
-static void reserve(sArray* self, Uint32 capacity) {   
+void nArrayReserve(sArray* self, Uint32 capacity) {   
     if (self->capacity >= capacity) return;
     self->entries = realloc(self->entries, sizeof(sArrayNode) * capacity); 
     nUtil->assertAlloc(self->entries);
     self->capacity = capacity;
 }
 
-static void clean(sArray* self) {
+void nArrayClean(sArray* self) {
     if(self->size > 0 || self->capacity > 8){
         for (Uint32 i = 0; i < self->size; i++) {
             if (self->entries[i].dtor) self->entries[i].dtor(self->entries[i].value);
@@ -225,13 +222,13 @@ static inline void mergeFragments(sArray* self, sArray* fragments, sComp comp) {
     free(temp);
 }
 
-static void sort(sArray* self, sComp comp) {
+void nArraySort(sArray* self, sComp comp) {
     
     if (self->size <= 1) { return; }    
 
     //create fragments
-    sArray* fragments = create();   
-    push(fragments, createFragment(0, 1), free);
+    sArray* fragments = nArrayCreate();   
+    nArrayPush(fragments, createFragment(0, 1), free);
   
     //fill fragments    
     for (Uint32 i = 1, counter = 1; i < self->size; i++) {
@@ -247,7 +244,7 @@ static void sort(sArray* self, sComp comp) {
         }
 
         if((order > 0 && data->order < 0) || (order < 0 && data->order > 0)){
-            push(fragments, createFragment(i, 1), free);
+            nArrayPush(fragments, createFragment(i, 1), free);
             data->end = i - 1;
             counter = 1;
             continue;
@@ -265,22 +262,5 @@ static void sort(sArray* self, sComp comp) {
         mergeFragments(self, fragments, comp);
     }
 
-    nArray->destroy(fragments);
+    nArrayDestroy(fragments);
 }
-
-const struct sArrayNamespace* const nArray = &(struct sArrayNamespace){
-	.create = create,
-	.destroy = destroy,
-	.size = getSize,
-	.capacity = getCapacity,
-	.at = at,
-    .last = getLast,
-	.push = push,
-	.insert = insert,
-	.remove = removeByIndex,
-	.removeByValue = removeByValue,
-	.indexOf = indexOf,
-	.reserve = reserve,
-	.clean = clean,
-	.sort = sort,    
-};

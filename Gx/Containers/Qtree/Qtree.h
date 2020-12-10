@@ -3,17 +3,16 @@
 #include "../../Util/Util.h"
 
 
-extern const struct sQtreeNamespace {
-	sQtreeElem* (*createQtreeElem)(void* elem, const sRect* (*posGetter)(void* elem));
-	void (*destroyQtreeElem)(sQtreeElem* self);
-	void* (*getElem)(sQtreeElem* self);
-	sQtree* (*create)(sQtree* parent, sRect pos);
-	void (*destroy)(sQtree* self);
-	sRect (*position)(sQtree* self);
-	void (*insert)(sQtree* self, sQtreeElem* element);
-	void (*remove)(sQtree* self, sQtreeElem* element);
-	void (*update)(sQtree* self, sQtreeElem* element, sRect previous);	
-	void (*getAllElementsInArea)(sQtree* self, const sRect* area, sArray* arr, bool begin);	
-}* nQtree;
+
+sQtreeElem* nQtreeCreateElem(void* elem, const sRect* (*posGetter)(void* elem));
+void nQtreeDestroyElem(sQtreeElem* self);
+void* nQtreeGetElem(sQtreeElem* self);
+sQtree* nQtreeCreate(sQtree* parent, sRect pos);
+void nQtreeDestroy(sQtree* self);
+sRect nQtreePosition(sQtree* self);
+void nQtreeInsert(sQtree* self, sQtreeElem* element);
+void nQtreeRemove(sQtree* self, sQtreeElem* element);
+void nQtreeUpdate(sQtree* self, sQtreeElem* element, sRect previous);	
+void nQtreeGetElementsInArea(sQtree* self, const sRect* area, sArray* arr, bool begin);	
 
 #endif // !GX_QUADTREE_H

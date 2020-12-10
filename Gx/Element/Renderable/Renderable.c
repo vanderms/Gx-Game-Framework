@@ -74,7 +74,7 @@ static Color* createColor(const char* value) {
 	if (value) {
 		self->value = malloc(sizeof(SDL_Color));
 		nUtil->assertAlloc(self->value);
-		nApp->convertColor(self->value, value);
+		nAppConvertColor(self->value, value);
 		self->last = nUtil->createString(value);
 	}
 	return self;
@@ -97,7 +97,7 @@ static bool updateColor(Color* self, const char* value) {
 			self->value = malloc(sizeof(SDL_Color));
 			nUtil->assertAlloc(self->value);
 		}
-		nApp->convertColor(self->value, value);
+		nAppConvertColor(self->value, value);
 		self->last = nUtil->createString(value);
 		return true;
 	}
@@ -113,51 +113,51 @@ static void destroyColor(Color* color) {
 }
 
 //constructors and destructors
-static sElemRenderable* pCreate(sElement* elem, const sIni* ini) {
+sElemRenderable* nElemCreateRenderable_(sElement* elem, const sIni* ini) {
 	
-	if(ini->display !=  nElem->display->ABSOLUTE && ini->display !=  nElem->display->RELATIVE){
-		nUtil->assertArgument(ini->display == nElem->display->NONE);
+	if(ini->display !=  nElem_DISPLAY_ABSOLUTE && ini->display !=  nElem_DISPLAY_RELATIVE){
+		nUtil->assertArgument(ini->display == nElem_DISPLAY_NONE);
 		return NULL;
 	}
 
 	sElemRenderable* self = nUtil->assertAlloc(calloc(1, sizeof(sElemRenderable)));	
-	self->type = (ini->display ==  nElem->display->ABSOLUTE ? 
-		 nElem->display->ABSOLUTE :  nElem->display->RELATIVE
+	self->type = (ini->display ==  nElem_DISPLAY_ABSOLUTE ? 
+		 nElem_DISPLAY_ABSOLUTE :  nElem_DISPLAY_RELATIVE
 	);
-	self->pos = nElem->position(elem);
+	self->pos = nElemPosition(elem);
 	self->zIndex = ini->zIndex;
 	self->elem = elem;
-	nElem->p_->setRenderable(elem, self);
+	nElemSetRenderable_(elem, self);
 	self->opacity = 255;
 	//... folders
 	if (ini->folders) {
 		self->folders = nUtil->split(ini->folders, "|");
-		for (Uint32 i = 0; i < nArray->size(self->folders); i++) {
-			sFolder* folder = nApp->getFolder(nArray->at(self->folders, i));
+		for (Uint32 i = 0; i < nArraySize(self->folders); i++) {
+			sFolder* folder = nAppGetFolder(nArrayAt(self->folders, i));
 			nUtil->assertArgument(folder);
-			nArray->insert(self->folders, i, folder, NULL);
-			nFolder->p_->incRefCounter(folder);
+			nArrayInsert(self->folders, i, folder, NULL);
+			nFolderIncRefCounter_(folder);
 		}
 	}
 
 	//...
 	if (ini->orientation){
-		nElem->style->setOrientation(elem, ini->orientation);
+		nElemSetOrientation(elem, ini->orientation);
 	}
 	else {
 		self->orientation = SDL_FLIP_NONE;
 	}
 	//...
 	if (ini->image){
-		nElem->style->setImage(elem, ini->image);
+		nElemSetImage(elem, ini->image);
 	}
 	//...
 	if (ini->animation){
-		nElem->style->setAnimation (elem, ini->animation);
+		nElemSetAnimation (elem, ini->animation);
 	}
 	//...
 	if (ini->alignment) {
-		nElem->style->setAlignment(elem, ini->alignment);
+		nElemSetAlignment(elem, ini->alignment);
 	}
 	//...
 	self->hidden = ini->hidden;
@@ -167,23 +167,23 @@ static sElemRenderable* pCreate(sElement* elem, const sIni* ini) {
 
 	//label
 	self->color = ini->color ? createColor(ini->color) : createColor("Black");
-	nElem->style->setFontSize(elem, ini->fontSize);
+	nElemSetFontSize(elem, ini->fontSize);
 	self->text = ini->text ? nUtil->createString(ini->text) : NULL;
-	nElem->style->setFont(elem, ini->font ? ini->font : "Default");
+	nElemSetFont(elem, ini->font ? ini->font : "Default");
 	self->shouldUpdateLabel = ini->text ? true : false;
 
 	self->border.color = createColor(NULL);
-	nElem->style->setBorder(elem, ini->border);
-	self->qtreeElem = nQtree->createQtreeElem(elem, nElem->p_->posGetter);
+	nElemSetBorder(elem, ini->border);
+	self->qtreeElem = nQtreeCreateElem(elem, nElemPosGetter_);
 	return self;
 }
 
-static void pDestroy(sElemRenderable* self) {
+void nElemDestroyRenderable_(sElemRenderable* self) {
 	if (self) {
-		if(nApp->isRunning() && self->folders){
-			for (Uint32 i = 0; i < nArray->size(self->folders); i++){
-				sFolder* folder = nArray->at(self->folders, i);
-				nFolder->p_->decRefCounter(folder);
+		if(nAppIsRunning() && self->folders){
+			for (Uint32 i = 0; i < nArraySize(self->folders); i++){
+				sFolder* folder = nArrayAt(self->folders, i);
+				nFolderDecRefCounter_(folder);
 			}
 		}
 		free(self->qtreeElem);
@@ -194,68 +194,68 @@ static void pDestroy(sElemRenderable* self) {
 		if(self->color) destroyColor(self->color);
 		if(self->backgroundColor) destroyColor(self->backgroundColor);
 		if(self->border.color) destroyColor(self->border.color);
-		if(self->label) nFolder->img->destroyText(self->label);
-		if(self->folders) nArray->destroy(self->folders);
+		if(self->label) nImageDestroyText(self->label);
+		if(self->folders) nArrayDestroy(self->folders);
 		free(self);
 	}
 }
 
-static bool hasRelativePosition(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
-	return renderable && renderable->type ==  nElem->display->RELATIVE;
+bool nElemHasRelativeDisplay(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
+	return renderable && renderable->type ==  nElem_DISPLAY_RELATIVE;
 }
 
-static bool hasAbsolutePosition(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
-	return renderable && renderable->type ==  nElem->display->ABSOLUTE;
+bool nElemHasAbsoluteDisplay(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
+	return renderable && renderable->type ==  nElem_DISPLAY_ABSOLUTE;
 }
 
 
-static int zIndex(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+int nElemZIndex(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->zIndex;
 }
 
-static void setZIndex(sElement* self, int value) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetZIndex(sElement* self, int value) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	renderable->zIndex = value;
 }
 
-static Uint8 opacity(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+Uint8 nElemOpacity(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->opacity;
 }
 
-static void setOpacity(sElement* self, Uint8 value) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetOpacity(sElement* self, Uint8 value) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	renderable->opacity = value;
 }
 
-static int orientation(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+int nElemOrientation(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return (int) renderable->orientation;
 }
 
-static void setOrientation(sElement* self, int value) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
-	nUtil->assertArgument(value ==  nElem->orientation->FORWARD || 
-		value ==  nElem->orientation->BACKWARD
+void nElemSetOrientation(sElement* self, int value) {
+	sElemRenderable* renderable = nElemRenderable_(self);
+	nUtil->assertArgument(value ==  nElem_FORWARD || 
+		value ==  nElem_BACKWARD
 	);
 	renderable->orientation = (SDL_RendererFlip) value;
 }
 
-static const char* image(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const char* nElemImage(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->image ? renderable->asset : NULL;
 }
 
-static const char* animation(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const char* nElemAnimation(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->animation ? renderable->asset : NULL;
 }
 
-static const char* alignment(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const char* nElemAlignment(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	if (!renderable->alignment) {
 		return sCenterCenter;
 	}
@@ -281,8 +281,8 @@ static const char* alignment(sElement* self) {
 	return renderable->alignment->last;
 }
 
-static void setAlignment(sElement* self, const char* value) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetAlignment(sElement* self, const char* value) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	if (!renderable->alignment) {
 		renderable->alignment = calloc(1, sizeof(Alignment));
 		nUtil->assertAlloc(renderable->alignment);
@@ -344,46 +344,46 @@ static void setAlignment(sElement* self, const char* value) {
 	}
 }
 
-static bool isHidden(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+bool nElemIsHidden(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->hidden;
 }
 
-static void hide(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemHide(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	renderable->hidden = true;
 }
 
-static void show(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemShow(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	renderable->hidden = false;
 }
 
-static double angle(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+double nElemAngle(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->angle;
 }
 
-static void setAngle(sElement* self, double angle) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetAngle(sElement* self, double angle) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	renderable->angle = angle;
 }
 
-static double proportion(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+double nElemProportion(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->proportion;
 }
 
-static void setProportion(sElement* self, double proportion) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetProportion(sElement* self, double proportion) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	renderable->proportion = proportion;
 }
 
-static void setToFit(sElement* self, const char* axis) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetToFit(sElement* self, const char* axis) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	nUtil->assertArgument(strcmp(axis, "horizontal") == 0 || strcmp(axis, "vertical") == 0);
-	const sSize* size = nFolder->img->size(renderable->image);
-	const sRect* pos = nElem->position(self);
+	const sSize* size = nImageSize(renderable->image);
+	const sRect* pos = nElemPosition(self);
 	if (strcmp(axis, "horizontal") == 0){
 		renderable->proportion = ((double) pos->w) / size->w;
 	}
@@ -392,40 +392,40 @@ static void setToFit(sElement* self, const char* axis) {
 	}
 }
 
-static const SDL_Color* color(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const SDL_Color* nElemColor(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->color->value;
 }
 
-static void setColor(sElement* self, const char* color) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetColor(sElement* self, const char* color) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	if(updateColor(renderable->color, color)){
 		renderable->shouldUpdateLabel = true;
 	}
 }
 
-static const SDL_Color* backgroundColor(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const SDL_Color* nElemBackgroundColor(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->backgroundColor->value;
 }
 
-static void setBackgroundColor(sElement* self, const char* color) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetBackgroundColor(sElement* self, const char* color) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	updateColor(renderable->backgroundColor, color);
 }
 
-static int borderSize(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+int nElemBorderSize(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->border.size;
 }
 
-static const SDL_Color* borderColor(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const SDL_Color* nElemBorderColor(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->border.color->value;
 }
 
-static void setBorder(sElement* self, const char* border) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetBorder(sElement* self, const char* border) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 
 	//if null, reset border
 	if (!border) {
@@ -451,15 +451,15 @@ static void setBorder(sElement* self, const char* border) {
 	}
 }
 
-static sQtreeElem* pGetQtreeElem(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+sQtreeElem* nElemGetRenderableQtreeElem_(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->qtreeElem;
 }
 
 enum AssetType{IMAGE, ANIMATION};
 
 static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+	sElemRenderable* renderable = nElemRenderable_(self);
 	if (apath != NULL) {
 		if (renderable->asset && (strcmp(renderable->asset, apath) == 0)){
 			return ( type == IMAGE ?
@@ -472,17 +472,17 @@ static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type
 		nUtil->assertArgument(slash);
 
 		*slash = '\0';
-		sFolder* folder = nApp->getFolder(renderable->asset);
+		sFolder* folder = nAppGetFolder(renderable->asset);
 		nUtil->assertArgument(folder);
 
-		bool folderIsLoaded = nFolder->p_->hasStatus(folder, nUtil->status->LOADING) ||
-			nFolder->p_->hasStatus(folder, nUtil->status->READY);
+		bool folderIsLoaded = nFolderHasStatus(folder, nUtil->status->LOADING) ||
+			nFolderHasStatus(folder, nUtil->status->READY);
 		nUtil->assertState(folderIsLoaded);
 
 		*slash = '/';
 		void* asset = (type == IMAGE ?
-			(void*) nFolder->getImage(folder, slash + 1) :
-			(void*) nFolder->getAnimation(folder, slash + 1)
+			(void*) nFolderGetImage(folder, slash + 1) :
+			(void*) nFolderGetAnimation(folder, slash + 1)
 		);
 		nUtil->assertArgument(asset);
 		return asset;
@@ -490,9 +490,9 @@ static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type
 	return NULL;
 }
 
-static void setImage(sElement* self, const char* apath) {
+void nElemSetImage(sElement* self, const char* apath) {
 
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+	sElemRenderable* renderable = nElemRenderable_(self);
 	sImage* image = elemGetAsset(self, apath, IMAGE);
 	if(renderable->image != image){
 		renderable->animation = NULL;
@@ -502,9 +502,9 @@ static void setImage(sElement* self, const char* apath) {
 	}
 }
 
-static void setAnimation(sElement* self, const char* apath) {
+void nElemSetAnimation(sElement* self, const char* apath) {
 	
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+	sElemRenderable* renderable = nElemRenderable_(self);
 	sAnimation* anim = elemGetAsset(self, apath, ANIMATION);
 	
 	renderable->image = NULL;
@@ -513,9 +513,9 @@ static void setAnimation(sElement* self, const char* apath) {
 	renderable->animCurrent = 0;	
 }
 
-static void setText(sElement* self, const char* format, ...) {
+void nElemSetText(sElement* self, const char* format, ...) {
 
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+	sElemRenderable* renderable = nElemRenderable_(self);
 
 	if (format){
 		static char text[1024];
@@ -547,13 +547,13 @@ static void setText(sElement* self, const char* format, ...) {
 }
 
 
-static const char* text(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const char* nElemText(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->text;
 }
 
-static void setFontSize(sElement* self, int size) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetFontSize(sElement* self, int size) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	if(size <= 0) size = 16;
 	if(size <= 8) size = 8;
 	if (renderable->fontSize != size) {
@@ -562,18 +562,18 @@ static void setFontSize(sElement* self, int size) {
 	}
 }
 
-static int fontSize(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+int nElemFontSize(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->fontSize;
 }
 
-static void setFont(sElement* self, const char* font) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemSetFont(sElement* self, const char* font) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	nUtil->assertArgument(font);
 	if (renderable->font && strcmp(renderable->font, font) == 0) {
 		return;
 	}
-	const void* fontExists = nApp->p_->getFontPath(font);
+	const void* fontExists = nAppGetFontPath_(font);
 	nUtil->assertArgument(fontExists);
 	if (fontExists) {
 		free(renderable->font);
@@ -582,22 +582,22 @@ static void setFont(sElement* self, const char* font) {
 	}
 }
 
-static const char* font(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+const char* nElemFont(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->font;
 }
 
 static void pUpdateLabel(sElemRenderable* renderable) {
 
 	if(renderable->label){
-		nFolder->img->destroyText(renderable->label);
+		nImageDestroyText(renderable->label);
 	}
 	renderable->shouldUpdateLabel = false;
 
 	if(renderable->text && renderable->fontSize > 0 &&
 		renderable->font && renderable->color->value
 	){
-		renderable->label = nFolder->img->createText(renderable->text,
+		renderable->label = nImageCreateText(renderable->text,
 			renderable->font, renderable->fontSize, renderable->color->value
 		);
 	}
@@ -608,12 +608,12 @@ static void pUpdateLabel(sElemRenderable* renderable) {
 
 //...ELEMENT RENDER METHODS
 static sRect calcAbsolutePos(sElemRenderable* ren) {
-	int y = nApp->logicalSize().h - (ren->pos->y + ren->pos->h);
+	int y = nAppLogicalSize().h - (ren->pos->y + ren->pos->h);
 	return (sRect) { ren->pos->x, y, ren->pos->w, ren->pos->h };
 }
 
 static sRect calcRelativePos(sElemRenderable* ren) {
-	const sRect* cpos = nElem->position(nScene->getCamera(nElem->scene(ren->elem)));
+	const sRect* cpos = nElemPosition(nScene->getCamera(nElemScene(ren->elem)));
 	int x = ren->pos->x - cpos->x;
 	int y = (cpos->y + cpos->h) - (ren->pos->y + ren->pos->h);
 	return (sRect) { x, y, ren->pos->w, ren->pos->h };
@@ -653,24 +653,24 @@ static void pApplyAlignment(sElemRenderable* ren, sRect* pos) {
 	}
 }
 
-static sRect* pCalcImagePosOnCamera(sElement* self, sRect* pos, sImage* image) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
-	const sSize* size = nFolder->img->size(image);
+sRect* nElemCalcImagePosOnCamera(sElement* self, sRect* pos, sImage* image) {
+	sElemRenderable* renderable = nElemRenderable_(self);
+	const sSize* size = nImageSize(image);
 	pApplyProportion(renderable, pos, *size);
 	pApplyAlignment(renderable, pos);
 	return pos;
 }
 
-static sRect calcPosOnCamera(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
-	if(renderable->type ==  nElem->display->ABSOLUTE){
+sRect nElemCalcPosOnCamera(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
+	if(renderable->type ==  nElem_DISPLAY_ABSOLUTE){
 		return calcAbsolutePos(renderable);
 	}
 	return calcRelativePos(renderable);	
 }
 
-static sImage* pGetImageRef(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+sImage* nElemGetImageRef_(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	sImage* image = NULL;
 	if (renderable->image) {
 		image = renderable->image;
@@ -678,16 +678,16 @@ static sImage* pGetImageRef(sElement* self) {
 	else if (renderable->animation) {
 		sAnimation* anim = renderable->animation; //create alias
 		renderable->animCounter++; //to avoid counter starting with 0.
-		if (renderable->animCurrent >= nFolder->anim->quantity(anim)) {
+		if (renderable->animCurrent >= nAnimQuantity(anim)) {
 			renderable->animCurrent = 0;
 		}
-		image = nFolder->anim->getImage(anim, renderable->animCurrent);
+		image = nAnimGetImage(anim, renderable->animCurrent);
 
-		if (renderable->animCounter % nFolder->anim->interval(anim) == 0)
+		if (renderable->animCounter % nAnimInterval(anim) == 0)
 			renderable->animCurrent++;
 
 			//if it's the last frame in animation and there's no repeat set renderable->animation to NULL
-		if (renderable->animCurrent >= nFolder->anim->quantity(anim) && !nFolder->anim->isContinuous(anim)) {
+		if (renderable->animCurrent >= nAnimQuantity(anim) && !nAnimIsContinuous(anim)) {
 			renderable->animation = NULL;
 			renderable->animCounter = 0;
 			renderable->animCurrent = 0;
@@ -696,84 +696,17 @@ static sImage* pGetImageRef(sElement* self) {
 	return image;
 }
 
-static void onRender(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+void nElemOnRender_(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	if (renderable->shouldUpdateLabel) {
 		pUpdateLabel(renderable);
 	}
-	nElem->p_->executeHandler(self, &(sEvent){
+	nElemExecuteHandler_(self, &(sEvent){
 		.type = nComponent->ON_RENDER
 	});
 }
 
-static sImage* pLabel(sElement* self) {
-	sElemRenderable* renderable = nElem->p_->renderable(self);
+sImage* nElemLabel_(sElement* self) {
+	sElemRenderable* renderable = nElemRenderable_(self);
 	return renderable->label;
 }
-
-
-const struct sElemRenderableNamespace nElemRenderable = {
-
-	.hasRelativePosition = hasRelativePosition,
-	.hasAbsolutePosition = hasAbsolutePosition,
-
-	.zIndex = zIndex,
-	.setZIndex = setZIndex,
-
-	.opacity = opacity,
-	.setOpacity = setOpacity,
-
-	.orientation = orientation,
-	.setOrientation = setOrientation,
-
-	.image = image,
-	.setImage = setImage,	
-
-	.animation = animation,
-	.setAnimation = setAnimation,
-
-	.alignment = alignment,
-	.setAlignment = setAlignment,
-
-	.isHidden = isHidden,
-	.hide = hide,
-	.show = show,
-
-	.angle = angle,
-	.setAngle = setAngle,
-
-	.proportion = proportion,
-	.setProportion = setProportion,
-	.setToFit = setToFit,
-
-	.backgroundColor = backgroundColor,
-	.setBackgroundColor = setBackgroundColor,
-
-	.borderSize = borderSize,
-	.borderColor = borderColor,
-	.setBorder = setBorder,
-
-	.text = text,
-	.setText = setText,
-	
-	.fontSize = fontSize,
-	.setFontSize = setFontSize,	
-
-	.setFont = setFont,
-	.font = font,
-
-	.color = color,
-	.setColor = setColor,
-	
-	.calcPosOnCamera = calcPosOnCamera,
-
-	.p_ = &(struct sElemRenderablePrivateNamespace) {
-		.create = pCreate,
-		.destroy = pDestroy,
-		.onRender = onRender,
-		.getQtreeElem = pGetQtreeElem,
-		.calcImagePosOnCamera = pCalcImagePosOnCamera,
-		.getImageRef = pGetImageRef,
-		.label = pLabel
-	},
-};

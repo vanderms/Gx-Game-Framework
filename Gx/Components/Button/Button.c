@@ -47,9 +47,9 @@ static void onMouse(sEvent* ev) {
 	sButton* self = ev->target;
 	const SDL_Event* e = ev->sdle;
 
-	SDL_Rect posOnCamera = nElem->style->calcPosOnCamera(self->base);
+	SDL_Rect posOnCamera = nElemCalcPosOnCamera(self->base);
 	SDL_Rect pos = {0, 0, 0, 0};
-	nApp->calcDest(&posOnCamera, &pos);
+	nAppCalcDest(&posOnCamera, &pos);
 
 	if (e->type == SDL_MOUSEBUTTONDOWN && e->button.button == SDL_BUTTON_LEFT) {
 		sPoint p = { e->button.x, e->button.y };			
@@ -87,9 +87,9 @@ static void onFinger(sEvent* ev) {
 	sButton* self = ev->target;
 	const SDL_Event* e = ev->sdle;
 
-	SDL_Rect pos = nElem->style->calcPosOnCamera(self->base);
+	SDL_Rect pos = nElemCalcPosOnCamera(self->base);
 
-	sSize appSize = nApp->logicalSize();
+	sSize appSize = nAppLogicalSize();
 
 	if (e->type == SDL_FINGERDOWN) {
 		sPoint p = { (int) (e->tfinger.x * appSize.w + 0.5f), (int) (e->tfinger.y * appSize.h + 0.5f) };
@@ -171,7 +171,7 @@ static void onKeyboard(sEvent* ev) {
 
 
 static Uint32 getStatus(sElement* base){
-	sButton* self = nElem->getComponent(base, "nButton");
+	sButton* self = nElemGetComponent(base, "nButton");
 	Uint32 status = nButton->NONE;
 	status |= self->input & nButton->SCREEN ? self->status : nButton->NONE;
 	status |= self->input & nButton->KEYBOARD ? self->keyStatus : nButton->NONE;
@@ -179,7 +179,7 @@ static Uint32 getStatus(sElement* base){
 }
 
 static bool hasStatus(sElement* base, Uint32 status) {
-	sButton* self = nElem->getComponent(base, "nButton");
+	sButton* self = nElemGetComponent(base, "nButton");
 	return (
 		((self->input & nButton->SCREEN) && (self->status & status)) ||
 		((self->input & nButton->KEYBOARD) && (self->keyStatus & status))
@@ -189,7 +189,7 @@ static bool hasStatus(sElement* base, Uint32 status) {
 //constructor 
 static void implement(sElement* base, Uint32 inputs, int keyCode) {	
 	
-	nUtil->assertArgument(!(inputs & nButton->SCREEN) || nElem->position(base));
+	nUtil->assertArgument(!(inputs & nButton->SCREEN) || nElemPosition(base));
 
 	sButton* self = nUtil->assertAlloc(calloc(1, sizeof(sButton)));
 	self->input = inputs;
@@ -200,7 +200,7 @@ static void implement(sElement* base, Uint32 inputs, int keyCode) {
 	sHandler mouseHandler = (inputs & nButton->MOUSE) ? onMouse : NULL;
 	sHandler fingerHandler = (inputs & nButton->MOUSE) ? onFinger : NULL;
 	#if 1
-	nElem->addComponent(base, &(sComponent){
+	nElemAddComponent(base, &(sComponent){
 		.name = "nButton",
 		.target = self,
 		.onLoopBegin = onLoopBegin,

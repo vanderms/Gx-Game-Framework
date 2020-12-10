@@ -29,7 +29,7 @@ typedef struct sList {
 } sList;
 
 
-static sList* create() {
+sList* nListCreate() {
 	sList* self = malloc(sizeof(sList));	
 	nUtil->assertAlloc(self);
 	self->size = 0;
@@ -39,22 +39,22 @@ static sList* create() {
 	return self;
 }
 
-static void destroy(sList* self) {
+void nListDestroy(sList* self) {
 	if (self) {
-		nList->clean(self);
+		nListClean(self);
 		free(self);
 	}
 }
 
-static int size(sList* self) {
+int nListSize(sList* self) {
 	return self->size;
 }
 
-static void* first(sList* self) {
+void* nListFirst(sList* self) {
 	return self->first->value;
 }
 
-static void* last(sList* self) {
+void* nListLast(sList* self) {
 	return self->last->value;
 }
 
@@ -76,12 +76,12 @@ static ListNode* listGetNodeByIndex(sList* self, int index) {
 	 return node;
 }
 
-static void* at(sList* self, int index) {
+void* nListAt(sList* self, int index) {
 	ListNode* node = listGetNodeByIndex(self, index);
 	return node->value;
 }
 
-static bool contains(sList* self, void* value) {	
+bool nListContains(sList* self, void* value) {	
 	ListNode* node = self->first;
 	while (node && node->value != value) {
 		node = node->next;
@@ -89,7 +89,7 @@ static bool contains(sList* self, void* value) {
 	return (bool) node;
 }
 
-static void* begin(sList* self) {
+void* nListBegin(sList* self) {
 	if (self) {
 		self->previousNode = self->first;
 		return self->first ? self->first->value : NULL;
@@ -97,7 +97,7 @@ static void* begin(sList* self) {
 	return NULL;	
 }
 
-static void* next(sList* self) {	
+void* nListNext(sList* self) {	
 	if (self->previousNode) {
 		self->previousNode = self->previousNode->next;
 		if (self->previousNode) {
@@ -107,7 +107,7 @@ static void* next(sList* self) {
 	return NULL;
 }
 
-static void push(sList* self, void* value, sDtor dtor) {
+void nListPush(sList* self, void* value, sDtor dtor) {
 	ListNode* node = createNode(value, dtor);	
 	if (self->last) {
 		node->prev = self->last;
@@ -120,11 +120,11 @@ static void push(sList* self, void* value, sDtor dtor) {
 	self->size++;
 }
 
-static void insert(sList* self, int index, void* value, sDtor dtor) {
+void nListInsert(sList* self, int index, void* value, sDtor dtor) {
 	ListNode* node = createNode(value, dtor);
 
 	if (index >= self->size) {
-		nList->push(self, value, dtor);
+		nListPush(self, value, dtor);
 	}
 	else if (index == 0) {
 		node->next = self->first;
@@ -141,7 +141,7 @@ static void insert(sList* self, int index, void* value, sDtor dtor) {
 	self->size++;
 }
 
-static bool replace(sList* self, void* oldValue, void* newValue, sDtor dtor) {
+bool nListReplace(sList* self, void* oldValue, void* newValue, sDtor dtor) {
 	
 	ListNode* node = (self->previousNode && 
 		oldValue == self->previousNode->value) ? self->previousNode : self->first;
@@ -186,7 +186,7 @@ static bool listRemoveNode(sList* self, ListNode* node) {
 	else return false;
 }
 
-static bool removeByValue(sList* self, void* value) {
+bool nListRemove(sList* self, void* value) {
 
 	//tests if the value is equal to self->nextNode->prev or self->last
 	//not being equal to anyone sets node equals to self->first
@@ -203,34 +203,14 @@ static bool removeByValue(sList* self, void* value) {
 	return (bool) (node && listRemoveNode(self, node));	
 }
 
-static bool removeByIndex(sList* self, int index) {
+bool nListRemoveByIndex(sList* self, int index) {
 	nUtil->assertOutOfRange(index >= 0 && index < self->size);	
 	 return listRemoveNode(self, listGetNodeByIndex(self, index));
 }
 
-static void clean(sList* self) {
-	while (nList->size(self)) {
+void nListClean(sList* self) {
+	while (nListSize(self)) {
 		listRemoveNode(self, self->last);
 	}
 	self->size = 0;
 }
-
-
-const struct sListNamespace* const nList = &(struct sListNamespace){
-	//constructor and destructor
-	.create = create,
-	.destroy = destroy,
-	.size = size,
-	.first = first,
-	.last = last,
-	.at = at,
-	.contains = contains,
-	.begin = begin,
-	.next = next,
-	.push = push,
-	.insert = insert,
-	.replace = replace,
-	.remove = removeByValue,
-	.removeByIndex = removeByIndex,
-	.clean = clean,
-};

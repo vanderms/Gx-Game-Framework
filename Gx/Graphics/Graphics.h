@@ -2,16 +2,16 @@
 #define GX_GRAPHICS_H
 #include "../Util/Util.h"
 
-extern const struct sGraphicsNamespace {
-	sGraphics* (*create)(sScene* scene);
-	void (*destroy)(sGraphics* self);
-	void (*insert)(sGraphics* self, sElement* element);
-	void (*updateElement)(sGraphics* self, sElement* element, sRect previousPos);
-	void (*remove)(sGraphics* self, sElement* element);
-	void (*update)(sGraphics* self);
-	//...sElement
-	void (*renderElement)(sElement* self);
-}* const nGraphics;
+
+sGraphics* nGraphicsCreate_(sScene* scene);
+void nGraphicsDestroy_(sGraphics* self);
+void nGraphicsInsert_(sGraphics* self, sElement* element);
+void nGraphicsUpdateElement_(sGraphics* self, sElement* element, sRect previousPos);
+void nGraphicsRemoveElement_(sGraphics* self, sElement* element);
+void nGraphicsUpdate_(sGraphics* self);
+//...sElement
+void nGraphicsRenderElement_(sElement* self);
+
 
 
 

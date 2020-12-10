@@ -110,7 +110,7 @@ static char* cloneString(const char* str, char* buffer, Uint32 size) {
 
 static sArray* split(const char* str, const char* sep) {
     
-    sArray* tokens = nArray->create();
+    sArray* tokens = nArrayCreate();
 
     const size_t len = strlen(sep);
     char* next = NULL;
@@ -119,11 +119,11 @@ static sArray* split(const char* str, const char* sep) {
 
     while ((next = strstr(token, sep))){
         next[0] = '\0';
-        nArray->push(tokens, nUtil->createString(token), free);
+        nArrayPush(tokens, nUtil->createString(token), free);
         token = next + len;       
     }
     
-    nArray->push(tokens, nUtil->createString(token), free);
+    nArrayPush(tokens, nUtil->createString(token), free);
     free(memory);
     
     return tokens;
@@ -175,56 +175,56 @@ static int random(uint32_t* seed, int start, int end) {
 
 static bool assertNullPointer(const void* ptr) {
     if (!ptr) {
-        nApp->runtimeError("Null pointer error.");
+        nAppRuntimeError("Null pointer error.");
     }
     return ptr;
 }
 
 static bool assertArgument(bool condition){
     if (!condition) {
-        nApp->runtimeError("Invalid argument error.");
+        nAppRuntimeError("Invalid argument error.");
     }    
     return condition;
 }
 
 static void* assertAlloc(void* ptr){
     if (!ptr) {
-        nApp->runtimeError("Failed to allocate memory.");
+        nAppRuntimeError("Failed to allocate memory.");
     }
     return ptr;
 }
 
 static bool assertImplementation(bool condition) {
     if (!condition) {
-        nApp->runtimeError("Component not implemented error.");
+        nAppRuntimeError("Component not implemented error.");
     }    
     return condition;
 }
 
 static bool assertHash(bool condition) {
     if (!condition) {
-        nApp->runtimeError("Invalid hash error.");
+        nAppRuntimeError("Invalid hash error.");
     }    
     return condition;
 }
 
 static bool assertOutOfRange(bool condition){
     if (!condition) {
-        nApp->runtimeError("Out of range error.");
+        nAppRuntimeError("Out of range error.");
     }    
     return condition;
 }
 
 static bool assertResourceNotFound(bool condition) {
     if (!condition) {
-        nApp->runtimeError("Resource not found error.");
+        nAppRuntimeError("Resource not found error.");
     }    
     return condition;
 }
 
 static bool assertState(bool condition){    
     if (!condition) {
-        nApp->runtimeError("Invalid state error.");
+        nAppRuntimeError("Invalid state error.");
     }    
     return condition;
 }

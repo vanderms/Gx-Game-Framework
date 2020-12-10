@@ -2,44 +2,39 @@
 #define GX_PHYSICS_H
 #include "../Util/Util.h"
 
-extern const struct sPhysicsNamespace {
-	//...
-	sPhysics* (*create)(sScene* scene);
-	void (*destroy)(sPhysics* self);
 
-	//...
-	void (*update)(sPhysics* self);
-	void (*insert)(sPhysics* self, sElement* element);
-	void (*remove)(sPhysics* self, sElement* element);
-	void (*updateElem)(sPhysics* self, sElement* element, sRect previousPos);
-	sVector (*moveByElem)(sPhysics* self, sElement* element);
-	void (*createWalls)(sPhysics* self);
-}* const nPhysics;
+extern const Uint32 nContact_RIGHT;
+extern const Uint32 nContact_LEFT;
+extern const Uint32 nContact_HORIZONTAL;
+extern const Uint32 nContact_UP;
+extern const Uint32 nContact_DOWN;
+extern const Uint32 nContact_VERTICAL;
+extern const Uint32 nContact_ALLOWED;
+extern const Uint32 nContact_ALL;
 
-extern const struct sContactNamespace {		
-	sElement* (*colliding)(sContact* contact);
-	sElement* (*collided)(sContact* contact);
-	bool (*isBetween)(sContact* contact, sElement* self, sElement* other);
-	bool (*hasElem)(sContact* contact, sElement* element);
-	bool (*hasDirection)(sContact* contact, Uint32 direction);	
-	Uint32 (*direction)(sContact* contact);
-	sElement* (*getOpposite)(sContact* contact, sElement* self);
-	bool (*wasAllowed)(sContact* contact);
-	void (*allowCollision)(sContact* contact);
-	bool (*isFromRight)(sContact* contact, sElement* self);
-	bool (*isFromLeft)(sContact* contact, sElement* self);
-	bool (*isFromBelow)(sContact* contact, sElement* self);
-	bool (*isFromAbove)(sContact* contact, sElement* self);
-	void (*oneWayPlatformCbk)(sEvent* e);
-	const Uint32 RIGHT;
-	const Uint32 LEFT;
-	const Uint32 HORIZONTAL;
-	const Uint32 UP;
-	const Uint32 DOWN;
-	const Uint32 VERTICAL;
-	const Uint32 ALLOWED;
-	const Uint32 ALL;
-}* const nContact;
 
+sPhysics* nPhysicsCreate_(sScene* scene);
+void  nPhysicsDestroy_(sPhysics* self);
+void nPhysicsUpdate_(sPhysics* self);
+void  nPhysicsInsert_(sPhysics* self, sElement* element);
+void nPhysicsRemoveElem_(sPhysics* self, sElement* element);
+void nPhysicsUpdateElem_(sPhysics* self, sElement* element, sRect previousPos);
+sVector nPhysicsMoveByElem_(sPhysics* self, sElement* element);
+void nPhysicsCreateWalls_(sPhysics* self);
+
+	
+sElement* nContactColliding(sContact* contact);
+sElement* nContactCollided(sContact* contact);
+bool nContactIsBetween(sContact* contact, sElement* self, sElement* other);
+bool nContactHasElem(sContact* contact, sElement* element);
+bool nContactHasDirection(sContact* contact, Uint32 direction);	
+Uint32 nContactDirection(sContact* contact);
+bool nContactHasRelativeDirection(sContact* contact, sElement* self, Uint32 direction);
+Uint32 nContactRelativeDirection(sContact* contact, sElement* self);
+sElement* nContactGetOpposite(sContact* contact, sElement* self);
+bool nContactWasAllowed(sContact* contact);
+void nContactAllowCollision(sContact* contact);
+void nContactOneWayPlatformCbk(sEvent* e);
+	
 
 #endif // !GX_PHYSICS_H
