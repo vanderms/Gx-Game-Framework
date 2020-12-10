@@ -25,14 +25,14 @@ static void updateImages(sTilemap* self){
             if(index != -1){
                 const char* imageName = sf("%s|%d", self->group, index);
                 image = nFolderGetImage(self->folder, imageName); 
-                nUtil->assertResourceNotFound(image);
+                nUtilAssertResourceNotFound(image);
             }
             nArrayInsert(self->images, i,  image, NULL);
         }
     }
     else {
         sImage* image = nFolderGetImage(self->folder, self->group);
-        nUtil->assertResourceNotFound(image);
+        nUtilAssertResourceNotFound(image);
         for (Uint32 i = 0; i < (Uint32) self->matrix.nr * self->matrix.nc; i++) {
             nArrayInsert(self->images, i, image, NULL);
         }
@@ -104,28 +104,30 @@ static void onDestroy(sEvent* e) {
     free(self);
 }
 
-static void implement(sElement* base, const char* path, sMatrix matrix, const int* sequence) {
+static void nTilemapCreate(sElement* base, 
+    const char* path, sMatrix matrix, const int* sequence) 
+{
 	
-	nUtil->assertArgument(base && path);
-	nUtil->assertArgument(nElemPosition(base) && nElemIsRenderable(base));
-	nUtil->assertArgument(matrix.nr && matrix.nc);
+	nUtilAssertArgument(base && path);
+	nUtilAssertArgument(nElemPosition(base) && nElemIsRenderable(base));
+	nUtilAssertArgument(matrix.nr && matrix.nc);
 			
-	sTilemap* self = nUtil->assertAlloc(calloc(1, sizeof(sTilemap)));	
+	sTilemap* self =nUtilAssertAlloc(calloc(1, sizeof(sTilemap)));	
 	self->base = base;
 	self->matrix = matrix;
     
     sArray* tokens = nAppTokenize(path, "/");
-    nUtil->assertArgument(nArraySize(tokens) == 2);
+   nUtilAssertArgument(nArraySize(tokens) == 2);
     self->folder = nAppGetFolder(nArrayAt(tokens, 0));
-    nUtil->assertArgument(self->folder);
-    self->group = nUtil->createString(nArrayAt(tokens, 1));    
+   nUtilAssertArgument(self->folder);
+    self->group = nUtilCreateString(nArrayAt(tokens, 1));    
    
     self->images = nArrayCreate();
 	
     if (sequence) {
          self->sequence = nArrayCreate();
          for (Uint32 i = 0; i < (Uint32) matrix.nr * matrix.nc; i++) {
-            nArrayPush(self->sequence, nUtil->createInt(sequence[i]), free);
+            nArrayPush(self->sequence, nUtilCreateInt(sequence[i]), free);
         }
     }
     else self->sequence = NULL;
@@ -139,6 +141,3 @@ static void implement(sElement* base, const char* path, sMatrix matrix, const in
     });
 }
 
-const struct sTilemapNamespace* const nTilemap = &(struct sTilemapNamespace) {
-	.implement = implement
-};

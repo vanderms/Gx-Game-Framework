@@ -64,9 +64,30 @@ typedef struct sMatrix {
 	int nc;
 } sMatrix;
 
+
+enum sEventType {
+	nEvent_ON_LOAD,
+	nEvent_ON_LOOP_BEGIN,
+	nEvent_ON_UPDATE,
+	nEvent_ON_RENDER,
+	nEvent_ON_LOOP_END,
+	nEvent_ON_UNLOAD,
+	nEvent_ON_KEYBOARD,
+	nEvent_ON_MOUSE,
+	nEvent_ON_FINGER,
+	nEvent_ON_SDL_DEFAULT,
+	nEvent_ON_PRE_CONTACT,
+	nEvent_ON_CONTACT_BEGIN,
+	nEvent_ON_CONTACT_END,
+	nEvent_ON_TIMEOUT,
+	nEvent_ON_DESTROY,
+	nEvent_ON_ELEM_REMOVAL,
+	nEvent_TOTAL,
+};
+
 typedef struct sEvent {
 	void* target;
-	int type;
+	enum sEventType type;
 	union { sContact* contact; SDL_Event* sdle; };
 } sEvent;
 
@@ -152,75 +173,53 @@ typedef struct sIni {
 
 
 //... Util namespace
-extern const struct sUtilNamespace {	
+enum sUtilStatus{
+	nUtil_STATUS_NONE,
+	nUtil_STATUS_LOADING,
+	nUtil_STATUS_LOADED,
+	nUtil_STATUS_RUNNING,
+	nUtil_STATUS_PAUSED,
+	nUtil_STATUS_READY,
+	nUtil_STATUS_UNLOADING
+};
+	
+extern const Uint32 nUtil_HASH_ELEMENT;
+extern const Uint32 nUtil_HASH_SCENE;
+extern const Uint32 nUtil_HASH_CONTACT;
+	
 
-	int* (*createInt)(int value);
-	Uint32* (*createUint)(Uint32 value);
-	bool* (*createBool)(bool value);
-	double* (*createDouble)(double value);
-	char* (*createString)(const char* value);
-	char* (*createStringF)(const char* format, ...);
-	char* (*cloneString)(const char* str, char* buffer, unsigned int size);	
-	sArray* (*split)(const char* str, const char* sep);
-	char* (*trim)(const char* str, char* buffer, size_t bSize);
-	int (*abs)(int value);
-	int (*random)(uint32_t* seed, int start, int end);
-	void (*printMask)(Uint32 mask);
-	SDL_Point (*calcDistance)(const SDL_Point* pointA, const SDL_Point* pointB);
-	bool (*assertNullPointer)(const void* ptr); 
-	bool (*assertArgument)(bool condition);
-	bool (*assertState)(bool condition);
-	void* (*assertAlloc)(void* ptr);
-	bool (*assertResourceNotFound)(bool condition);
-	bool (*assertImplementation)(bool condition);
-	bool (*assertHash)(bool condition);
-	bool (*assertOutOfRange)(bool condition);	
-	void (*splitAssetPath)(const char* path, char* folder, char* asset);
+int* nUtilCreateInt(int value);
+Uint32* nUtilCreateUint(Uint32 value);
+bool* nUtilCreateBool(bool value);
+double* nUtilCreateDouble(double value);
+char* nUtilCreateString(const char* value);
+char* nUtilCreateStringF(const char* format, ...);
+char* nUtilCloneString(const char* str, char* buffer, unsigned int size);	
+sArray* nUtilSplit(const char* str, const char* sep);
+char* nUtilTrim(const char* str, char* buffer, size_t bSize);
+int nUtilRandom(uint32_t* seed, int start, int end);
+void nUtilPrintMask(Uint32 mask);
+SDL_Point nUtilCalcDistance(const SDL_Point* pointA, const SDL_Point* pointB);
+bool nUtilAssertNullPointer(const void* ptr); 
+bool nUtilAssertArgument(bool condition);
+bool nUtilAssertState(bool condition);
+void* nUtilAssertAlloc(void* ptr);
+bool nUtilAssertResourceNotFound(bool condition);
+bool nUtilAssertImplementation(bool condition);
+bool nUtilAssertHash(bool condition);
+bool nUtilAssertOutOfRange(bool condition);	
+void nUtilSplitAssetPath(const char* path, char* folder, char* asset);
 
-	struct sUtilStatusNamespace {		
-		const int NONE;
-		const int LOADING;
-		const int LOADED;
-		const int RUNNING;
-		const int PAUSED;
-		const int READY;
-		const int UNLOADING;
-	}* status;
-
-	struct sUtilHash {
-		const Uint32 ELEMENT;
-		const Uint32 SCENE;
-		const Uint32 CONTACT;
-	}* hash;
-}* const nUtil;
 
 //...component namespace
-extern const struct sComponentNamespace {		
-		bool (*isIniComponentEmpty)(const sIni* ini);
-		bool (*isComponentEmpty)(const sComponent* comp);
-		sComponent* (*create)(const sIni* ini);
-		sComponent* (*copy)(const sComponent* comp);
-		void (*destroy)(sComponent* self);
-		void (*onDestroyFreeTarget)(sEvent* e);
-		void(*onDestroyDoNothing)(sEvent* e);
-		sHandler (*getHandler)(sComponent* comp, int type);
-		const int ON_LOAD;
-		const int ON_LOOP_BEGIN;
-		const int ON_UPDATE;
-		const int ON_RENDER;
-		const int ON_LOOP_END;
-		const int ON_UNLOAD;	
-		const int ON_KEYBOARD;
-		const int ON_MOUSE;
-		const int ON_FINGER;
-		const int ON_SDL_DEFAULT;
-		const int ON_PRE_CONTACT;
-		const int ON_CONTACT_BEGIN;
-		const int ON_CONTACT_END;
-		const int ON_TIMEOUT;
-		const int ON_DESTROY;
-		const int ON_ELEM_REMOVAL;
-		const int TOTAL;
-}* const nComponent;
+		
+bool nComponentIsIniEmpty_(const sIni* ini);
+bool nComponentIsEmpty_(const sComponent* comp);
+sComponent* nComponentCreate_(const sIni* ini);
+sComponent* nComponentCopy_(const sComponent* comp);
+void nComponentDestroy_(sComponent* self);
+sHandler nComponentGetHandler_(sComponent* comp, int type);
+void nOnDestroyFreeTarget(sEvent* e);
+void nOnDestroyDoNothing(sEvent* e);
 
 #endif // !UTILITIES_H

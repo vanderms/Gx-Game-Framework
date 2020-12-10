@@ -3,13 +3,9 @@
 #include "../../Gx.h"
 
 
-struct sTilemapNamespace {
-	void (*implement)(sElement* base, 
+void nTilemapCreate(sElement* base, 
 		const char* path, sMatrix matrix, const int* sequence
-	);
-};
-
-extern const struct sTilemapNamespace* const nTilemap;
+);
 
 //... some useful macros for creating sequecences
 

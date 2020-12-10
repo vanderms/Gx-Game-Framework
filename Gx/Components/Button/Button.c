@@ -13,8 +13,19 @@ typedef struct sButton {
 	Uint32 keyStatus;
 	bool keyClickFlag;
 
-
 } sButton;
+
+
+const Uint32 nButton_KEYBOARD = 1u << 0;
+const Uint32 nButton_FINGER = 1u << 1;
+const Uint32 nButton_MOUSE = 1u << 2;
+const Uint32 nButton_SCREEN = 1U << 1 | 1U << 2;
+const Uint32 nButton_NONE = 0u;
+const Uint32 nButton_ON = 1u << 8;
+const Uint32 nButton_HOVER = 1u << 9;
+const Uint32 nButton_CLICK = 1u << 10;
+const Uint32 nButton_DOWN = 1u << 11;
+const Uint32 nButton_UP = 1u << 12;
 
 
 static void setFingerId(sButton* self, const SDL_FingerID* value){
@@ -37,8 +48,8 @@ static void setFingerId(sButton* self, const SDL_FingerID* value){
 
 static void onLoopBegin(sEvent* e) {
 	sButton* self = e->target;
-	self->status &= (nButton->ON | nButton->HOVER);
-	self->keyStatus &= nButton->ON;	
+	self->status &= (nButton_ON | nButton_HOVER);
+	self->keyStatus &= nButton_ON;	
 }
 
 
@@ -54,8 +65,8 @@ static void onMouse(sEvent* ev) {
 	if (e->type == SDL_MOUSEBUTTONDOWN && e->button.button == SDL_BUTTON_LEFT) {
 		sPoint p = { e->button.x, e->button.y };			
 		if (SDL_PointInRect(&p, &pos)) {
-			self->status |= nButton->DOWN;
-			self->status |= nButton->ON;
+			self->status |= nButton_DOWN;
+			self->status |= nButton_ON;
 			self->clickFlag = true;
 		}
 	}
@@ -63,9 +74,9 @@ static void onMouse(sEvent* ev) {
 	else if (e->type == SDL_MOUSEBUTTONUP && e->button.button == SDL_BUTTON_LEFT) {
 		sPoint p = { e->button.x, e->button.y };		
 		if (SDL_PointInRect(&p, &pos)) {	
-			self->status |= nButton->UP;
-			self->status &= ~nButton->ON;
-			if (self->clickFlag) self->status |= nButton->CLICK;
+			self->status |= nButton_UP;
+			self->status &= ~nButton_ON;
+			if (self->clickFlag) self->status |= nButton_CLICK;
 			self->clickFlag = false;
 		}
 	}
@@ -73,10 +84,10 @@ static void onMouse(sEvent* ev) {
 	else if (e->type == SDL_MOUSEMOTION) {
 		sPoint p = { e->motion.x, e->motion.y };
 		if (SDL_PointInRect(&p, &pos)) {			
-			self->status |= nButton->HOVER;
+			self->status |= nButton_HOVER;
 		}
 		else {
-			self->status &= ~(nButton->HOVER | nButton->ON);			
+			self->status &= ~(nButton_HOVER | nButton_ON);			
 			self->clickFlag = false;
 		}
 	}		
@@ -94,8 +105,8 @@ static void onFinger(sEvent* ev) {
 	if (e->type == SDL_FINGERDOWN) {
 		sPoint p = { (int) (e->tfinger.x * appSize.w + 0.5f), (int) (e->tfinger.y * appSize.h + 0.5f) };
 		if (SDL_PointInRect(&p, &pos)) {
-			self->status |= nButton->DOWN;
-			self->status |= nButton->ON;
+			self->status |= nButton_DOWN;
+			self->status |= nButton_ON;
 			self->clickFlag = true;
 			setFingerId(self, &e->tfinger.fingerId);
 			self->touchID = e->tfinger.touchId;
@@ -110,14 +121,14 @@ static void onFinger(sEvent* ev) {
 			};
 
 			if (SDL_PointInRect(&p, &pos)) {
-				self->status |= nButton->UP;	
-				self->status &= ~nButton->ON;
+				self->status |= nButton_UP;	
+				self->status &= ~nButton_ON;
 				if (self->clickFlag){
-					self->status |= nButton->CLICK;
+					self->status |= nButton_CLICK;
 				}
 			}
 			else {
-				self->status &= ~(nButton->HOVER | nButton->ON);							
+				self->status &= ~(nButton_HOVER | nButton_ON);							
 			}
 
 			self->clickFlag = false;
@@ -136,15 +147,15 @@ static void onFinger(sEvent* ev) {
 		if(self->fingerID && e->tfinger.fingerId == *(self->fingerID)){
 			
 			if (!isInside) {
-				self->status &= ~(nButton->HOVER | nButton->ON);
+				self->status &= ~(nButton_HOVER | nButton_ON);
 				self->clickFlag = false;
 				setFingerId(self, NULL);			
 			}			
 		}
 		else if(!self->fingerID){
 			if(isInside){
-				self->status |= nButton->HOVER;
-				self->status |= nButton->ON;
+				self->status |= nButton_HOVER;
+				self->status |= nButton_ON;
 				setFingerId(self, &e->tfinger.fingerId);
 			}			
 		}		
@@ -157,49 +168,48 @@ static void onKeyboard(sEvent* ev) {
 	const SDL_Event* e = ev->sdle;
 
 	if (self->keyCode == e->key.keysym.sym) {
-		if (e->type == SDL_KEYDOWN && !(self->keyStatus & nButton->ON)) {			
-			self->keyStatus |= nButton->ON;
-			self->keyStatus |= nButton->DOWN;				
+		if (e->type == SDL_KEYDOWN && !(self->keyStatus & nButton_ON)) {			
+			self->keyStatus |= nButton_ON;
+			self->keyStatus |= nButton_DOWN;				
 		}
 		else if (e->type == SDL_KEYUP) {
-			self->keyStatus |= nButton->UP;
-			self->keyStatus &= ~nButton->ON;
-			self->keyStatus |= nButton->CLICK;
+			self->keyStatus |= nButton_UP;
+			self->keyStatus &= ~nButton_ON;
+			self->keyStatus |= nButton_CLICK;
 		}
 	}
 }
 
-
-static Uint32 getStatus(sElement* base){
+Uint32 nButtonGetStatus(sElement* base){
 	sButton* self = nElemGetComponent(base, "nButton");
-	Uint32 status = nButton->NONE;
-	status |= self->input & nButton->SCREEN ? self->status : nButton->NONE;
-	status |= self->input & nButton->KEYBOARD ? self->keyStatus : nButton->NONE;
+	Uint32 status = nButton_NONE;
+	status |= self->input & nButton_SCREEN ? self->status : nButton_NONE;
+	status |= self->input & nButton_KEYBOARD ? self->keyStatus : nButton_NONE;
 	return status;
 }
 
-static bool hasStatus(sElement* base, Uint32 status) {
+bool nButtonHasStatus(sElement* base, Uint32 status) {
 	sButton* self = nElemGetComponent(base, "nButton");
 	return (
-		((self->input & nButton->SCREEN) && (self->status & status)) ||
-		((self->input & nButton->KEYBOARD) && (self->keyStatus & status))
+		((self->input & nButton_SCREEN) && (self->status & status)) ||
+		((self->input & nButton_KEYBOARD) && (self->keyStatus & status))
 	);
 }
 
 //constructor 
-static void implement(sElement* base, Uint32 inputs, int keyCode) {	
+void nButtonCreate(sElement* base, Uint32 inputs, int keyCode) {	
 	
-	nUtil->assertArgument(!(inputs & nButton->SCREEN) || nElemPosition(base));
+	nUtilAssertArgument(!(inputs & nButton_SCREEN) || nElemPosition(base));
 
-	sButton* self = nUtil->assertAlloc(calloc(1, sizeof(sButton)));
+	sButton* self =nUtilAssertAlloc(calloc(1, sizeof(sButton)));
 	self->input = inputs;
 	self->keyCode = keyCode;
 	self->base = base;
 
-	sHandler keyboardHandler = (inputs & nButton->KEYBOARD) ? onKeyboard : NULL;
-	sHandler mouseHandler = (inputs & nButton->MOUSE) ? onMouse : NULL;
-	sHandler fingerHandler = (inputs & nButton->MOUSE) ? onFinger : NULL;
-	#if 1
+	sHandler keyboardHandler = (inputs & nButton_KEYBOARD) ? onKeyboard : NULL;
+	sHandler mouseHandler = (inputs & nButton_MOUSE) ? onMouse : NULL;
+	sHandler fingerHandler = (inputs & nButton_MOUSE) ? onFinger : NULL;
+	
 	nElemAddComponent(base, &(sComponent){
 		.name = "nButton",
 		.target = self,
@@ -207,23 +217,7 @@ static void implement(sElement* base, Uint32 inputs, int keyCode) {
 		.onKeyboard = keyboardHandler,
 		.onMouse = mouseHandler,
 		.onFinger = fingerHandler,
-		.onDestroy = nComponent->onDestroyFreeTarget,	
-	});	
-	#endif
+		.onDestroy = nOnDestroyFreeTarget,	
+	});
 }
 
-const struct sButtonNamespace* const nButton= &(struct sButtonNamespace) {
-	.implement = implement,
-	.getStatus = getStatus,
-	.hasStatus = hasStatus,
-	.KEYBOARD = 1u << 0,
-	.FINGER = 1u << 1,
-	.MOUSE = 1u << 2,
-	.SCREEN = 1U << 1 | 1U << 2,
-	.NONE = 0u,
-	.ON = 1u << 8,
-	.HOVER = 1u << 9,
-	.CLICK = 1u << 10,
-	.DOWN = 1u << 11,
-	.UP = 1u << 12,
-};

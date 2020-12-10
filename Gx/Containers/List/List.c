@@ -31,7 +31,7 @@ typedef struct sList {
 
 sList* nListCreate() {
 	sList* self = malloc(sizeof(sList));	
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	self->size = 0;
 	self->first = NULL;
 	self->last = NULL;
@@ -59,7 +59,7 @@ void* nListLast(sList* self) {
 }
 
 static ListNode* listGetNodeByIndex(sList* self, int index) {
-	nUtil->assertOutOfRange(index >= 0 && index < self->size);	
+	nUtilAssertOutOfRange(index >= 0 && index < self->size);	
 	 ListNode* node = NULL;
 	 if (index < (self->size / 2)) {
 		 node = self->first;
@@ -204,7 +204,7 @@ bool nListRemove(sList* self, void* value) {
 }
 
 bool nListRemoveByIndex(sList* self, int index) {
-	nUtil->assertOutOfRange(index >= 0 && index < self->size);	
+	nUtilAssertOutOfRange(index >= 0 && index < self->size);	
 	 return listRemoveNode(self, listGetNodeByIndex(self, index));
 }
 

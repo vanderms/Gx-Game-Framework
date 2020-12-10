@@ -23,7 +23,7 @@ sArray* nArrayCreate(void){
 	sArray* self = malloc(sizeof(sArray));	
 	//create attributes    
     self->entries = malloc(sizeof(sArrayNode) * 8);
-    nUtil->assertAlloc(self->entries);
+   nUtilAssertAlloc(self->entries);
     self->capacity = 8;  
     self->size = 0;  
     return self;
@@ -50,7 +50,7 @@ Uint32 nArrayCapacity(sArray* self){
 
 //methods
 void* nArrayAt(sArray* self, Uint32 index) {    
-   nUtil->assertOutOfRange(index < self->size);
+    nUtilAssertOutOfRange(index < self->size);
     return self->entries[index].value;
 }
 
@@ -80,7 +80,7 @@ void nArrayPush(sArray* self, void* value, sDtor dtor){
 
 
 void nArrayRemove(sArray* self, Uint32 index) {       
-   nUtil->assertOutOfRange(index < self->size);
+   nUtilAssertOutOfRange(index < self->size);
     if (self->entries[index].dtor) {
         self->entries[index].dtor(self->entries[index].value);
     }
@@ -112,7 +112,7 @@ int64_t nArrayIndexOf(sArray* self, void* value) {
 void nArrayReserve(sArray* self, Uint32 capacity) {   
     if (self->capacity >= capacity) return;
     self->entries = realloc(self->entries, sizeof(sArrayNode) * capacity); 
-    nUtil->assertAlloc(self->entries);
+   nUtilAssertAlloc(self->entries);
     self->capacity = capacity;
 }
 
@@ -123,7 +123,7 @@ void nArrayClean(sArray* self) {
         }
         free(self->entries);
         self->entries = malloc(sizeof(sArrayNode) * 8); 
-        nUtil->assertAlloc(self->entries);
+       nUtilAssertAlloc(self->entries);
         self->capacity = 8;
         self->size = 0;
     }
@@ -144,7 +144,7 @@ typedef struct sFragment {
 } sFragment;
 
 static inline sFragment* createFragment(Uint32 start, int order) {
-    sFragment* self = nUtil->assertAlloc(malloc(sizeof(sFragment)));
+    sFragment* self =nUtilAssertAlloc(malloc(sizeof(sFragment)));
     self->start = start;
     self->order = order;
     return self;
@@ -170,7 +170,7 @@ static inline void mergeFragments(sArray* self, sArray* fragments, sComp comp) {
     
     Uint32 i = 0, step = 1;
     sArrayNode* temp = malloc((self->size) * sizeof(sArrayNode));
-    nUtil->assertAlloc(temp);
+   nUtilAssertAlloc(temp);
     
     while (step < fragments->size) {            
         Uint32 second = i + step;            

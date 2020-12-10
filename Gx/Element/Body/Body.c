@@ -58,12 +58,12 @@ const Uint32 nElem_CMASK_FIXED = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1
 sElemBody* nElemCreateBody_(sElement* elem, const sIni* ini) {
 
 	if(ini->body != nElem_BODY_FIXED && ini->body != nElem_BODY_DYNAMIC){
-		nUtil->assertArgument(ini->body == nElem_BODY_NONE);
+		nUtilAssertArgument(ini->body == nElem_BODY_NONE);
 		return NULL;
 	}
 
 	sElemBody* self = calloc(1, sizeof(sElemBody));
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	nElemSetBody_(elem, self);
 	self->type = (ini->body == nElem_BODY_FIXED ? 
 		nElem_BODY_FIXED : nElem_BODY_DYNAMIC
@@ -325,7 +325,7 @@ sVector nElemMove(sElement* self, sVector vector, bool force) {
 	body->velocity.x = vector.x;
 	body->velocity.y = vector.y;
 	body->maxgvel = 0;	
-	vector = nPhysicsMoveByElem_(nScene->p_->getPhysics(scene), self);
+	vector = nPhysicsMoveByElem_(nSceneGetPhysics_(scene), self);
 	body->cmask = mask;
 	body->velocity = velocity;
 	body->maxgvel = gvel;		
@@ -337,12 +337,12 @@ void nElemMoveTo(sElement* self, sPoint pos, bool force) {
 	nElemMove(self, (sVector){ pos.x - selfPos->x, pos.y - selfPos->y }, force);
 }
 
-static void nElemApplyHozElasticity_(sElement* self, double res) {
+void nElemApplyHozElasticity_(sElement* self, double res) {
 	sElemBody* body = nElemBody_(self);
 	body->velocity.x *= -(body->elasticity * res);
 }
 
-static void nElemApplyVetElasticity_(sElement* self, double res) {
+void nElemApplyVetElasticity_(sElement* self, double res) {
 	sElemBody* body = nElemBody_(self);
 	body->velocity.y *= -(body->elasticity * res);
 }

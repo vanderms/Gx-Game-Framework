@@ -12,11 +12,6 @@
 #include "../Containers/Array/Array.h"
 #include "../Containers/List/List.h"
 
-#ifdef NDEBUG
-    #define GX_DEV 1
-#else
-    #define GX_DEV 1
-#endif
 
 //... #forward declarations
 static inline sMap* createColorMap(void);
@@ -82,7 +77,7 @@ sScene* nAppCreate(const sIni* ini) {
     if(self){ return self->snMain; }
     
     self = calloc(1, sizeof(sApp));
-    nUtil->assertAlloc(self);
+   nUtilAssertAlloc(self);
     self->snActive = NULL;
     self->folders = nMapCreate();
     self->scenes = nMapCreate();
@@ -94,7 +89,7 @@ sScene* nAppCreate(const sIni* ini) {
     self->aLoaded = NULL;
     self->currentFrame = 0;
 
-    SDL_AtomicSet(&self->atom, nUtil->status->NONE);
+    SDL_AtomicSet(&self->atom, nUtil_STATUS_NONE);
 
    
 	  //init SDL modules
@@ -119,20 +114,20 @@ sScene* nAppCreate(const sIni* ini) {
     Uint32 bigger = mode.w > mode.h ? mode.w : mode.h;
     Uint32 smaller = mode.w > mode.h ? mode.h : mode.w;
 
-    nUtil->assertArgument(ini->window);
-    sArray* wparams = nUtil->split(ini->window, "|");
-    nUtil->assertArgument(nArraySize(wparams) == 2);
+   nUtilAssertArgument(ini->window);
+    sArray* wparams = nUtilSplit(ini->window, "|");
+   nUtilAssertArgument(nArraySize(wparams) == 2);
 
     if(strstr(ini->window, "Landscape")){
 	    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
         self->size.h = atoi(nArrayAt(wparams, 1));
-        nUtil->assertArgument(self->size.h);
+       nUtilAssertArgument(self->size.h);
         self->size.w = ((double) bigger * self->size.h) / smaller;       
     }
     else if (strstr(ini->window, "Portrait")) {
         SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
         self->size.w = atoi(nArrayAt(wparams, 1));
-        nUtil->assertArgument(self->size.w);
+       nUtilAssertArgument(self->size.w);
         self->size.h = ((double) bigger * self->size.w) / smaller;       
     }
     nArrayDestroy(wparams);
@@ -174,8 +169,8 @@ sScene* nAppCreate(const sIni* ini) {
    
     SDL_SetRenderDrawBlendMode(self->renderer, SDL_BLENDMODE_BLEND);
 
-    self->status = nUtil->status->NONE;
-    self->snMain = nScene->create(ini);
+    self->status = nUtil_STATUS_NONE;
+    self->snMain = nSceneCreate(ini);
     return self->snMain;
 }
 
@@ -220,7 +215,7 @@ static void destroy() {
         nListDestroy(self->aLoading);
         nListDestroy(self->aLoaded);
         nMapDestroy(self->scenes);
-        nScene->p_->destroy(self->snMain);
+        nSceneDestroy_(self->snMain);
         nArrayDestroy(self->temporary);
         nMapDestroy(self->folders);
         nMapDestroy(self->colors);
@@ -248,12 +243,12 @@ sSize nAppLogicalSize(void) {
 }
 
 bool nAppIsRunning() {
-    return self->status == nUtil->status->RUNNING;
+    return self->status == nUtil_STATUS_RUNNING;
 }
 
 void nAppAddScene_(sScene* scene) {
     if(self->snMain != NULL){
-        nMapSet(self->scenes, nScene->name(scene), scene, nScene->p_->destroy);
+        nMapSet(self->scenes, nSceneName(scene), scene, nSceneDestroy_);
     }
 }
 
@@ -271,33 +266,33 @@ sFolder* nAppGetFolder(const char* id) {
 
 void nAppLoadSDLSurface_(sImage* image, const char* path) {
     Asset* asset = malloc(sizeof(Asset));
-    nUtil->assertAlloc(asset);
+   nUtilAssertAlloc(asset);
     *asset = (Asset) {
         .type = IMAGE,
         .mod = image,
-        .path = nUtil->createString(path)
+        .path = nUtilCreateString(path)
     };
     nListPush(self->aToLoad, asset, (sDtor) destroyAsset);
 }
 
 void nAppLoadMixChunk_(sChunk* sound, const char* path) {
     Asset* asset = malloc(sizeof(Asset));
-    nUtil->assertAlloc(asset);
+   nUtilAssertAlloc(asset);
     *asset = (Asset) {
         .type = SOUND,
         .mod = sound,
-        .path = nUtil->createString(path)
+        .path = nUtilCreateString(path)
     };
     nListPush(self->aToLoad, asset, (sDtor)  destroyAsset);
 }
 
 void nAppLoadMixMusic_(sMusic* music, const char* path) {
      Asset* asset = malloc(sizeof(Asset));
-     nUtil->assertAlloc(asset);
+    nUtilAssertAlloc(asset);
     *asset = (Asset) {
         .type = MUSIC,
         .mod = music,
-        .path = nUtil->createString(path)
+        .path = nUtilCreateString(path)
     };
     nListPush(self->aToLoad, asset, (sDtor) destroyAsset);
 }
@@ -353,35 +348,35 @@ static int threadLoadAsset() {
         if (!asset->resource) nAppRuntimeError(SDL_GetError());
     }
 
-    SDL_AtomicSet(&self->atom, nUtil->status->LOADED);
+    SDL_AtomicSet(&self->atom, nUtil_STATUS_LOADED);
     return 0;
 }
 
 
 void nAppRun() {
-    nUtil->assertState(self);
+    nUtilAssertState(self);
     self->counter = SDL_GetTicks();
     
     //run
-    self->status = nUtil->status->RUNNING;
+    self->status = nUtil_STATUS_RUNNING;
     nAppLoadScene(self->snMain);
 
-    while (self->status == nUtil->status->RUNNING) {
+    while (self->status == nUtil_STATUS_RUNNING) {
 
         bool activeIsReady =  self->snActive ?
-            nScene->status(self->snActive) == nUtil->status->RUNNING : false;
+            nSceneStatus(self->snActive) == nUtil_STATUS_RUNNING : false;
 
         self->counter = SDL_GetTicks();
         self->snRunning = self->snActive;
-        if (activeIsReady && self->snActive) nScene->p_->onLoopBegin(self->snActive);
+        if (activeIsReady && self->snActive) nSceneOnLoopBegin_(self->snActive);
 
         self->snRunning = self->snMain;
-        nScene->p_->onLoopBegin(self->snMain);
+        nSceneOnLoopBegin_(self->snMain);
 
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT){
-                self->status = nUtil->status->UNLOADING;
+                self->status = nUtil_STATUS_UNLOADING;
             }
             else if (e.type == SDL_WINDOWEVENT) {
                 if (e.window.event == SDL_WINDOWEVENT_MAXIMIZED) {
@@ -393,35 +388,35 @@ void nAppRun() {
             }
            
             self->snRunning = self->snActive;
-            if (activeIsReady && self->snActive) nScene->p_->onSDLEvent(self->snActive, &e);
+            if (activeIsReady && self->snActive) nSceneOnSDLEvent_(self->snActive, &e);
 
             self->snRunning = self->snMain;
-            nScene->p_->onSDLEvent(self->snMain, &e);
+            nSceneOnSDLEvent_(self->snMain, &e);
         }
 
         //... update
         self->snRunning = self->snActive;
-        if (self->snActive) nScene->p_->update(self->snActive);
+        if (self->snActive) nSceneUpdate_(self->snActive);
 
         self->snRunning = self->snMain;
-        nScene->p_->update(self->snMain);
+        nSceneUpdate_(self->snMain);
 
 
         //...load assets
         if (self->aLoaded == NULL && 
-            SDL_AtomicGet(&self->atom) == nUtil->status->LOADED) 
+            SDL_AtomicGet(&self->atom) == nUtil_STATUS_LOADED) 
         {
             self->aLoaded = self->aLoading;
             self->aLoading = NULL;
-            SDL_AtomicSet(&self->atom, nUtil->status->NONE);
+            SDL_AtomicSet(&self->atom, nUtil_STATUS_NONE);
         }
 
         if (nListSize(self->aToLoad) && 
-            SDL_AtomicGet(&self->atom) == nUtil->status->NONE) 
+            SDL_AtomicGet(&self->atom) == nUtil_STATUS_NONE) 
         {
             self->aLoading = self->aToLoad;
             self->aToLoad = nListCreate();
-            SDL_AtomicSet(&self->atom, nUtil->status->LOADING);
+            SDL_AtomicSet(&self->atom, nUtil_STATUS_LOADING);
             SDL_Thread* thread = (
                 SDL_CreateThread((SDL_ThreadFunction) threadLoadAsset, "loaderThread", self)
             );
@@ -462,10 +457,10 @@ void nAppRun() {
 
         //call loop end handlers
         self->snRunning = self->snActive;
-        if (activeIsReady && self->snActive) nScene->p_->onLoopEnd(self->snActive);
+        if (activeIsReady && self->snActive) nSceneOnLoopEnd_(self->snActive);
 
         self->snRunning = self->snMain;
-        nScene->p_->onLoopEnd(self->snMain);
+        nSceneOnLoopEnd_(self->snMain);
         nArrayClean(self->temporary);
 
          //clear window
@@ -485,12 +480,12 @@ void nAppLoadScene(sScene* scene) {
     }
 
     self->snRunning = scene;
-    nScene->p_->preLoad(scene);
+    nScenePreLoad_(scene);
 
     if (scene != self->snMain){
         if(self->snActive){
             self->snRunning = self->snActive;
-            nScene->p_->unLoad(self->snActive);
+            nSceneUnLoad_(self->snActive);
         }
         self->snActive = scene;
     }
@@ -540,11 +535,11 @@ void nAppPlayChunk(const char* path, int loops) {
 
 int nAppStopMusic(void){
     return Mix_HaltMusic();
-};
+}
 
 void nAppPauseMusic(void){
     Mix_PauseMusic();
-};
+}
 
 void nAppResumeMusic(void) {
     Mix_ResumeMusic();
@@ -556,7 +551,7 @@ int  nAppIsPlayingMusic(void) {
 
 static inline void createColor(sMap* map, const char* name, SDL_Color* color) {
     SDL_Color* ncolor = malloc(sizeof(SDL_Color));
-    nUtil->assertAlloc(ncolor);
+   nUtilAssertAlloc(ncolor);
     *ncolor = *color;
     nMapSet(map, name, ncolor, free);
 }
@@ -585,8 +580,8 @@ static sMap* createColorMap(void) {
 void nAppConvertColor(SDL_Color* destination, const char* color) {
 
     SDL_Color* mapcolor = NULL;
-    char* clone = nUtil->cloneString(color, (char[32]){0}, 32);
-    clone = nUtil->trim(clone, (char[32]){'\0'}, 32);
+    char* clone = nUtilCloneString(color, (char[32]){0}, 32);
+    clone = nUtilTrim(clone, (char[32]){'\0'}, 32);
     int len = (int) strlen(clone);
 
 	if(clone[0] == '(' && clone[len - 1] == ')'){
@@ -596,7 +591,7 @@ void nAppConvertColor(SDL_Color* destination, const char* color) {
 
 		//get tokens
         sArray* tokens = nAppTokenize(clone, ",");
-        nUtil->assertArgument(nArraySize(tokens) == 4);
+       nUtilAssertArgument(nArraySize(tokens) == 4);
 
         char* r = nArrayAt(tokens, 0);
         char* g = nArrayAt(tokens, 1);
@@ -613,7 +608,7 @@ void nAppConvertColor(SDL_Color* destination, const char* color) {
         *destination = *mapcolor;
 	}
     else {
-        nUtil->assertArgument(false);
+       nUtilAssertArgument(false);
     }
 }
 
@@ -621,23 +616,23 @@ void nAppConvertColor(SDL_Color* destination, const char* color) {
 static sMap* createFontMap(void) {
     sMap* fonts = nMapCreate();
 #define FPATH "Gx/Font/PTSerif/PTSerif-"
-    nMapSet(fonts, "Default", nUtil->createString(FPATH "Regular.ttf"), free);
-    nMapSet(fonts, "Italic", nUtil->createString(FPATH "Italic.ttf"), free);
-    nMapSet(fonts, "Bold", nUtil->createString(FPATH "Bold.ttf"), free);
-    nMapSet(fonts, "BoldItalic", nUtil->createString(FPATH "BoldItalic.ttf"), free);
+    nMapSet(fonts, "Default", nUtilCreateString(FPATH "Regular.ttf"), free);
+    nMapSet(fonts, "Italic", nUtilCreateString(FPATH "Italic.ttf"), free);
+    nMapSet(fonts, "Bold", nUtilCreateString(FPATH "Bold.ttf"), free);
+    nMapSet(fonts, "BoldItalic", nUtilCreateString(FPATH "BoldItalic.ttf"), free);
 #undef FPATH
     return fonts;
 }
 
 void nAppAddFont(const char* name, const char* path){
-   nUtil->assertNullPointer(name);
-   nUtil->assertNullPointer(path);
+  nUtilAssertNullPointer(name);
+  nUtilAssertNullPointer(path);
     TTF_Font* teste = TTF_OpenFont(path, 16);
     if (!teste) {
         nAppRuntimeError(sf("Could not open path %s", path));
     }
     TTF_CloseFont(teste);
-    nMapSet(self->fonts, name, nUtil->createString(path), free);    
+    nMapSet(self->fonts, name, nUtilCreateString(path), free);    
 }
 
 const char* nAppGetFontPath_(const char* name) {
@@ -650,13 +645,13 @@ char* sf(const char* format, ...) {
 	va_start(args, format);
 	vsnprintf(buffer, 1024, format, args);
 	va_end(args);
-    char* value = nUtil->createString(buffer);
+    char* value = nUtilCreateString(buffer);
     nArrayPush(self->temporary, value, free);
 	return value;
 }
 
 sArray* nAppTokenize(const char* str, const char* sep){
-    sArray* response = nUtil->split(str, sep);
+    sArray* response = nUtilSplit(str, sep);
     nArrayPush(self->temporary, response, nArrayDestroy);
     return response;
 }

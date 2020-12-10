@@ -8,7 +8,7 @@ typedef struct GxInt { int value; }GxInt;
 
 static inline GxInt* createInt(int value) {
 	GxInt* self = malloc(sizeof(GxInt));	
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	self->value = value;
 	return self;
 }
@@ -46,17 +46,17 @@ static inline int calcHash(const char* str, Uint32 max) {
 
 sMap* nMapCreate() {
 	sMap* self = malloc(sizeof(sMap));
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	self->size = 0;
 	self->capacity = 16;
 	
 	//create table
 	self->table = malloc(self->capacity * sizeof(sList*));	
-	nUtil->assertAlloc(self->table);
+	nUtilAssertAlloc(self->table);
 	self->entries = malloc(self->capacity * sizeof(Entry));
-	nUtil->assertAlloc(self->entries);
+	nUtilAssertAlloc(self->entries);
 	self->keys = malloc(self->capacity * sizeof(char*));
-	nUtil->assertAlloc(self->keys);
+	nUtilAssertAlloc(self->keys);
 	
 	for (Uint32 i = 0; i < self->capacity; i++) {
 		self->table[i] = nListCreate();
@@ -110,7 +110,7 @@ void* nMapGet(sMap* self, const char* key) {
 }
 
 void* nMapAt(sMap* self, Uint32 index) {
-	nUtil->assertOutOfRange(index < self->size);
+	nUtilAssertOutOfRange(index < self->size);
 	return self->entries[index].value;
 }
 
@@ -139,7 +139,7 @@ void nMapSet(sMap* self, const char* key, void* value, sDtor dtor) {
 
 	if (!contains) {	
 		//fill bucket
-		char* k = nUtil->createString(key);
+		char* k = nUtilCreateString(key);
 		GxInt* index = createInt(self->size);
 		nListPush(bucket, k, NULL);
 		nListPush(bucket, index, NULL);
@@ -162,7 +162,7 @@ void nMapRehash(sMap* self, Uint32 capacity) {
 
 	//create replacement table
 	sList** table = malloc(capacity * sizeof(sList*));
-	nUtil->assertAlloc(table);
+	nUtilAssertAlloc(table);
 	
 	for (Uint32 i = 0; i < capacity; i++) {
 		table[i] = nListCreate();
@@ -183,9 +183,9 @@ void nMapRehash(sMap* self, Uint32 capacity) {
 	//swap table and realloc keys and entries
 	SWAP(self->table, table)	
 	self->keys = realloc(self->keys, capacity * sizeof(char*));
-	nUtil->assertAlloc(self->keys);
+	nUtilAssertAlloc(self->keys);
 	self->entries = realloc(self->entries, capacity* sizeof(Entry));
-	nUtil->assertAlloc(self->entries);
+	nUtilAssertAlloc(self->entries);
 	
 	//destroy previous table
 	for (Uint32 i = 0; i < self->capacity; i++) {
@@ -235,7 +235,7 @@ void nMapRemove(sMap* self, const char* key) {
 }
 
 void nMapRemoveByIndex(sMap* self, Uint32 index) {
-	nUtil->assertOutOfRange(index < self->size);
+	nUtilAssertOutOfRange(index < self->size);
 	char* key = self->keys[index];
 	nMapRemove(self, key);
 }

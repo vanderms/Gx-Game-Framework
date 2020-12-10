@@ -17,9 +17,9 @@ typedef struct sGraphics {
 
 sGraphics* nGraphicsCreate_(sScene* scene){
 	sGraphics* self = malloc(sizeof(sGraphics));
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	self->scene = scene;
-	sSize size = nScene->size(scene);
+	sSize size = nSceneSize(scene);
 	int length = size.w > size.h ? size.w : size.h ;	
 	self->rtree =nQtreeCreate(NULL, (sRect) { 0, 0, length, length });	
 	self->absolute = nArrayCreate();
@@ -68,7 +68,7 @@ void nGraphicsRemoveElement_(sGraphics* self, sElement* element) {
 }
 
 static void iFillRenderables(sElement* elem) {
-	sGraphics* self = nScene->p_->getGraphics(nElemScene(elem));
+	sGraphics* self = nSceneGetGraphics_(nElemScene(elem));
 	if (!nElemIsHidden(elem)) {
 			nArrayPush(self->renderables, elem, NULL);
 	}	
@@ -88,7 +88,7 @@ void nGraphicsUpdate_(sGraphics* self) {
 	for (Uint32 i = 0; i < nArraySize(self->absolute); i++){	
 		sElement* e = nArrayAt(self->absolute, i);
 		if(nElemIsHidden(e)) continue;
-		sSize size = nScene->size(self->scene);
+		sSize size = nSceneSize(self->scene);
 		sRect pos = (sRect){ 0, 0, size.w, size.h };
 		const sRect* elemPos = nElemPosition(e);
 		if (SDL_HasIntersection(&pos, elemPos)) {
@@ -97,7 +97,7 @@ void nGraphicsUpdate_(sGraphics* self) {
 	}
 
 	//fill with relative elements
-	const sRect* area = nElemPosition(nScene->getCamera(self->scene));
+	const sRect* area = nElemPosition(nSceneGetCamera(self->scene));
 	sArray* temp = nArrayCreate();
 	nQtreeGetElementsInArea(self->rtree, area, temp, true);
 	for (Uint32 i = 0; i < nArraySize(temp); i++) {		
@@ -149,7 +149,7 @@ void nGraphicsRenderElement_(sElement* self) {
 
 	//... borders
 	const SDL_Color* borderColor = nElemBorderColor(self);
-	int bsize = nElemBorderSize(self);;
+	int bsize = nElemBorderSize(self);
 
 	if (bsize > 0 && borderColor && borderColor->a) {
 		SDL_SetRenderDrawColor(renderer,

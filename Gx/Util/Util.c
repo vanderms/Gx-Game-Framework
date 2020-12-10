@@ -4,44 +4,12 @@
 #include <string.h>
 #include <stdio.h>
 
-enum sEventType {
-	//lifecycle
-	EventOnLoad,
-	EventOnLoopBegin,
-	EventOnUpdate,
-	EventOnRender,
-	EventOnLoopEnd,
-	EventOnUnload,
 
-	//sdl events
-	EventOnKeyboard,
-	EventMouse,
-	EventFinger,
-	EventSDLDefault,
+const Uint32 nUtil_HASH_ELEMENT = 1111251919;
+const Uint32 nUtil_HASH_SCENE = 2066184690;
+const Uint32 nUtil_HASH_CONTACT = 804125936;
 
-	//contact events
-	EventPreContact,
-	EventContactBegin,
-	EventContactEnd,
-
-	//events not inside ihandlers
-	EventTimeout,
-	EventOnDestroy,	
-    EventTotal,
-};
-
-typedef enum sStatus {
-	StatusNone,
-	StatusLoading,
-	StatusLoaded,
-	StatusRunning,
-	StatusPaused,
-	StatusReady,
-	StatusUnloading,
-} sStatus;
-
-
-static void printMask(Uint32 mask) {
+void nUtilPrintMask(Uint32 mask) {
     for (Uint32 i = 0; i < 32; i++) {
         if(i != 0 && i % 8 == 0) putchar('.');
         putchar((1u << i) & mask ? '1' : '0');
@@ -49,7 +17,7 @@ static void printMask(Uint32 mask) {
     putchar('\n');
 }
 
-static char* createStringF(const char* format, ...) {
+char* nUtilCreateStringF(const char* format, ...) {
     
     static char buffer[1024]; //1kb
     //...
@@ -57,48 +25,48 @@ static char* createStringF(const char* format, ...) {
 	va_start(args, format);
 	vsnprintf(buffer, 1024, format, args);
 	va_end(args);     
-    char* value = nUtil->createString(buffer);    
+    char* value = nUtilCreateString(buffer);    
 	return value;
 }
 
-static int* createInt(int value) {
+int* nUtilCreateInt(int value) {
 	int* self = malloc(sizeof(int));
     *self = value;
     return self;
 }
 
-static Uint32* createUint(Uint32 value) {
+Uint32* nUtilCreateUint(Uint32 value) {
 	Uint32* self = malloc(sizeof(Uint32));
-    nUtil->assertAlloc(self);
+    nUtilAssertAlloc(self);
     *self = value;
     return self;
 }
 
-static bool* createBool(bool value) {
+bool* nUtilCreateBool(bool value) {
     bool* self = malloc(sizeof(bool));
     *self = value;
     return self;
 }
 
-static double* createDouble(double value) {
+double* nUtilCreateDouble(double value) {
 	double* self = malloc(sizeof(double));
-    nUtil->assertAlloc(self);
+   nUtilAssertAlloc(self);
     *self = value;
     return self;
 }
 
-static char* createString(const char* value) {
-   nUtil->assertNullPointer(value);
+char* nUtilCreateString(const char* value) {
+    nUtilAssertNullPointer(value);
 	size_t size = strlen(value) + 1;
 	char* self = malloc(sizeof(char) * size);
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	//strncpy is deprecated and strncpy_s does not have portability
 	for (size_t i = 0; i < size - 1; i++) self[i] = value[i];
 	self[size - 1] = '\0';
 	return self;
 }
 
-static char* cloneString(const char* str, char* buffer, Uint32 size) {
+char* nUtilCloneString(const char* str, char* buffer, Uint32 size) {
     unsigned int i = 0;
     while (i < size - 1 && str[i]){
         buffer[i] = str[i];
@@ -108,42 +76,42 @@ static char* cloneString(const char* str, char* buffer, Uint32 size) {
     return buffer;    
 }
 
-static sArray* split(const char* str, const char* sep) {
+sArray* nUtilSplit(const char* str, const char* sep) {
     
     sArray* tokens = nArrayCreate();
 
     const size_t len = strlen(sep);
     char* next = NULL;
-    char* token = nUtil->createString(str);
+    char* token = nUtilCreateString(str);
     char* memory = token;
 
     while ((next = strstr(token, sep))){
         next[0] = '\0';
-        nArrayPush(tokens, nUtil->createString(token), free);
+        nArrayPush(tokens, nUtilCreateString(token), free);
         token = next + len;       
     }
     
-    nArrayPush(tokens, nUtil->createString(token), free);
+    nArrayPush(tokens, nUtilCreateString(token), free);
     free(memory);
     
     return tokens;
 }
 
-static void splitAssetPath(const char* path, char* folder, char* asset) {
+void nUtilSplitAssetPath(const char* path, char* folder, char* asset) {
     char clone[64];
-    cloneString(path, clone, 64);
+    nUtilCloneString(path, clone, 64);
     char* div = strstr(clone, "/");
-    nUtil->assertArgument(div);
+    nUtilAssertArgument(div);
     div[0] = '\0';
-    nUtil->cloneString(clone, folder, 32);
-    nUtil->cloneString(div + 1, asset, 32);
+    nUtilCloneString(clone, folder, 32);
+    nUtilCloneString(div + 1, asset, 32);
 }
 
 
-static char* trim(const char* str, char* buffer, size_t bSize) {    
+char* nUtilTrim(const char* str, char* buffer, size_t bSize) {    
 
     size_t len = strlen(str);
-    nUtil->assertState(bSize > len);
+    nUtilAssertState(bSize > len);
     
     size_t start = 0, index = 0, end = len - 1;
     
@@ -159,70 +127,70 @@ static char* trim(const char* str, char* buffer, size_t bSize) {
 }
 
 
-static SDL_Point calcDistance(const SDL_Point* pointA, const SDL_Point* pointB) {
+SDL_Point nUtilCalcDistance(const SDL_Point* pointA, const SDL_Point* pointB) {
     return (SDL_Point) {
         pointB->x - pointA->x,
         pointB->y - pointA->y
     };
 }
 
-static int random(uint32_t* seed, int start, int end) {	
+int nUtilRandom(uint32_t* seed, int start, int end) {	
 	*seed = *seed * 1103515245 + 12345;
 	uint32_t partial = *seed % (uint32_t)(end - start + 1);
 	int response = (int) partial + start;
 	return response;
 }
 
-static bool assertNullPointer(const void* ptr) {
+bool nUtilAssertNullPointer(const void* ptr) {
     if (!ptr) {
         nAppRuntimeError("Null pointer error.");
     }
     return ptr;
 }
 
-static bool assertArgument(bool condition){
+bool nUtilAssertArgument(bool condition){
     if (!condition) {
         nAppRuntimeError("Invalid argument error.");
     }    
     return condition;
 }
 
-static void* assertAlloc(void* ptr){
+void* nUtilAssertAlloc(void* ptr){
     if (!ptr) {
         nAppRuntimeError("Failed to allocate memory.");
     }
     return ptr;
 }
 
-static bool assertImplementation(bool condition) {
+bool nUtilAssertImplementation(bool condition) {
     if (!condition) {
         nAppRuntimeError("Component not implemented error.");
     }    
     return condition;
 }
 
-static bool assertHash(bool condition) {
+bool nUtilAssertHash(bool condition) {
     if (!condition) {
         nAppRuntimeError("Invalid hash error.");
     }    
     return condition;
 }
 
-static bool assertOutOfRange(bool condition){
+bool nUtilAssertOutOfRange(bool condition){
     if (!condition) {
         nAppRuntimeError("Out of range error.");
     }    
     return condition;
 }
 
-static bool assertResourceNotFound(bool condition) {
+bool nUtilAssertResourceNotFound(bool condition) {
     if (!condition) {
         nAppRuntimeError("Resource not found error.");
     }    
     return condition;
 }
 
-static bool assertState(bool condition){    
+bool nUtilAssertState(bool condition){    
     if (!condition) {
         nAppRuntimeError("Invalid state error.");
     }    
@@ -230,57 +198,15 @@ static bool assertState(bool condition){
 }
 
 
-
-
-const struct sUtilNamespace* const nUtil = &(struct sUtilNamespace){
-	.createInt = createInt,
-	.createUint = createUint,
-	.createBool = createBool,
-	.createDouble = createDouble,
-	.createString = createString,
-	.createStringF = createStringF,
-	.cloneString = cloneString,
-	.split = split,
-	.trim = trim,	
-	.random = random,
-	.printMask = printMask,
-	.calcDistance = calcDistance,
-	.assertNullPointer = assertNullPointer,
-    .assertImplementation = assertImplementation,
-    .assertResourceNotFound = assertResourceNotFound,
-	.assertArgument = assertArgument,
-    .assertHash = assertHash,
-	.assertState =assertState,
-	.assertAlloc = assertAlloc,
-	.assertOutOfRange = assertOutOfRange,	
-	.splitAssetPath = splitAssetPath,
-    
-    .status = &(struct sUtilStatusNamespace){
-		.NONE =StatusNone,
-		.LOADING = StatusLoading,
-		.LOADED = StatusLoaded,
-		.RUNNING = StatusRunning,
-        .PAUSED = StatusPaused,
-        .READY = StatusReady,
-		.UNLOADING = StatusUnloading,
-	},	
-
-    .hash = &(struct sUtilHash) {
-        .ELEMENT = 1111251919,	
-	    .SCENE = 2066184690,
-	    .CONTACT = 804125936,
-    },
-};
-
-static void onDestroyFreeTarget(sEvent* e) {
+void nOnDestroyFreeTarget(sEvent* e) {
     free(e->target);
 }
 
-static void onDestroyDoNothing(sEvent* e) {
+void nOnDestroyDoNothing(sEvent* e) {
     (void) e;
 }
 
-static bool isComponentEmpty(const sComponent* comp) {
+bool nComponentIsEmpty_(const sComponent* comp) {
     return (!(comp && (comp->onLoad || comp->onLoopBegin || comp->onUpdate ||
         comp->onRender || comp->onLoopEnd ||
         comp->onUnload || comp->onKeyboard || comp->onMouse ||
@@ -289,7 +215,7 @@ static bool isComponentEmpty(const sComponent* comp) {
     )));
 }
 
-static bool isIniComponentEmpty(const sIni* comp) {
+bool nComponentIsIniEmpty_(const sIni* comp) {
     return (!(comp && (comp->onLoad || comp->onLoopBegin || comp->onUpdate ||
         comp->onRender || comp->onLoopEnd ||
         comp->onUnload || comp->onKeyboard || comp->onMouse ||
@@ -298,13 +224,13 @@ static bool isIniComponentEmpty(const sIni* comp) {
     )));
 }
 
-static sComponent* createComponent(const sIni* ini) {
-    if (isIniComponentEmpty(ini)) {
+sComponent* nComponentCreate_(const sIni* ini) {
+    if (nComponentIsIniEmpty_(ini)) {
         return NULL;
     }    
-    nUtil->assertArgument(!ini->target || ini->onDestroy);
+   nUtilAssertArgument(!ini->target || ini->onDestroy);
 
-    sComponent* self = nUtil->assertAlloc(malloc(sizeof(sComponent)));
+    sComponent* self =nUtilAssertAlloc(malloc(sizeof(sComponent)));
     
     self->target = ini->target;
     self->name = NULL;
@@ -324,94 +250,67 @@ static sComponent* createComponent(const sIni* ini) {
     self->onDestroy = ini->onDestroy;   
     return self;
 }
-static sComponent* copyComponent(const sComponent* comp) {
-    if (isComponentEmpty(comp)) {
+
+sComponent* nComponentCopy_(const sComponent* comp) {
+    if (nComponentIsEmpty_(comp)) {
         return NULL;
     }
-    sComponent* self = nUtil->assertAlloc(malloc(sizeof(sComponent)));
+    sComponent* self = nUtilAssertAlloc(malloc(sizeof(sComponent)));
     *self = *comp;
     self->name = NULL;
     return self;
 }
 
-static void destroyComponent(sComponent* self) {
+void nComponentDestroy_(sComponent* self) {
     free(self);
 }
 
-static sHandler getHandler(sComponent* comp, int type){    
+sHandler nComponentGetHandler_(sComponent* comp, int type){    
     
     if (!comp) {
         return NULL;
     }
-    if (type == EventOnRender) {
+    if (type == nEvent_ON_RENDER) {
         return comp->onRender;
     }
-    if (type == EventPreContact) {
+    if (type == nEvent_ON_PRE_CONTACT) {
         return comp->onPreContact;
     }
-    if (type == EventContactBegin) {
+    if (type == nEvent_ON_CONTACT_BEGIN) {
         return comp->onContactBegin;
     }
-    if (type == EventContactEnd) {
+    if (type == nEvent_ON_CONTACT_END) {
         return comp->onContactEnd;
     }
-    if (type == EventOnUpdate) {
+    if (type == nEvent_ON_UPDATE) {
         return comp->onUpdate;
     }   
-    if(type == EventOnLoopBegin){
+    if(type == nEvent_ON_LOOP_BEGIN){
         return comp->onLoopBegin;
     }   
-    if (type == EventOnLoopEnd) {
+    if (type == nEvent_ON_LOOP_END) {
         return comp->onLoopEnd;
     }   
-    if (type == EventOnKeyboard) {
+    if (type == nEvent_ON_KEYBOARD) {
         return comp->onKeyboard;
     }
-    if (type == EventMouse) {
+    if (type == nEvent_ON_MOUSE) {
         return comp->onMouse;
     }
-    if (type == EventFinger) {
+    if (type == nEvent_ON_FINGER) {
         return comp->onFinger;
     }
-    if (type == EventSDLDefault) {
+    if (type == nEvent_ON_SDL_DEFAULT) {
         return comp->onSDLDefault;
     }   
-    if (type == EventOnUnload) {
+    if (type == nEvent_ON_UNLOAD) {
         return comp->onUnload;
     }
-    if (type == EventOnLoad) {
+    if (type == nEvent_ON_LOAD) {
         return comp->onLoad;
     }
-    if (type == EventOnDestroy) {
+    if (type == nEvent_ON_DESTROY) {
         return comp->onDestroy;
     }
     return NULL;
-};
-
-
-const struct sComponentNamespace* const nComponent = &(struct sComponentNamespace) {
-    .create = createComponent,
-    .copy = copyComponent,
-    .destroy = destroyComponent,
-    .isComponentEmpty = isComponentEmpty,
-    .isIniComponentEmpty = isIniComponentEmpty,
-    .onDestroyFreeTarget = onDestroyFreeTarget,
-	.onDestroyDoNothing = onDestroyDoNothing,
-    .getHandler = getHandler,
-    .ON_LOAD = EventOnLoad,
-	.ON_LOOP_BEGIN = EventOnLoopBegin,
-	.ON_UPDATE = EventOnUpdate,
-	.ON_RENDER = EventOnRender,
-	.ON_LOOP_END = EventOnLoopEnd,
-	.ON_UNLOAD = EventOnUnload,	
-	.ON_KEYBOARD = EventOnKeyboard,
-	.ON_MOUSE = EventMouse,
-	.ON_FINGER = EventFinger,
-	.ON_SDL_DEFAULT = EventSDLDefault,
-	.ON_PRE_CONTACT = EventPreContact,
-	.ON_CONTACT_BEGIN = EventContactBegin,
-	.ON_CONTACT_END = EventContactEnd,
-	.ON_TIMEOUT = EventTimeout,
-	.ON_DESTROY = EventOnDestroy,	
-    .TOTAL = EventTotal
-};
+}

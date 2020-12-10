@@ -70,12 +70,12 @@ static const char* sCenterCenter = "center|center";
 //...COLOR 
 static Color* createColor(const char* value) {
 	Color* self = calloc(1, sizeof(Color));
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	if (value) {
 		self->value = malloc(sizeof(SDL_Color));
-		nUtil->assertAlloc(self->value);
+		nUtilAssertAlloc(self->value);
 		nAppConvertColor(self->value, value);
-		self->last = nUtil->createString(value);
+		self->last = nUtilCreateString(value);
 	}
 	return self;
 }
@@ -95,10 +95,10 @@ static bool updateColor(Color* self, const char* value) {
 		free(self->last);
 		if (!self->value) {
 			self->value = malloc(sizeof(SDL_Color));
-			nUtil->assertAlloc(self->value);
+			nUtilAssertAlloc(self->value);
 		}
 		nAppConvertColor(self->value, value);
-		self->last = nUtil->createString(value);
+		self->last = nUtilCreateString(value);
 		return true;
 	}
 	return false;
@@ -116,11 +116,11 @@ static void destroyColor(Color* color) {
 sElemRenderable* nElemCreateRenderable_(sElement* elem, const sIni* ini) {
 	
 	if(ini->display !=  nElem_DISPLAY_ABSOLUTE && ini->display !=  nElem_DISPLAY_RELATIVE){
-		nUtil->assertArgument(ini->display == nElem_DISPLAY_NONE);
+		nUtilAssertArgument(ini->display == nElem_DISPLAY_NONE);
 		return NULL;
 	}
 
-	sElemRenderable* self = nUtil->assertAlloc(calloc(1, sizeof(sElemRenderable)));	
+	sElemRenderable* self =nUtilAssertAlloc(calloc(1, sizeof(sElemRenderable)));	
 	self->type = (ini->display ==  nElem_DISPLAY_ABSOLUTE ? 
 		 nElem_DISPLAY_ABSOLUTE :  nElem_DISPLAY_RELATIVE
 	);
@@ -131,10 +131,10 @@ sElemRenderable* nElemCreateRenderable_(sElement* elem, const sIni* ini) {
 	self->opacity = 255;
 	//... folders
 	if (ini->folders) {
-		self->folders = nUtil->split(ini->folders, "|");
+		self->folders = nUtilSplit(ini->folders, "|");
 		for (Uint32 i = 0; i < nArraySize(self->folders); i++) {
 			sFolder* folder = nAppGetFolder(nArrayAt(self->folders, i));
-			nUtil->assertArgument(folder);
+			nUtilAssertArgument(folder);
 			nArrayInsert(self->folders, i, folder, NULL);
 			nFolderIncRefCounter_(folder);
 		}
@@ -168,7 +168,7 @@ sElemRenderable* nElemCreateRenderable_(sElement* elem, const sIni* ini) {
 	//label
 	self->color = ini->color ? createColor(ini->color) : createColor("Black");
 	nElemSetFontSize(elem, ini->fontSize);
-	self->text = ini->text ? nUtil->createString(ini->text) : NULL;
+	self->text = ini->text ? nUtilCreateString(ini->text) : NULL;
 	nElemSetFont(elem, ini->font ? ini->font : "Default");
 	self->shouldUpdateLabel = ini->text ? true : false;
 
@@ -238,7 +238,7 @@ int nElemOrientation(sElement* self) {
 
 void nElemSetOrientation(sElement* self, int value) {
 	sElemRenderable* renderable = nElemRenderable_(self);
-	nUtil->assertArgument(value ==  nElem_FORWARD || 
+	nUtilAssertArgument(value ==  nElem_FORWARD || 
 		value ==  nElem_BACKWARD
 	);
 	renderable->orientation = (SDL_RendererFlip) value;
@@ -285,7 +285,7 @@ void nElemSetAlignment(sElement* self, const char* value) {
 	sElemRenderable* renderable = nElemRenderable_(self);
 	if (!renderable->alignment) {
 		renderable->alignment = calloc(1, sizeof(Alignment));
-		nUtil->assertAlloc(renderable->alignment);
+		nUtilAssertAlloc(renderable->alignment);
 	}
 	if (value == sCenterCenter) {
 		renderable->alignment->horizontal = sCenter;
@@ -295,9 +295,9 @@ void nElemSetAlignment(sElement* self, const char* value) {
 		return;
 	}
 	else {
-		char* align = nUtil->createString(value);
+		char* align = nUtilCreateString(value);
 		char* div = strstr(align, "|");
-		nUtil->assertArgument(div);
+		nUtilAssertArgument(div);
 		div[0] = '\0';
 		char* horizontal = div != align ? align : NULL;
 		char* vertical = *(div + 1) != '\0'? div + 1 : NULL;
@@ -381,7 +381,7 @@ void nElemSetProportion(sElement* self, double proportion) {
 
 void nElemSetToFit(sElement* self, const char* axis) {
 	sElemRenderable* renderable = nElemRenderable_(self);
-	nUtil->assertArgument(strcmp(axis, "horizontal") == 0 || strcmp(axis, "vertical") == 0);
+	nUtilAssertArgument(strcmp(axis, "horizontal") == 0 || strcmp(axis, "vertical") == 0);
 	const sSize* size = nImageSize(renderable->image);
 	const sRect* pos = nElemPosition(self);
 	if (strcmp(axis, "horizontal") == 0){
@@ -436,9 +436,9 @@ void nElemSetBorder(sElement* self, const char* border) {
 	}
 
 	//get size and color strings
-	char* size = nUtil->cloneString(border, (char[64]){0}, 64);
+	char* size = nUtilCloneString(border, (char[64]){0}, 64);
 	char* color = strstr(size, "|");
-	nUtil->assertArgument(color);
+	nUtilAssertArgument(color);
 	color[0] = '\0';
 	color++;
 
@@ -467,24 +467,24 @@ static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type
 			);
 		}
 		free(renderable->asset);
-		renderable->asset = nUtil->createString(apath);
+		renderable->asset = nUtilCreateString(apath);
 		char* slash = strstr(renderable->asset, "/");
-		nUtil->assertArgument(slash);
+		nUtilAssertArgument(slash);
 
 		*slash = '\0';
 		sFolder* folder = nAppGetFolder(renderable->asset);
-		nUtil->assertArgument(folder);
+		nUtilAssertArgument(folder);
 
-		bool folderIsLoaded = nFolderHasStatus(folder, nUtil->status->LOADING) ||
-			nFolderHasStatus(folder, nUtil->status->READY);
-		nUtil->assertState(folderIsLoaded);
+		bool folderIsLoaded = nFolderHasStatus(folder, nUtil_STATUS_LOADING) ||
+			nFolderHasStatus(folder, nUtil_STATUS_READY);
+		nUtilAssertState(folderIsLoaded);
 
 		*slash = '/';
 		void* asset = (type == IMAGE ?
 			(void*) nFolderGetImage(folder, slash + 1) :
 			(void*) nFolderGetAnimation(folder, slash + 1)
 		);
-		nUtil->assertArgument(asset);
+		nUtilAssertArgument(asset);
 		return asset;
 	}
 	return NULL;
@@ -525,13 +525,13 @@ void nElemSetText(sElement* self, const char* format, ...) {
 		va_end(args);
 
 		if(!renderable->text) {
-			renderable->text = nUtil->createString(text);
+			renderable->text = nUtilCreateString(text);
 			renderable->shouldUpdateLabel = true;
 		}
 		else { // renderable text != NULL
 			if (strcmp(text, renderable->text) != 0) {
 				free(renderable->text);
-				renderable->text = nUtil->createString(text);
+				renderable->text = nUtilCreateString(text);
 				renderable->shouldUpdateLabel = true;
 			}
 		}
@@ -569,15 +569,15 @@ int nElemFontSize(sElement* self) {
 
 void nElemSetFont(sElement* self, const char* font) {
 	sElemRenderable* renderable = nElemRenderable_(self);
-	nUtil->assertArgument(font);
+	nUtilAssertArgument(font);
 	if (renderable->font && strcmp(renderable->font, font) == 0) {
 		return;
 	}
 	const void* fontExists = nAppGetFontPath_(font);
-	nUtil->assertArgument(fontExists);
+	nUtilAssertArgument(fontExists);
 	if (fontExists) {
 		free(renderable->font);
-		renderable->font = nUtil->createString(font);
+		renderable->font = nUtilCreateString(font);
 		renderable->shouldUpdateLabel = true;
 	}
 }
@@ -613,7 +613,7 @@ static sRect calcAbsolutePos(sElemRenderable* ren) {
 }
 
 static sRect calcRelativePos(sElemRenderable* ren) {
-	const sRect* cpos = nElemPosition(nScene->getCamera(nElemScene(ren->elem)));
+	const sRect* cpos = nElemPosition(nSceneGetCamera(nElemScene(ren->elem)));
 	int x = ren->pos->x - cpos->x;
 	int y = (cpos->y + cpos->h) - (ren->pos->y + ren->pos->h);
 	return (sRect) { x, y, ren->pos->w, ren->pos->h };
@@ -702,7 +702,7 @@ void nElemOnRender_(sElement* self) {
 		pUpdateLabel(renderable);
 	}
 	nElemExecuteHandler_(self, &(sEvent){
-		.type = nComponent->ON_RENDER
+		.type = nEvent_ON_RENDER
 	});
 }
 

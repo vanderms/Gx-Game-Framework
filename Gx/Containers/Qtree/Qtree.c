@@ -27,7 +27,7 @@ typedef struct sQtreeElem {
 } sQtreeElem;
 
 sQtreeElem* nQtreeCreateElem(void* elem, const sRect* (*posGetter)(void* elem)) {
-	sQtreeElem* self = nUtil->assertAlloc(malloc(sizeof(sQtreeElem)));
+	sQtreeElem* self =nUtilAssertAlloc(malloc(sizeof(sQtreeElem)));
 	self->elem = elem;
 	self->posGetter = posGetter;
 	return self;
@@ -41,16 +41,16 @@ void nQtreeDestroyElem(sQtreeElem* self) {
 
 void* nQtreeGetElem(sQtreeElem* self){
 	return self->elem;
-};
+}
 
 static void subdivide(sQtree* self);
 
 sQtree* nQtreeCreate(sQtree* parent, sRect pos){		
 	
 	sQtree* self = malloc(sizeof(sQtree));
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	self->parent = parent;
-	self->counter = parent ? parent->counter : nUtil->createUint(0);
+	self->counter = parent ? parent->counter : nUtilCreateUint(0);
 	self->pos = pos;	
 	self->children = NULL;
 	self->elements = NULL;

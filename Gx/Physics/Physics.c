@@ -60,10 +60,10 @@ static bool contactIsEqual(sContact* lhs, sContact* rhs);
 //... Constructor and destructor
 sPhysics* nPhysicsCreate_(sScene* scene) {
 	sPhysics* self = malloc(sizeof(sPhysics));
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	self->scene = scene;	
 	self->contacts = nArrayCreate();
-	sSize size = nScene->size(scene);
+	sSize size = nSceneSize(scene);
 	int len = size.w > size.h ? size.w + 2 : size.h + 2;		
 	self->dynamic =nQtreeCreate(NULL, (sRect) { -1, -1, len, len });
 	self->fixed =nQtreeCreate(NULL, (sRect) { -1, -1, len, len });	
@@ -103,7 +103,7 @@ typedef struct EmData {
 
 static EmData* createEmData(sElement* elem) {
 	EmData* self = malloc(sizeof(EmData));
-	nUtil->assertAlloc(self);
+	nUtilAssertAlloc(self);
 	self->self = elem;
 	self->requestedPos = self->previousPos = *nElemPosition(elem);	
 	self->requestedPos.x = self->previousPos.x + nElemVelx(elem);
@@ -122,8 +122,8 @@ static void destroyEmData(EmData* self) {
 
 static sContact* createContact(sElement* self, sElement* other, int amove, Uint32 direction) {
 	sContact* contact = malloc(sizeof(sContact));	
-	nUtil->assertAlloc(contact);
-	contact->hash = nUtil->hash->CONTACT;
+	nUtilAssertAlloc(contact);
+	contact->hash = nUtil_HASH_CONTACT;
 	contact->colliding = self;
 	contact->collided = other;
 	contact->amove = amove;	
@@ -136,10 +136,10 @@ static sContact* createContact(sElement* self, sElement* other, int amove, Uint3
 static void destroyContact(sContact* self) {
 	if (self) {
 		sScene* scene = nElemScene(self->colliding);
-		if (self->effective && !nScene->hasStatus(scene, nUtil->status->UNLOADING)) {			
+		if (self->effective && !nSceneHasStatus(scene, nUtil_STATUS_UNLOADING)) {			
 			nElemRemoveContact_(self->colliding, self);
 			nElemRemoveContact_(self->collided, self);
-			nArrayRemoveByValue(nScene->p_->getPhysics(scene)->contacts, self);
+			nArrayRemoveByValue(nSceneGetPhysics_(scene)->contacts, self);
 		}
 		free(self);
 	}
@@ -150,7 +150,7 @@ static void destroyContact(sContact* self) {
 //... 
 void nPhysicsUpdate_(sPhysics* self) {
 	
-	sRect area = *nElemPosition(nScene->getCamera(self->scene));
+	sRect area = *nElemPosition(nSceneGetCamera(self->scene));
 	area.x -= 64;
 	area.y -= 64;
 	area.w += 128;
@@ -215,13 +215,13 @@ sVector nPhysicsMoveByElem_(sPhysics* self, sElement* element) {
 
 static void physicsMoveElement_(sElement* element) {
 
-	nUtil->assertState(!nElemMcFlag_(element));
-	sPhysics* physics = nScene->p_->getPhysics(nElemScene(element));			
+	nUtilAssertState(!nElemMcFlag_(element));
+	sPhysics* physics = nSceneGetPhysics_(nElemScene(element));			
 	physicsApplyGravity(physics, element);
 	bool cantmove = nElemMovFlag_(element) || !nElemIsMoving(element);		
 	if (cantmove) {
 		sVector* vector = malloc(sizeof(sVector));
-		nUtil->assertAlloc(vector);
+		nUtilAssertAlloc(vector);
 		*vector = (sVector){ 0, 0 };
 		nArrayPush(physics->mvstack, vector, free);		
 		return;
@@ -237,11 +237,11 @@ static void physicsMoveElement_(sElement* element) {
 	for (Uint32 i = 0; i < nArraySize(temp); i++) {		
 		physicsCheckCollision(nQtreeGetElem(nArrayAt(temp, i)));
 	}	
-	sVector* vec = nUtil->assertAlloc(malloc(sizeof(sVector)));		
+	sVector* vec =nUtilAssertAlloc(malloc(sizeof(sVector)));		
 	*vec = physicsProcessMovementData(physics);
 	nArrayPush(physics->mvstack, vec, free);
 
-	if (nScene->hasGravity(physics->scene) &&
+	if (nSceneHasGravity(physics->scene) &&
 		nElemMaxgvel(element)
 	){				
 		for (Uint32 i = 0; i < nArraySize(temp); i++) {
@@ -265,7 +265,7 @@ static void physicsMoveElement_(sElement* element) {
 static void physicsApplyGravity(sPhysics* self, sElement* elem) {	
 
 	int maxgvel = nElemMaxgvel(elem);
-	int gravity = nScene->gravity(self->scene);
+	int gravity = nSceneGravity(self->scene);
 	int vely = nElemVely(elem);
 	if (gravity && (maxgvel < vely) && !nElemIsOnGround(elem)) {
 		double acceleration = gravity / 60.0;
@@ -274,7 +274,7 @@ static void physicsApplyGravity(sPhysics* self, sElement* elem) {
 }
 
 static void physicsApplyFriction(sPhysics* self, sElement* element, sVector move) {	
-	if (nScene->hasGravity(self->scene) && nElemHasFriction(element)) {
+	if (nSceneHasGravity(self->scene) && nElemHasFriction(element)) {
 		move = (sVector) { move.x, move.y < 0 ? move.y : 0 };
 		sArray* up = nElemGetContacts(element, nContact_UP);
 		for (Uint32 i = 0; i < nArraySize(up); i++){
@@ -288,7 +288,7 @@ static void physicsApplyFriction(sPhysics* self, sElement* element, sVector move
 static void physicsCheckCollision(sElement* other) {	
 	
 	//create alias	
-	sPhysics* physics = nScene->p_->getPhysics(nElemScene(other));
+	sPhysics* physics = nSceneGetPhysics_(nElemScene(other));
 	EmData* emdata = nArrayLast(physics->emdstack);
 	sElement* self = emdata->self;	
 
@@ -350,7 +350,7 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 
 	for (Uint32 i = 0; i < nArraySize(emdata->contacts); i++){
 		sContact* contact = nArrayAt(emdata->contacts, i);
-		nScene->p_->onPreContact(self->scene, contact);
+		nSceneOnPreContact_(self->scene, contact);
 		if (contact->prevented) { continue; }
 
 		int spref = nElemPreference(contact->colliding);
@@ -458,7 +458,7 @@ static sVector physicsProcessMovementData(sPhysics* self) {
 		//notify collision callback handler
 	while (previousSize < nArraySize(self->contacts)) {
 		sContact* contact = nArrayAt(self->contacts, previousSize);
-		nScene->p_->onContactBegin(self->scene, contact);
+		nSceneOnContactBegin_(self->scene, contact);
 		previousSize++;
 	}
 	return move;
@@ -534,7 +534,7 @@ static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 	
 	for (Uint32 i = 0; i < nArraySize(contactsToRemove); i++){
 		sContact* contact = nArrayAt(contactsToRemove, i);		
-		nScene->p_->onContactEnd(self->scene, contact);		
+		nSceneOnContactEnd_(self->scene, contact);		
 	}
 	
 	//... sArray destructor delete contacts //-> and sContact sDtor remove it from arrays.
@@ -542,7 +542,7 @@ static void physicsCheckContactEnd(sPhysics* self, sElement* element) {
 }
 
 static void physicsCheckGround(sElement* other) {
-	sPhysics* physics = nScene->p_->getPhysics(nElemScene(other));
+	sPhysics* physics = nSceneGetPhysics_(nElemScene(other));
 	EmData* emdata = nArrayLast(physics->emdstack);
 	sElement* self = emdata->self;
 	
@@ -553,16 +553,16 @@ static void physicsCheckGround(sElement* other) {
 	bool ytouching =  (s->y == o->y + o->h);
 	if (samecolumn && ytouching) {
 		sContact* contact = createContact(self, other, 0, nContact_DOWN);
-		nScene->p_->onPreContact(physics->scene, contact);
+		nSceneOnPreContact_(physics->scene, contact);
 		if (physicsAddContact(physics, contact)) {
-			nScene->p_->onContactBegin(physics->scene, contact);
+			nSceneOnContactBegin_(physics->scene, contact);
 		}
 	}
 }
 
 void nPhysicsCreateWalls_(sPhysics* self) {
 	
-	sSize size = nScene->size(self->scene);
+	sSize size = nSceneSize(self->scene);
 	sIni ini = {
 		.className = "__WALL__",				
 		.display = nElem_DISPLAY_NONE,
@@ -584,62 +584,62 @@ void nPhysicsCreateWalls_(sPhysics* self) {
 
 
 sElement* nContactColliding(sContact* contact) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	return contact->colliding;
 }
 
 sElement* nContactCollided(sContact* contact) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	return contact->collided;
 }
 
 bool nContactIsBetween(sContact* contact, sElement* self, sElement* other) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	bool s = self ? contact->colliding == self : true;
 	bool o = other ? contact->collided == other : true;
 	return s && o;
 }
 
 bool nContactHasElem(sContact* contact, sElement* element) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	return (contact->colliding == element || contact->collided == element);
 }
 
 
 sElement* nContactGetOpposite(sContact* contact, sElement* self) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
-	nUtil->assertArgument(contact->colliding == self || contact->collided == self);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
+	nUtilAssertArgument(contact->colliding == self || contact->collided == self);
 	return (contact->colliding == self ? contact->collided : contact->colliding);
 }
 
 bool nContactHasDirection(sContact* contact, Uint32 direction) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	return contact->direction & direction;
 }
 
 Uint32 nContactDirection(sContact* contact) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	return contact->direction;
 }
 
 bool nContactHasRelativeDirection(sContact* contact, sElement* elem, Uint32 direction) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	Uint32 relativeDirection = nContactRelativeDirection(contact, elem);
 	return direction & relativeDirection;
 }
 
 Uint32 nContactRelativeDirection(sContact* contact, sElement* elem) {
 	
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	
 	if (elem == contact->colliding) {
 		return contact->direction;
@@ -660,19 +660,19 @@ Uint32 nContactRelativeDirection(sContact* contact, sElement* elem) {
 }
 
 bool nContactWasAllowed(sContact* contact) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	return contact->prevented;
 }
 
 void nContactAllowCollision(sContact* contact) {
-	nUtil->assertNullPointer(contact);
-	nUtil->assertHash(contact->hash == nUtil->hash->CONTACT);
+	nUtilAssertNullPointer(contact);
+	nUtilAssertHash(contact->hash == nUtil_HASH_CONTACT);
 	contact->prevented = true;
 }
 
 
-static void nContactOneWayPlatformCbk(sEvent* e) {
+void nContactOneWayPlatformCbk(sEvent* e) {
 
 	if(!nContactHasDirection(e->contact, nContact_DOWN)){
 		nContactAllowCollision(e->contact);

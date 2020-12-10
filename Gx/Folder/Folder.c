@@ -81,9 +81,9 @@ static void pDestroyImage(sImage* self);
 void nFolderCreate(const char* name, void(*loader)(void)) {
 
     sFolder* self = malloc(sizeof(sFolder));
-    nUtil->assertAlloc(self);
-    self->name = nUtil->createString(name);
-    self->status = loader ? nUtil->status->NONE : nUtil->status->READY;
+   nUtilAssertAlloc(self);
+    self->name = nUtilCreateString(name);
+    self->status = loader ? nUtil_STATUS_NONE : nUtil_STATUS_READY;
     self->assetsLoaded = 0;
     self->totalAssets = 0;
     self->assets = nMapCreate();
@@ -116,21 +116,21 @@ sImage* nFolderGetImage(sFolder* self, const char* id) {
 
 Mix_Music* nFolderGetMixMusic(const char* path) {
 	sArray* tokens = nAppTokenize(path, "/");
-    nUtil->assertArgument(nArraySize(tokens) == 2);
+   nUtilAssertArgument(nArraySize(tokens) == 2);
     sFolder* folder = nAppGetFolder(nArrayAt(tokens, 0));
-    nUtil->assertArgument(folder);
+   nUtilAssertArgument(folder);
     sMusic* asset = nMapGet(folder->assets, nArrayAt(tokens, 1));
-    nUtil->assertArgument(asset);
+   nUtilAssertArgument(asset);
     return asset->music;
 }
 
 Mix_Chunk* nFolderGetMixChunk(const char* path) {
 	sArray* tokens = nAppTokenize(path, "/");
-    nUtil->assertArgument(nArraySize(tokens) == 2);
+   nUtilAssertArgument(nArraySize(tokens) == 2);
     sFolder* folder = nAppGetFolder(nArrayAt(tokens, 0));
-    nUtil->assertArgument(folder);
+   nUtilAssertArgument(folder);
     sChunk* asset = nMapGet(folder->assets, nArrayAt(tokens, 1));
-    nUtil->assertArgument(asset);
+   nUtilAssertArgument(asset);
     return asset->chunk;
 }
 
@@ -139,8 +139,8 @@ sAnimation* nFolderGetAnimation(sFolder* self, const char* id) {
 }
 
 static void iLoadFolder(sFolder* self) {
-    if(self->status == nUtil->status->NONE){
-        self->status = nUtil->status->LOADING;
+    if(self->status == nUtil_STATUS_NONE){
+        self->status = nUtil_STATUS_LOADING;
         rFolder = self;
         self->loader();
         rFolder = NULL;
@@ -153,13 +153,13 @@ int nFolderGetPercLoaded(sFolder* self) {
 
 static void iUnloadFolder(sFolder* self) {
     nMapClean(self->assets);
-    self->status = nUtil->status->NONE;
+    self->status = nUtil_STATUS_NONE;
 }
 
 static void iIncreaseAssetsLoaded(sFolder* self){
     self->assetsLoaded++;
     if(self->assetsLoaded == self->totalAssets){
-        self->status = nUtil->status->READY;
+        self->status = nUtil_STATUS_READY;
     }
 }
 
@@ -170,7 +170,7 @@ void nFolderIncRefCounter_(sFolder* self) {
 
 void nFolderDecRefCounter_(sFolder* self) {
     if(nAppIsRunning()){
-        nUtil->assertState(self->refCounter > 0);
+        nUtilAssertState(self->refCounter > 0);
         --self->refCounter;
         if (self->refCounter == 0) {
            iUnloadFolder(self);
@@ -180,8 +180,8 @@ void nFolderDecRefCounter_(sFolder* self) {
 
 static sImage* iCreateImage(sFolder* folder, const char* name, ImageType type) {
     sImage* self = calloc(1, sizeof(sImage));
-    nUtil->assertAlloc(self);
-    self->name = nUtil->createString(name);
+   nUtilAssertAlloc(self);
+    self->name = nUtilCreateString(name);
     self->folder = folder;
     self->type = type;
     nMapSet(folder->assets, name, self, pDestroyImage);
@@ -202,7 +202,7 @@ static void pDestroyImage(sImage* self) {
 sImage* nImageCreateText(const char* text, const char* fontName, int size, SDL_Color* color){
 
     sImage* self = calloc(1, sizeof(sImage));
-    nUtil->assertAlloc(self);
+   nUtilAssertAlloc(self);
     self->type = Text;
     const char* fontPath = nAppGetFontPath_(fontName);
    
@@ -227,15 +227,15 @@ sImage* nImageCreateText(const char* text, const char* fontName, int size, SDL_C
 }
 
 void nImageDestroyText(sImage* self) { 
-    nUtil->assertArgument(self && self->type == Text);
+   nUtilAssertArgument(self && self->type == Text);
     pDestroyImage(self);
 }
 
 void nFolderLoadImage(const char* id, const char* path, sRect* src, double proportion) {
 
     sFolder* self = rFolder;
-    nUtil->assertArgument(self->assets == NULL || nMapGet(self->assets, id) == NULL);
-    nUtil->assertState(self->status == nUtil->status->LOADING);
+   nUtilAssertArgument(self->assets == NULL || nMapGet(self->assets, id) == NULL);
+    nUtilAssertState(self->status == nUtil_STATUS_LOADING);
     sImage* img = iCreateImage(self, id, Texture);
     img->proportion = proportion;
     img->resource = NULL;
@@ -245,7 +245,7 @@ void nFolderLoadImage(const char* id, const char* path, sRect* src, double propo
 
     if (src) {
         img->src = malloc(sizeof(sRect));
-        nUtil->assertAlloc(img->src);
+       nUtilAssertAlloc(img->src);
         *img->src = *src;
     }
     else img->src = NULL;
@@ -254,7 +254,7 @@ void nFolderLoadImage(const char* id, const char* path, sRect* src, double propo
 
 void nFolderLoadTileset(const char* id, const char* pathF, int start, int end, double proportion) {
 
-    nUtil->assertArgument(start >= 0);
+   nUtilAssertArgument(start >= 0);
 
     for (int i = start; i <= end; i++) {
         char bId[64];
@@ -268,12 +268,12 @@ void nFolderLoadTileset(const char* id, const char* pathF, int start, int end, d
 void nFolderCreateTilesetFromImage(const char* image, sSize size, sMatrix matrix) {
 
 	char folderId[32], imageId[32];
-    nUtil->splitAssetPath(image, folderId, imageId);
+    nUtilSplitAssetPath(image, folderId, imageId);
 
     sFolder* folder = nAppGetFolder(folderId);
-    nUtil->assertArgument(folder);
+   nUtilAssertArgument(folder);
     sImage* source = nMapGet(folder->assets, imageId);
-    nUtil->assertArgument(source);
+   nUtilAssertArgument(source);
 
     int counter = 0;
 
@@ -283,7 +283,7 @@ void nFolderCreateTilesetFromImage(const char* image, sSize size, sMatrix matrix
             snprintf(bId, 64, "%s|%d", source->name, ++counter);
             sImage* self = iCreateImage(folder, bId, Opaque);
             self->src = malloc(sizeof(sRect));
-            nUtil->assertAlloc(self->src);
+           nUtilAssertAlloc(self->src);
             *self->src = (sRect) { size.w * j, size.h * i, size.w, size.h };
             self->source = source;
             self->size = size;
@@ -292,36 +292,36 @@ void nFolderCreateTilesetFromImage(const char* image, sSize size, sMatrix matrix
 }
 
 sFolder* nImageFolder(sImage* self) {
-    nUtil->assertArgument(self);
+   nUtilAssertArgument(self);
     return self->folder;
 }
 
 const sSize* nImageSize(sImage* self) {
-    nUtil->assertArgument(self);
+   nUtilAssertArgument(self);
     return &self->size;
 }
 
 const sRect* nImageSrc(sImage* self) {
-     nUtil->assertArgument(self);
+    nUtilAssertArgument(self);
     return self->src;
 }
 
 const char* nImageName(sImage* self) {
-    nUtil->assertArgument(self);
+   nUtilAssertArgument(self);
     return self->name;
 }
 
 SDL_Texture* nImageSDLTexture(sImage* self) {
-    nUtil->assertArgument(self);
+   nUtilAssertArgument(self);
 	return self->resource;
 }
 
 double nImageProportion(sImage* self) {
-     nUtil->assertArgument(self);
+    nUtilAssertArgument(self);
      return self->proportion;
 }
 
-static void nFolderSetSDLTexture_(sImage* self, void* resource, sSize* size) {
+void nFolderSetSDLTexture_(sImage* self, void* resource, sSize* size) {
 
     self->resource = resource;
 
@@ -347,14 +347,14 @@ static void iDestroyAnimation(sAnimation* self) {
 void nFolderLoadAnimation(const char* name, const char* pathF,
     int start, int end, int interval, double proportion, bool continuous)
 {
-    nUtil->assertArgument(start >= 0);
+   nUtilAssertArgument(start >= 0);
 
     sFolder* folder = rFolder;
     sAnimation* self = malloc(sizeof(sAnimation));
-    nUtil->assertAlloc(self);
-    self->name = nUtil->createString(name);
+   nUtilAssertAlloc(self);
+    self->name = nUtilCreateString(name);
     self->images = nArrayCreate();
-	self->interval = interval;
+	self->interval = (Uint32) interval;
     self->continuous = continuous;
     self->quantity = end - start + 1;
 
@@ -400,8 +400,8 @@ static void iDestroyChunk(sChunk* self) {
 void nFolderLoadChunk(const char* id, const char* path) {
 
     sChunk* self = malloc(sizeof(sChunk));
-    nUtil->assertAlloc(self);
-    self->id = nUtil->createString(id);
+   nUtilAssertAlloc(self);
+    self->id = nUtilCreateString(id);
     self->folder = rFolder;
     self->chunk = NULL;
     nAppLoadMixChunk_(self, path);
@@ -424,8 +424,8 @@ static void iDestroyMusic(sMusic* self) {
 
 void nFolderLoadMusic(const char* id, const char* path) {
     sMusic* self = malloc(sizeof(sMusic));
-    nUtil->assertAlloc(self);
-    self->id = nUtil->createString(id);
+   nUtilAssertAlloc(self);
+    self->id = nUtilCreateString(id);
     self->folder = rFolder;
     self->music = NULL;
     nAppLoadMixMusic_(self, path);
