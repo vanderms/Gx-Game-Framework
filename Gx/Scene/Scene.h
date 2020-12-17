@@ -17,8 +17,7 @@ void nSceneSetGravity(sScene* self, int gravity);
 void nSceneSetTimeout(sScene* self, int interval, sHandler callback, void* target);
 sElement* nSceneGetCamera(sScene* self);
 void nSceneAddComponent(sScene* self, sComponent* comp);
-
-
+void* nSceneGetComponent(sScene* self, const char* name);
 void nSceneDestroy_(sScene* self);	
 sPhysics* nSceneGetPhysics_(sScene* self);
 sGraphics* nSceneGetGraphics_(sScene* self);	

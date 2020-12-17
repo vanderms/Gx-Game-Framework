@@ -3,6 +3,7 @@
 
 #include "Button/Button.h"
 #include "Tilemap/Tilemap.h"
+#include "Text/Text.h"
 
 
 #endif // !GX_COMPONENTS_H

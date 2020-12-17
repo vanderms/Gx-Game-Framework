@@ -266,14 +266,28 @@ Uint32 nSceneAddElem_(sScene* self, sElement* elem) {
 
 void nSceneAddComponent(sScene* self, sComponent* comp) {
 	nUtilAssertNullPointer(self);
-	nUtilAssertHash(self->hash == nUtil_HASH_ELEMENT);
+	nUtilAssertHash(self->hash == nUtil_HASH_SCENE);
 	nUtilAssertArgument(comp->name && !nComponentIsEmpty_(comp));
 	sComponent* copy = nComponentCopy_(comp);
 	if (!self->components) {
 		self->components = nMapCreate();
 	}
+	nUtilAssertArgument(nMapGet(self->components, comp->name) == NULL);
 	nMapSet(self->components, comp->name, copy, nComponentDestroy_);
-	nSceneSubscribeComponent_(self, comp);
+	nSceneSubscribeComponent_(self, copy);
+}
+
+
+void* nSceneGetComponent(sScene* self, const char* name) {
+	nUtilAssertNullPointer(self);
+	nUtilAssertHash(self->hash == nUtil_HASH_SCENE);
+	if (name) {
+		nUtilAssertImplementation(self->components != NULL);
+		sComponent* comp = nMapGet(self->components, name);
+		nUtilAssertImplementation(comp != NULL);
+		return comp->target;
+	}
+	return (self->comp ? self->comp->target : self);	
 }
 
 

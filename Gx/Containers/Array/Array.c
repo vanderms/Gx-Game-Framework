@@ -55,7 +55,10 @@ void* nArrayAt(sArray* self, Uint32 index) {
 }
 
 void* nArrayLast(sArray* self) {
-	return self->entries[self->size - 1].value;
+    if (self->size > 0) {
+        return self->entries[self->size - 1].value;
+    }
+    return NULL;	
 }
 
 void nArrayInsert(sArray* self, Uint32 index, void* value, sDtor dtor) {

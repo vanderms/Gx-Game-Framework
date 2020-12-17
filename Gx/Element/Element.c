@@ -50,7 +50,7 @@ sElement* nElemCreate(const sIni* ini){
 
 	
 	//set position
-	if (ini->display != nElem_DISPLAY_NONE || ini->body != nElem_BODY_NONE) {
+	if (ini->display != nElem_DISPLAY_NONE || ini->body != nELEM_BODY_NONE) {
 		nUtilAssertArgument(ini->position);
 		self->pos = malloc(sizeof(sRect));
 		nUtilAssertAlloc(self->pos);
@@ -165,11 +165,12 @@ void nElemExecuteHandler_(sElement* self, sEvent* ev){
 void nElemAddComponent(sElement* self, sComponent* comp) {
 	nUtilAssertNullPointer(self);
 	nUtilAssertHash(self->hash == nUtil_HASH_ELEMENT);
-	nUtilAssertArgument(comp->name && !nComponentIsEmpty_(comp));
+	nUtilAssertArgument(comp->name && !nComponentIsEmpty_(comp));	
 	sComponent* copy = nComponentCopy_(comp);
 	if (!self->components) {
 		self->components = nMapCreate();
 	}
+	nUtilAssertArgument(nMapGet(self->components, comp->name) == NULL);
 	nMapSet(self->components, comp->name, copy, nComponentDestroy_);
 	nSceneSubscribeComponent_(self->scene, copy);
 }

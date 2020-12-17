@@ -58,7 +58,7 @@ const Uint32 nElem_CMASK_FIXED = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1
 sElemBody* nElemCreateBody_(sElement* elem, const sIni* ini) {
 
 	if(ini->body != nElem_BODY_FIXED && ini->body != nElem_BODY_DYNAMIC){
-		nUtilAssertArgument(ini->body == nElem_BODY_NONE);
+		nUtilAssertArgument(ini->body == nELEM_BODY_NONE);
 		return NULL;
 	}
 

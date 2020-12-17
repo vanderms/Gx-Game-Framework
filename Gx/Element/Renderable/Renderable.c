@@ -115,14 +115,14 @@ static void destroyColor(Color* color) {
 //constructors and destructors
 sElemRenderable* nElemCreateRenderable_(sElement* elem, const sIni* ini) {
 	
-	if(ini->display !=  nElem_DISPLAY_ABSOLUTE && ini->display !=  nElem_DISPLAY_RELATIVE){
+	if(ini->display !=  nELEM_DISPLAY_ABSOLUTE && ini->display !=  nElem_DISPLAY_RELATIVE){
 		nUtilAssertArgument(ini->display == nElem_DISPLAY_NONE);
 		return NULL;
 	}
 
 	sElemRenderable* self =nUtilAssertAlloc(calloc(1, sizeof(sElemRenderable)));	
-	self->type = (ini->display ==  nElem_DISPLAY_ABSOLUTE ? 
-		 nElem_DISPLAY_ABSOLUTE :  nElem_DISPLAY_RELATIVE
+	self->type = (ini->display ==  nELEM_DISPLAY_ABSOLUTE ? 
+		 nELEM_DISPLAY_ABSOLUTE :  nElem_DISPLAY_RELATIVE
 	);
 	self->pos = nElemPosition(elem);
 	self->zIndex = ini->zIndex;
@@ -207,7 +207,7 @@ bool nElemHasRelativeDisplay(sElement* self) {
 
 bool nElemHasAbsoluteDisplay(sElement* self) {
 	sElemRenderable* renderable = nElemRenderable_(self);
-	return renderable && renderable->type ==  nElem_DISPLAY_ABSOLUTE;
+	return renderable && renderable->type ==  nELEM_DISPLAY_ABSOLUTE;
 }
 
 
@@ -663,7 +663,7 @@ sRect* nElemCalcImagePosOnCamera(sElement* self, sRect* pos, sImage* image) {
 
 sRect nElemCalcPosOnCamera(sElement* self) {
 	sElemRenderable* renderable = nElemRenderable_(self);
-	if(renderable->type ==  nElem_DISPLAY_ABSOLUTE){
+	if(renderable->type ==  nELEM_DISPLAY_ABSOLUTE){
 		return calcAbsolutePos(renderable);
 	}
 	return calcRelativePos(renderable);	

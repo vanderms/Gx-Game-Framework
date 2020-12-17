@@ -201,23 +201,21 @@ static void pDestroyImage(sImage* self) {
 
 sImage* nImageCreateText(const char* text, const char* fontName, int size, SDL_Color* color){
 
-    sImage* self = calloc(1, sizeof(sImage));
-   nUtilAssertAlloc(self);
+    sImage* self = calloc(1, sizeof(sImage));   
+    
+    nUtilAssertAlloc(self);
     self->type = Text;
-    const char* fontPath = nAppGetFontPath_(fontName);
-   
+      
     sSize wsize = {0, 0};
     SDL_GetRendererOutputSize(nAppSDLRenderer(), &wsize.w, &wsize.h);
     sSize lsize = nAppLogicalSize();
-    size = ((double) size * wsize.w) / lsize.w;
+    size = ((double) size * wsize.w) / lsize.w;    
 
-    TTF_Font* font = TTF_OpenFont(fontPath, size);
-    if(!font){
-        nAppRuntimeError(TTF_GetError());
-    }
+    TTF_Font* font = nAppLoadFont_(fontName, size);
+   
     SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text, *color);
     if (!surface){
-        nAppRuntimeError(TTF_GetError());
+        nAppRuntimeError(SDL_GetError());
     }
     self->size.w = surface->w;
     self->size.h = surface->h;
@@ -445,7 +443,7 @@ void nImageRender(sImage* self, sRect* target,
 {
     if (self->type == Texture || self->type == Opaque || self->type == Text){
         void* resource = NULL;
-        void* src = NULL;
+        sRect* src = NULL;
         if (self->type == Texture || self->type == Text) {
             resource = self->resource;
             src = self->src;

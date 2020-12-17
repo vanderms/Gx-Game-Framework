@@ -3,18 +3,18 @@
 #include "../../Gx.h"
 
 
-extern const Uint32 nButton_KEYBOARD;
-extern const Uint32 nButton_FINGER;
-extern const Uint32 nButton_MOUSE;
-extern const Uint32 nButton_SCREEN;
-extern const Uint32 nButton_NONE;
-extern const Uint32 nButton_ON;	
-extern const Uint32 nButton_HOVER;
-extern const Uint32 nButton_CLICK;
-extern const Uint32 nButton_DOWN;
-extern const Uint32 nButton_UP;		
+extern const Uint32 nBUTTON_KEYBOARD;
+extern const Uint32 nBUTTON_FINGER;
+extern const Uint32 nBUTTON_MOUSE;
+extern const Uint32 nBUTTON_SCREEN;
+extern const Uint32 nBUTTON_NONE;
+extern const Uint32 nBUTTON_ON;	
+extern const Uint32 nBUTTON_HOVER;
+extern const Uint32 nBUTTON_CLICK;
+extern const Uint32 nBUTTON_DOWN;
+extern const Uint32 nBUTTON_UP;		
 
-void nButtonCreate(sElement* base, Uint32 inputs, int keycode);
+sElement* nButtonCreate(sElement* base, Uint32 inputs, int keycode);
 Uint32 nButtonGetStatus(sElement* base);
 bool nButtonHasStatus(sElement*base, Uint32 status);
 

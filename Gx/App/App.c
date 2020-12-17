@@ -45,6 +45,11 @@ typedef struct sApp {
     //... temporary resources
     sArray* temporary;
 
+    //...font
+    TTF_Font* lastFont;
+    char* lastFontName;
+    int lastFontSize;
+
     //...assets modules
     sList* aToLoad;
     sList* aLoading;
@@ -88,9 +93,11 @@ sScene* nAppCreate(const sIni* ini) {
     self->aLoading = NULL;
     self->aLoaded = NULL;
     self->currentFrame = 0;
+    self->lastFont = NULL;
+    self->lastFontName = NULL;
+    self->lastFontSize = 0;
 
     SDL_AtomicSet(&self->atom, nUtil_STATUS_NONE);
-
    
 	  //init SDL modules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
@@ -220,6 +227,12 @@ static void destroy() {
         nMapDestroy(self->folders);
         nMapDestroy(self->colors);
         nMapDestroy(self->fonts);
+        if (self->lastFont) {
+            TTF_CloseFont(self->lastFont);
+        }
+        if (self->lastFontName) {
+            free(self->lastFontName);
+        }
         free(self);
         self = NULL;
         IMG_Quit();
@@ -562,6 +575,7 @@ static sMap* createColorMap(void) {
 
     createColor(map, "Black", &(SDL_Color){0, 0, 0, 255});
     createColor(map, "White", &(SDL_Color){255, 255, 255, 255});
+    createColor(map, "Gainsboro", &(SDL_Color){220, 220, 220, 255});
     createColor(map, "Blue", &(SDL_Color){0, 0, 255, 255});
     createColor(map, "Aqua", &(SDL_Color){0, 255, 255, 255});
     createColor(map, "Coral", &(SDL_Color){255, 127, 80, 255});
@@ -577,7 +591,7 @@ static sMap* createColorMap(void) {
     return map;
 }
 
-void nAppConvertColor(SDL_Color* destination, const char* color) {
+SDL_Color* nAppConvertColor(SDL_Color* destination, const char* color) {
 
     SDL_Color* mapcolor = NULL;
     char* clone = nUtilCloneString(color, (char[32]){0}, 32);
@@ -610,18 +624,21 @@ void nAppConvertColor(SDL_Color* destination, const char* color) {
     else {
        nUtilAssertArgument(false);
     }
+    return destination;
 }
 
 
 static sMap* createFontMap(void) {
+#define FPATH "Gx/Font/FiraSans/FiraSans-"
+
     sMap* fonts = nMapCreate();
-#define FPATH "Gx/Font/PTSerif/PTSerif-"
     nMapSet(fonts, "Default", nUtilCreateString(FPATH "Regular.ttf"), free);
     nMapSet(fonts, "Italic", nUtilCreateString(FPATH "Italic.ttf"), free);
     nMapSet(fonts, "Bold", nUtilCreateString(FPATH "Bold.ttf"), free);
     nMapSet(fonts, "BoldItalic", nUtilCreateString(FPATH "BoldItalic.ttf"), free);
-#undef FPATH
     return fonts;
+
+#undef FPATH
 }
 
 void nAppAddFont(const char* name, const char* path){
@@ -637,6 +654,32 @@ void nAppAddFont(const char* name, const char* path){
 
 const char* nAppGetFontPath_(const char* name) {
     return nMapGet(self->fonts, name);
+}
+
+TTF_Font* nAppLoadFont_(const char* name, int size) {
+    nUtilAssertState(name);
+
+    if (self->lastFont) {
+        if (strcmp(name, self->lastFontName) == 0 && self->lastFontSize == size) {
+            return self->lastFont;
+        }
+        else {
+            TTF_CloseFont(self->lastFont);
+            self->lastFont = NULL;
+            free(self->lastFontName);
+            self->lastFontName = NULL;
+        }
+    }
+
+    const char* path = nMapGet(self->fonts, name);
+    nUtilAssertResourceNotFound(path);
+    self->lastFont = TTF_OpenFont(path, size);
+    if(!self->lastFont){
+        nAppRuntimeError(TTF_GetError());
+    }
+    self->lastFontName = nUtilCreateString(name);
+    self->lastFontSize = size;
+    return self->lastFont;
 }
 
 char* sf(const char* format, ...) {   

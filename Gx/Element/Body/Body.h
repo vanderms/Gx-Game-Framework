@@ -3,7 +3,7 @@
 #include "../../Util/Util.h"
 
 enum sElemBodyConstants {
-	nElem_BODY_NONE = 1,
+	nELEM_BODY_NONE = 1,
 	nElem_BODY_FIXED = 2,
 	nElem_BODY_DYNAMIC = 3,
 };

@@ -5,7 +5,7 @@
 
 enum sElemRenderableConstants {
 	nElem_DISPLAY_NONE = 1,
-	nElem_DISPLAY_ABSOLUTE = 2,
+	nELEM_DISPLAY_ABSOLUTE = 2,
 	nElem_DISPLAY_RELATIVE = 3,
 	nElem_FORWARD = SDL_FLIP_NONE,
 	nElem_BACKWARD = SDL_FLIP_HORIZONTAL,

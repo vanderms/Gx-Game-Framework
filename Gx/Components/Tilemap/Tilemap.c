@@ -1,6 +1,6 @@
 #include "Tilemap.h"
 
-typedef struct sTilemap {	
+typedef struct sTilemap {
 	sElement* base;
     sFolder* folder;
 	char* group;
@@ -17,14 +17,14 @@ typedef struct sTilemap {
 
 //...auxiliary
 static void updateImages(sTilemap* self){
-    
+
     if (self->sequence) {
         for (Uint32 i = 0; i < nArraySize(self->sequence); i++) {
             int index = *(int*) nArrayAt(self->sequence, i);
             sImage* image = NULL;
             if(index != -1){
                 const char* imageName = sf("%s|%d", self->group, index);
-                image = nFolderGetImage(self->folder, imageName); 
+                image = nFolderGetImage(self->folder, imageName);
                 nUtilAssertResourceNotFound(image);
             }
             nArrayInsert(self->images, i,  image, NULL);
@@ -45,7 +45,7 @@ static void onRender(sEvent* e) {
     const sRect* elemPos = nElemPosition(self->base);
     sRect target = nElemCalcPosOnCamera(self->base);
     int opacity = nElemOpacity(self->base);
-   
+
     int w = (elemPos->w / self->matrix.nc);
     int h = (elemPos->h / self->matrix.nr);
 
@@ -79,8 +79,8 @@ static void onRender(sEvent* e) {
 
             int index = rows * self->matrix.nc + columns;
             sImage* image = nArrayAt(self->images, index);
-            if(!image){ 
-                continue; 
+            if(!image){
+                continue;
             }
             int x = (target.x + columns * w);
             const sSize* imageSize = nImageSize(image);
@@ -90,7 +90,7 @@ static void onRender(sEvent* e) {
                 .y = y - ((imageSize->h - h) / 2), //... ycenter texture
                 .w = imageSize->w,
                 .h = imageSize->h
-            };           
+            };
             nImageRender(image, &pos, 0.0, SDL_FLIP_NONE, opacity);
         }
     }
@@ -104,26 +104,26 @@ static void onDestroy(sEvent* e) {
     free(self);
 }
 
-static void nTilemapCreate(sElement* base, 
-    const char* path, sMatrix matrix, const int* sequence) 
+void nTilemapCreate(sElement* base,
+    const char* path, sMatrix matrix, const int* sequence)
 {
-	
+
 	nUtilAssertArgument(base && path);
 	nUtilAssertArgument(nElemPosition(base) && nElemIsRenderable(base));
 	nUtilAssertArgument(matrix.nr && matrix.nc);
-			
-	sTilemap* self =nUtilAssertAlloc(calloc(1, sizeof(sTilemap)));	
+
+	sTilemap* self =nUtilAssertAlloc(calloc(1, sizeof(sTilemap)));
 	self->base = base;
 	self->matrix = matrix;
-    
+
     sArray* tokens = nAppTokenize(path, "/");
    nUtilAssertArgument(nArraySize(tokens) == 2);
     self->folder = nAppGetFolder(nArrayAt(tokens, 0));
    nUtilAssertArgument(self->folder);
-    self->group = nUtilCreateString(nArrayAt(tokens, 1));    
-   
+    self->group = nUtilCreateString(nArrayAt(tokens, 1));
+
     self->images = nArrayCreate();
-	
+
     if (sequence) {
          self->sequence = nArrayCreate();
          for (Uint32 i = 0; i < (Uint32) matrix.nr * matrix.nc; i++) {
@@ -131,11 +131,11 @@ static void nTilemapCreate(sElement* base,
         }
     }
     else self->sequence = NULL;
-    updateImages(self);	
+    updateImages(self);
 
     nElemAddComponent(self->base, &(sComponent){
         .name = "nTilemap",
-        .target = self,        
+        .target = self,
         .onDestroy = onDestroy,
         .onRender = onRender,
     });
