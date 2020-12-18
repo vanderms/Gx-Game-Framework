@@ -82,7 +82,7 @@ sScene* nAppCreate(const sIni* ini) {
     if(self){ return self->snMain; }
     
     self = calloc(1, sizeof(sApp));
-   nUtilAssertAlloc(self);
+    nUtilAssertAlloc(self);
     self->snActive = NULL;
     self->folders = nMapCreate();
     self->scenes = nMapCreate();
@@ -116,6 +116,8 @@ sScene* nAppCreate(const sIni* ini) {
         nAppRuntimeError(SDL_GetError());
     }
 
+   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(0, &mode);
     Uint32 bigger = mode.w > mode.h ? mode.w : mode.h;
@@ -140,10 +142,10 @@ sScene* nAppCreate(const sIni* ini) {
     nArrayDestroy(wparams);
 
     const char* title = ini->title ? ini->title : "Gx";
-    Uint32 flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
+    Uint32 flags = SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
 
     if (strcmp(SDL_GetPlatform(), "Windows") == 0) {
-        flags = SDL_WINDOW_MAXIMIZED | SDL_WINDOW_RESIZABLE;
+        flags = SDL_WINDOW_MAXIMIZED | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL;
     }
       
     if (!(self->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
@@ -152,7 +154,8 @@ sScene* nAppCreate(const sIni* ini) {
     }
 
     if (!(self->renderer = SDL_CreateRenderer(self->window, -1, 
-        SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED))) {
+        SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE) 
+       )){
          nAppRuntimeError(SDL_GetError());
     }
 
@@ -181,7 +184,7 @@ sScene* nAppCreate(const sIni* ini) {
     return self->snMain;
 }
 
-sRect* nAppCalcDest(sRect* src, sRect* dest) {
+sRect* nAppCalcDest(const sRect* src, sRect* dest) {
 #define intround(x) ((x) >= 0.0 ? (int) ((x) + 0.5) : (int) ((x) - 0.5))
     sSize wsize = {0, 0};
     SDL_GetRendererOutputSize(nAppSDLRenderer(), &wsize.w, &wsize.h);
@@ -200,7 +203,7 @@ sRect* nAppCalcDest(sRect* src, sRect* dest) {
 #undef intround
 }
 
-sRect* nAppCalcLabelDest(sRect* src, sRect* dest) {
+sRect* nAppCalcLabelDest(const sRect* src, sRect* dest) {
     nAppCalcDest(src, dest);
     SDL_Point center = {dest->x + dest->w/2, dest->y + dest->h/2};
     dest->x = center.x - src->w/2;
@@ -564,7 +567,7 @@ int  nAppIsPlayingMusic(void) {
 
 static inline void createColor(sMap* map, const char* name, SDL_Color* color) {
     SDL_Color* ncolor = malloc(sizeof(SDL_Color));
-   nUtilAssertAlloc(ncolor);
+    nUtilAssertAlloc(ncolor);
     *ncolor = *color;
     nMapSet(map, name, ncolor, free);
 }
