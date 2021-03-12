@@ -51,6 +51,14 @@
 		</Unit>
 		<Unit filename="Gx/Components/Button/Button.h" />
 		<Unit filename="Gx/Components/Components.h" />
+		<Unit filename="Gx/Components/Rounded/Rounded.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Components/Rounded/Rounded.h" />
+		<Unit filename="Gx/Components/Text/Text.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Gx/Components/Text/Text.h" />
 		<Unit filename="Gx/Components/Tilemap/Tilemap.c">
 			<Option compilerVar="CC" />
 		</Unit>

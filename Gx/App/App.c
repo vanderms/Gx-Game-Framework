@@ -97,7 +97,7 @@ sScene* nAppCreate(const sIni* ini) {
     self->lastFontName = NULL;
     self->lastFontSize = 0;
 
-    SDL_AtomicSet(&self->atom, nUtil_STATUS_NONE);
+    SDL_AtomicSet(&self->atom, nUTIL_STATUS_NONE);
    
 	  //init SDL modules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
@@ -179,7 +179,7 @@ sScene* nAppCreate(const sIni* ini) {
    
     SDL_SetRenderDrawBlendMode(self->renderer, SDL_BLENDMODE_BLEND);
 
-    self->status = nUtil_STATUS_NONE;
+    self->status = nUTIL_STATUS_NONE;
     self->snMain = nSceneCreate(ini);
     return self->snMain;
 }
@@ -259,7 +259,7 @@ sSize nAppLogicalSize(void) {
 }
 
 bool nAppIsRunning() {
-    return self->status == nUtil_STATUS_RUNNING;
+    return self->status == nUTIL_STATUS_RUNNING;
 }
 
 void nAppAddScene_(sScene* scene) {
@@ -364,7 +364,7 @@ static int threadLoadAsset() {
         if (!asset->resource) nAppRuntimeError(SDL_GetError());
     }
 
-    SDL_AtomicSet(&self->atom, nUtil_STATUS_LOADED);
+    SDL_AtomicSet(&self->atom, nUTIL_STATUS_LOADED);
     return 0;
 }
 
@@ -374,13 +374,13 @@ void nAppRun() {
     self->counter = SDL_GetTicks();
     
     //run
-    self->status = nUtil_STATUS_RUNNING;
+    self->status = nUTIL_STATUS_RUNNING;
     nAppLoadScene(self->snMain);
 
-    while (self->status == nUtil_STATUS_RUNNING) {
+    while (self->status == nUTIL_STATUS_RUNNING) {
 
         bool activeIsReady =  self->snActive ?
-            nSceneStatus(self->snActive) == nUtil_STATUS_RUNNING : false;
+            nSceneStatus(self->snActive) == nUTIL_STATUS_RUNNING : false;
 
         self->counter = SDL_GetTicks();
         self->snRunning = self->snActive;
@@ -392,7 +392,7 @@ void nAppRun() {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT){
-                self->status = nUtil_STATUS_UNLOADING;
+                self->status = nUTIL_STATUS_UNLOADING;
             }
             else if (e.type == SDL_WINDOWEVENT) {
                 if (e.window.event == SDL_WINDOWEVENT_MAXIMIZED) {
@@ -420,19 +420,19 @@ void nAppRun() {
 
         //...load assets
         if (self->aLoaded == NULL && 
-            SDL_AtomicGet(&self->atom) == nUtil_STATUS_LOADED) 
+            SDL_AtomicGet(&self->atom) == nUTIL_STATUS_LOADED) 
         {
             self->aLoaded = self->aLoading;
             self->aLoading = NULL;
-            SDL_AtomicSet(&self->atom, nUtil_STATUS_NONE);
+            SDL_AtomicSet(&self->atom, nUTIL_STATUS_NONE);
         }
 
         if (nListSize(self->aToLoad) && 
-            SDL_AtomicGet(&self->atom) == nUtil_STATUS_NONE) 
+            SDL_AtomicGet(&self->atom) == nUTIL_STATUS_NONE) 
         {
             self->aLoading = self->aToLoad;
             self->aToLoad = nListCreate();
-            SDL_AtomicSet(&self->atom, nUtil_STATUS_LOADING);
+            SDL_AtomicSet(&self->atom, nUTIL_STATUS_LOADING);
             SDL_Thread* thread = (
                 SDL_CreateThread((SDL_ThreadFunction) threadLoadAsset, "loaderThread", self)
             );

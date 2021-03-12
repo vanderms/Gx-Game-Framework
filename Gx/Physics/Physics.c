@@ -136,7 +136,7 @@ static sContact* createContact(sElement* self, sElement* other, int amove, Uint3
 static void destroyContact(sContact* self) {
 	if (self) {
 		sScene* scene = nElemScene(self->colliding);
-		if (self->effective && !nSceneHasStatus(scene, nUtil_STATUS_UNLOADING)) {			
+		if (self->effective && !nSceneHasStatus(scene, nUTIL_STATUS_UNLOADING)) {			
 			nElemRemoveContact_(self->colliding, self);
 			nElemRemoveContact_(self->collided, self);
 			nArrayRemoveByValue(nSceneGetPhysics_(scene)->contacts, self);
@@ -565,21 +565,21 @@ void nPhysicsCreateWalls_(sPhysics* self) {
 	sSize size = nSceneSize(self->scene);
 	sIni ini = {
 		.className = "__WALL__",				
-		.display = nElem_DISPLAY_NONE,
-		.body = nElem_BODY_FIXED,		
+		.display = nELEM_DISPLAY_NONE,
+		.body = nELEM_BODY_FIXED,		
 	};
 	
 	ini.position = &(sRect) { -1, -1, size.w + 2, 1 };
-	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nELEM_CMASK_ALL);
 
 	ini.position = &(sRect) {size.w, -1, 1, size.h + 2 };
-	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nELEM_CMASK_ALL);
 
 	ini.position = &(sRect) { -1, size.h, size.w + 2, 1 };
-	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nELEM_CMASK_ALL);
 
 	ini.position = &(sRect) { -1, -1, 1, size.h + 2  };
-	nElemSetCmask(nElemCreate(&ini), nElem_CMASK_ALL);
+	nElemSetCmask(nElemCreate(&ini), nELEM_CMASK_ALL);
 }
 
 

@@ -48,16 +48,16 @@ typedef struct sElemBody {
 	sArray* temp;
 } sElemBody;
 
-const Uint32 nElem_CMASK_NONE = 0;
-const Uint32 nElem_CMASK_ALL = ~0u;
-const Uint32 nElem_CMASK_CAMERA = 1u << 30;
-const Uint32 nElem_CMASK_DYNAMIC = 1 << 0;
-const Uint32 nElem_CMASK_FIXED = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7);
+const Uint32 nELEM_CMASK_NONE = 0;
+const Uint32 nELEM_CMASK_ALL = ~0u;
+const Uint32 nELEM_CMASK_CAMERA = 1u << 30;
+const Uint32 nELEM_CMASK_DYNAMIC = 1 << 0;
+const Uint32 nELEM_CMASK_FIXED = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7);
 
 
 sElemBody* nElemCreateBody_(sElement* elem, const sIni* ini) {
 
-	if(ini->body != nElem_BODY_FIXED && ini->body != nElem_BODY_DYNAMIC){
+	if(ini->body != nELEM_BODY_FIXED && ini->body != nELEM_BODY_DYNAMIC){
 		nUtilAssertArgument(ini->body == nELEM_BODY_NONE);
 		return NULL;
 	}
@@ -65,19 +65,19 @@ sElemBody* nElemCreateBody_(sElement* elem, const sIni* ini) {
 	sElemBody* self = calloc(1, sizeof(sElemBody));
 	nUtilAssertAlloc(self);
 	nElemSetBody_(elem, self);
-	self->type = (ini->body == nElem_BODY_FIXED ? 
-		nElem_BODY_FIXED : nElem_BODY_DYNAMIC
+	self->type = (ini->body == nELEM_BODY_FIXED ? 
+		nELEM_BODY_FIXED : nELEM_BODY_DYNAMIC
 	);		
-	self->cmask = (self->type == nElem_BODY_DYNAMIC ? 
-		nElem_CMASK_DYNAMIC : nElem_CMASK_FIXED
+	self->cmask = (self->type == nELEM_BODY_DYNAMIC ? 
+		nELEM_CMASK_DYNAMIC : nELEM_CMASK_FIXED
 	);
 	self->velocity.x = ini->velocity.x;
 	self->velocity.y = ini->velocity.y;
 	self->elasticity = 0.0;
 	self->restitution = 1.0;
 	self->friction = ini->friction ? ini->friction : false;
-	self->preference = self->type == nElem_BODY_DYNAMIC ? 1 : INT_MAX;
-	self->maxgvel = self->type == nElem_BODY_DYNAMIC? -20 : 0;		
+	self->preference = self->type == nELEM_BODY_DYNAMIC ? 1 : INT_MAX;
+	self->maxgvel = self->type == nELEM_BODY_DYNAMIC? -20 : 0;		
 	self->mcflag = false;
 	self->movflag = false;
 	self->dynamic = nQtreeCreateElem(elem, nElemPosGetter_);
@@ -100,12 +100,12 @@ void nElemDestroyBody_(sElemBody* self) {
 
 bool nElemIsBodyDynamic(sElement* self) {
 	sElemBody* body = nElemBody_(self);	
-	return body->type == nElem_BODY_DYNAMIC;
+	return body->type == nELEM_BODY_DYNAMIC;
 }
 
 bool nElemIsBodyFixed(sElement* self) {
 	sElemBody* body = nElemBody_(self);	
-	return body->type == nElem_BODY_FIXED;
+	return body->type == nELEM_BODY_FIXED;
 }
 
 bool nElemIsOnGround(sElement* self) {

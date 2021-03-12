@@ -50,7 +50,7 @@ sElement* nElemCreate(const sIni* ini){
 
 	
 	//set position
-	if (ini->display != nElem_DISPLAY_NONE || ini->body != nELEM_BODY_NONE) {
+	if (ini->display != nELEM_DISPLAY_NONE || ini->body != nELEM_BODY_NONE) {
 		nUtilAssertArgument(ini->position);
 		self->pos = malloc(sizeof(sRect));
 		nUtilAssertAlloc(self->pos);
@@ -76,7 +76,7 @@ void nElemDestroy_(sElement* self) {
 				if (comp->onDestroy) {
 					comp->onDestroy(&(sEvent) {
 						.target = comp->target,
-						.type = nEvent_ON_DESTROY
+						.type = nEVENT_ON_DESTROY
 					});
 				}
 				nSceneUnsubscribeComponent_(self->scene, comp);
@@ -88,7 +88,7 @@ void nElemDestroy_(sElement* self) {
 			if(self->comp->onDestroy){
 				self->comp->onDestroy(&(sEvent){
 					.target = self->comp->target, 
-					.type = nEvent_ON_DESTROY, 
+					.type = nEVENT_ON_DESTROY, 
 				});
 			}		
 			nSceneUnsubscribeComponent_(self->scene, self->comp);

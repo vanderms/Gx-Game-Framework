@@ -83,7 +83,7 @@ void nFolderCreate(const char* name, void(*loader)(void)) {
     sFolder* self = malloc(sizeof(sFolder));
    nUtilAssertAlloc(self);
     self->name = nUtilCreateString(name);
-    self->status = loader ? nUtil_STATUS_NONE : nUtil_STATUS_READY;
+    self->status = loader ? nUTIL_STATUS_NONE : nUTIL_STATUS_READY;
     self->assetsLoaded = 0;
     self->totalAssets = 0;
     self->assets = nMapCreate();
@@ -139,8 +139,8 @@ sAnimation* nFolderGetAnimation(sFolder* self, const char* id) {
 }
 
 static void iLoadFolder(sFolder* self) {
-    if(self->status == nUtil_STATUS_NONE){
-        self->status = nUtil_STATUS_LOADING;
+    if(self->status == nUTIL_STATUS_NONE){
+        self->status = nUTIL_STATUS_LOADING;
         rFolder = self;
         self->loader();
         rFolder = NULL;
@@ -153,13 +153,13 @@ int nFolderGetPercLoaded(sFolder* self) {
 
 static void iUnloadFolder(sFolder* self) {
     nMapClean(self->assets);
-    self->status = nUtil_STATUS_NONE;
+    self->status = nUTIL_STATUS_NONE;
 }
 
 static void iIncreaseAssetsLoaded(sFolder* self){
     self->assetsLoaded++;
     if(self->assetsLoaded == self->totalAssets){
-        self->status = nUtil_STATUS_READY;
+        self->status = nUTIL_STATUS_READY;
     }
 }
 
@@ -233,7 +233,7 @@ void nFolderLoadImage(const char* id, const char* path, sRect* src, double propo
 
     sFolder* self = rFolder;
    nUtilAssertArgument(self->assets == NULL || nMapGet(self->assets, id) == NULL);
-    nUtilAssertState(self->status == nUtil_STATUS_LOADING);
+    nUtilAssertState(self->status == nUTIL_STATUS_LOADING);
     sImage* img = iCreateImage(self, id, Texture);
     img->proportion = proportion;
     img->resource = NULL;

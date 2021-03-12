@@ -270,46 +270,46 @@ sHandler nComponentGetHandler_(sComponent* comp, int type){
     if (!comp) {
         return NULL;
     }
-    if (type == nEvent_ON_RENDER) {
+    if (type == nEVENT_ON_RENDER) {
         return comp->onRender;
     }
-    if (type == nEvent_ON_PRE_CONTACT) {
+    if (type == nEVENT_ON_PRE_CONTACT) {
         return comp->onPreContact;
     }
-    if (type == nEvent_ON_CONTACT_BEGIN) {
+    if (type == nEVENT_ON_CONTACT_BEGIN) {
         return comp->onContactBegin;
     }
-    if (type == nEvent_ON_CONTACT_END) {
+    if (type == nEVENT_ON_CONTACT_END) {
         return comp->onContactEnd;
     }
-    if (type == nEvent_ON_UPDATE) {
+    if (type == nEVENT_ON_UPDATE) {
         return comp->onUpdate;
     }   
-    if(type == nEvent_ON_LOOP_BEGIN){
+    if(type == nEVENT_ON_LOOP_BEGIN){
         return comp->onLoopBegin;
     }   
-    if (type == nEvent_ON_LOOP_END) {
+    if (type == nEVENT_ON_LOOP_END) {
         return comp->onLoopEnd;
     }   
-    if (type == nEvent_ON_KEYBOARD) {
+    if (type == nEVENT_ON_KEYBOARD) {
         return comp->onKeyboard;
     }
-    if (type == nEvent_ON_MOUSE) {
+    if (type == nEVENT_ON_MOUSE) {
         return comp->onMouse;
     }
-    if (type == nEvent_ON_FINGER) {
+    if (type == nEVENT_ON_FINGER) {
         return comp->onFinger;
     }
-    if (type == nEvent_ON_SDL_DEFAULT) {
+    if (type == nEVENT_ON_SDL_DEFAULT) {
         return comp->onSDLDefault;
     }   
-    if (type == nEvent_ON_UNLOAD) {
+    if (type == nEVENT_ON_UNLOAD) {
         return comp->onUnload;
     }
-    if (type == nEvent_ON_LOAD) {
+    if (type == nEVENT_ON_LOAD) {
         return comp->onLoad;
     }
-    if (type == nEvent_ON_DESTROY) {
+    if (type == nEVENT_ON_DESTROY) {
         return comp->onDestroy;
     }
     return NULL;

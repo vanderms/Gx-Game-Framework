@@ -115,14 +115,14 @@ static void destroyColor(Color* color) {
 //constructors and destructors
 sElemRenderable* nElemCreateRenderable_(sElement* elem, const sIni* ini) {
 	
-	if(ini->display !=  nELEM_DISPLAY_ABSOLUTE && ini->display !=  nElem_DISPLAY_RELATIVE){
-		nUtilAssertArgument(ini->display == nElem_DISPLAY_NONE);
+	if(ini->display !=  nELEM_DISPLAY_ABSOLUTE && ini->display !=  nELEM_DISPLAY_RELATIVE){
+		nUtilAssertArgument(ini->display == nELEM_DISPLAY_NONE);
 		return NULL;
 	}
 
 	sElemRenderable* self =nUtilAssertAlloc(calloc(1, sizeof(sElemRenderable)));	
 	self->type = (ini->display ==  nELEM_DISPLAY_ABSOLUTE ? 
-		 nELEM_DISPLAY_ABSOLUTE :  nElem_DISPLAY_RELATIVE
+		 nELEM_DISPLAY_ABSOLUTE :  nELEM_DISPLAY_RELATIVE
 	);
 	self->pos = nElemPosition(elem);
 	self->zIndex = ini->zIndex;
@@ -202,7 +202,7 @@ void nElemDestroyRenderable_(sElemRenderable* self) {
 
 bool nElemHasRelativeDisplay(sElement* self) {
 	sElemRenderable* renderable = nElemRenderable_(self);
-	return renderable && renderable->type ==  nElem_DISPLAY_RELATIVE;
+	return renderable && renderable->type ==  nELEM_DISPLAY_RELATIVE;
 }
 
 bool nElemHasAbsoluteDisplay(sElement* self) {
@@ -238,8 +238,8 @@ int nElemOrientation(sElement* self) {
 
 void nElemSetOrientation(sElement* self, int value) {
 	sElemRenderable* renderable = nElemRenderable_(self);
-	nUtilAssertArgument(value ==  nElem_FORWARD || 
-		value ==  nElem_BACKWARD
+	nUtilAssertArgument(value ==  nELEM_FORWARD || 
+		value ==  nELEM_BACKWARD
 	);
 	renderable->orientation = (SDL_RendererFlip) value;
 }
@@ -475,8 +475,8 @@ static void* elemGetAsset(sElement* self, const char* apath, enum AssetType type
 		sFolder* folder = nAppGetFolder(renderable->asset);
 		nUtilAssertArgument(folder);
 
-		bool folderIsLoaded = nFolderHasStatus(folder, nUtil_STATUS_LOADING) ||
-			nFolderHasStatus(folder, nUtil_STATUS_READY);
+		bool folderIsLoaded = nFolderHasStatus(folder, nUTIL_STATUS_LOADING) ||
+			nFolderHasStatus(folder, nUTIL_STATUS_READY);
 		nUtilAssertState(folderIsLoaded);
 
 		*slash = '/';
@@ -702,7 +702,7 @@ void nElemOnRender_(sElement* self) {
 		pUpdateLabel(renderable);
 	}
 	nElemExecuteHandler_(self, &(sEvent){
-		.type = nEvent_ON_RENDER
+		.type = nEVENT_ON_RENDER
 	});
 }
 

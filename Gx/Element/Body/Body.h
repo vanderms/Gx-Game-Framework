@@ -4,16 +4,15 @@
 
 enum sElemBodyConstants {
 	nELEM_BODY_NONE = 1,
-	nElem_BODY_FIXED = 2,
-	nElem_BODY_DYNAMIC = 3,
+	nELEM_BODY_FIXED = 2,
+	nELEM_BODY_DYNAMIC = 3,
 };
 
-extern const Uint32 nElem_CMASK_NONE;
-extern const Uint32 nElem_CMASK_ALL;
-extern const Uint32 nElem_CMASK_CAMERA;
-extern const Uint32 nElem_CMASK_DYNAMIC;
-extern const Uint32 nElem_CMASK_FIXED;
-
+extern const Uint32 nELEM_CMASK_NONE;
+extern const Uint32 nELEM_CMASK_ALL;
+extern const Uint32 nELEM_CMASK_CAMERA;
+extern const Uint32 nELEM_CMASK_DYNAMIC;
+extern const Uint32 nELEM_CMASK_FIXED;
 
 bool nElemIsBodyDynamic(sElement* self);
 bool nElemIsBodyFixed(sElement* self);

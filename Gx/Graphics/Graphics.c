@@ -178,7 +178,7 @@ void nGraphicsRenderElement_(sElement* self) {
 		nElemCalcImagePosOnCamera(self, &labelPos, image);
 		
 		nImageRender(image, &labelPos, 0.0, 
-			(SDL_RendererFlip)  nElem_FORWARD, 
+			(SDL_RendererFlip)  nELEM_FORWARD, 
 			nElemOpacity(self)
 		);
 	}
